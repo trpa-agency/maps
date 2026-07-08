@@ -25,7 +25,7 @@
     return `<a class="app-card" href="${resolveUrl(app.url)}" target="_blank" rel="noopener" data-search="${(app.title + ' ' + app.description + ' ' + (app.tags || []).join(' ')).toLowerCase()}">
       ${thumb}
       <div class="card-body">
-        <h3>${app.title}</h3>
+        <h3>${app.title}${app.beta ? ' <span class="beta-pill">Beta</span>' : ''}</h3>
         <p>${app.description}</p>
       </div>
       <div class="card-footer">

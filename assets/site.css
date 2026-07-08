@@ -184,6 +184,19 @@ a { color: var(--trpa-blue); }
   font-weight: 700;
   color: var(--trpa-navy);
 }
+.app-card .beta-pill {
+  display: inline-block;
+  vertical-align: 2px;
+  background: var(--trpa-orange);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  margin-left: 0.3rem;
+}
 .app-card p {
   margin: 0;
   font-size: 0.82rem;

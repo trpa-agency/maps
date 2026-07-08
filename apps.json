@@ -38,7 +38,10 @@
       "url": "https://gis.trpa.org/localplans/",
       "thumbnail": "assets/thumbs/localplans.png",
       "description": "Explore zoning for the Lake Tahoe Region. Click individual plan area statements, community plans, and area plans for zoning information and links to plan documents.",
-      "tags": ["Zoning", "Area Plans"]
+      "tags": [
+        "Zoning",
+        "Area Plans"
+      ]
     },
     {
       "id": "transportation",
@@ -47,7 +50,9 @@
       "url": "https://gis.trpa.org/transportation/",
       "thumbnail": "assets/thumbs/transportation.png",
       "description": "Existing and proposed transit routes, active transportation facilities, areas identified for safety improvements, crash locations, and electric vehicle charging stations.",
-      "tags": ["Transportation"]
+      "tags": [
+        "Transportation"
+      ]
     },
     {
       "id": "housing",
@@ -56,7 +61,9 @@
       "url": "https://gis.trpa.org/housing",
       "thumbnail": "assets/thumbs/housing.png",
       "description": "Housing resources web map for the Tahoe Region.",
-      "tags": ["Housing"]
+      "tags": [
+        "Housing"
+      ]
     },
     {
       "id": "shoreline",
@@ -65,7 +72,9 @@
       "url": "https://gis.trpa.org/shorelinemap",
       "thumbnail": "assets/thumbs/shoreline.png",
       "description": "Current inventory of shoreline structures, natural features, and environmental constraints along the 72 miles of Lake Tahoe shoreline.",
-      "tags": ["Shoreline"]
+      "tags": [
+        "Shoreline"
+      ]
     },
     {
       "id": "permitreview",
@@ -74,7 +83,9 @@
       "url": "https://gis.trpa.org/PermitReview",
       "thumbnail": "assets/thumbs/permitreview.png",
       "description": "Displays the map layers necessary to review a TRPA permit application.",
-      "tags": ["Permits"]
+      "tags": [
+        "Permits"
+      ]
     },
     {
       "id": "parcels",
@@ -82,7 +93,10 @@
       "category": "permitting",
       "url": "https://parcels.laketahoeinfo.org",
       "description": "Look up parcel details, permit records, land capability, and coverage information on Lake Tahoe Info.",
-      "tags": ["Parcels", "Permits"],
+      "tags": [
+        "Parcels",
+        "Permits"
+      ],
       "external": true
     },
     {
@@ -92,7 +106,11 @@
       "url": "https://trpa-agency.github.io/EIP/html/projects-map.html",
       "thumbnail": "assets/thumbs/eip-projects-map.png",
       "description": "Every Environmental Improvement Program (EIP) project with a known location on an interactive 2D and 3D map. Filter by focus area, stage, watershed, jurisdiction, program, and funding source.",
-      "tags": ["EIP", "Projects"]
+      "tags": [
+        "EIP",
+        "Projects"
+      ],
+      "beta": true
     },
     {
       "id": "eiplocator",
@@ -101,7 +119,11 @@
       "url": "https://trpa-agency.github.io/EIP/html/locator.html",
       "thumbnail": "assets/thumbs/eip-locator.png",
       "description": "Make consistent, branded locator maps for presentations and reports. Search an address, APN, or EIP project, pick a style and layout, and export a PowerPoint slide or PNG.",
-      "tags": ["EIP", "Locator"]
+      "tags": [
+        "EIP",
+        "Locator"
+      ],
+      "beta": true
     },
     {
       "id": "bmp",
@@ -110,7 +132,10 @@
       "url": "https://gis.trpa.org/bmpmappingtool",
       "thumbnail": "assets/thumbs/bmp.png",
       "description": "View best management practices (BMPs) layers, catchments, and APN labels. Locate parcels by address, APN, or catchment name and export selections.",
-      "tags": ["Stormwater", "BMP"]
+      "tags": [
+        "Stormwater",
+        "BMP"
+      ]
     },
     {
       "id": "sezviewer",
@@ -119,7 +144,10 @@
       "url": "https://gis.trpa.org/tahoesezviewer",
       "thumbnail": "assets/thumbs/sezviewer.png",
       "description": "Stream environment zone (SEZ) baseline condition assessment web map for the Lake Tahoe Basin.",
-      "tags": ["SEZ", "Restoration"]
+      "tags": [
+        "SEZ",
+        "Restoration"
+      ]
     },
     {
       "id": "smokemap",
@@ -128,7 +156,10 @@
       "url": "https://gis.trpa.org/smokemap",
       "thumbnail": "assets/thumbs/smokemap.png",
       "description": "Smoke forecast for the Tahoe Basin and surrounding region, updated every 24 hours by the National Weather Service. Concentrations reported in micrograms per cubic meter.",
-      "tags": ["Forest Health", "Fire"]
+      "tags": [
+        "Forest Health",
+        "Fire"
+      ]
     },
     {
       "id": "mapmaker",
@@ -137,7 +168,9 @@
       "url": "https://gis.trpa.org/mapmaker/",
       "thumbnail": "assets/thumbs/mapmaker.png",
       "description": "Interactive web map for exploring TRPA datasets. Turn layers on and off and export a map to PDF.",
-      "tags": ["General"]
+      "tags": [
+        "General"
+      ]
     },
     {
       "id": "datainventory",
@@ -146,7 +179,11 @@
       "url": "tools/data-inventory.html",
       "thumbnail": "assets/thumbs/data-inventory.png",
       "description": "Searchable inventory of 168 data assets across Tahoe Open Data and LT Info. Filter by source and channel, and export the list to CSV.",
-      "tags": ["Open Data", "Inventory"]
+      "tags": [
+        "Open Data",
+        "Inventory"
+      ],
+      "beta": true
     },
     {
       "id": "opendatapolicy",
@@ -155,7 +192,11 @@
       "url": "tools/open-data-policy.html",
       "thumbnail": "assets/thumbs/open-data-policy.png",
       "description": "How to use and access data published on tahoeopendata.org, including attribution, delivery channels, and developer examples.",
-      "tags": ["Open Data", "Developers"]
+      "tags": [
+        "Open Data",
+        "Developers"
+      ],
+      "beta": true
     },
     {
       "id": "opendata",
@@ -164,7 +205,9 @@
       "url": "https://www.tahoeopendata.org",
       "thumbnail": "assets/thumbs/opendata.png",
       "description": "Regional geographic data warehouse for the Tahoe Basin. Download GIS data and connect to shared services.",
-      "tags": ["Open Data"],
+      "tags": [
+        "Open Data"
+      ],
       "external": true
     },
     {
@@ -173,7 +216,10 @@
       "category": "tools",
       "url": "https://maps.trpa.org/server/rest/services",
       "description": "ArcGIS Server REST services directory for developers building on TRPA data.",
-      "tags": ["Developers", "REST"],
+      "tags": [
+        "Developers",
+        "REST"
+      ],
       "external": true
     }
   ]
