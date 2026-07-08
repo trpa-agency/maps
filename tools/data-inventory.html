@@ -33,6 +33,8 @@
   .src-tod{color:var(--trpa-blue);font-weight:600;}
   .src-lt{color:var(--trpa-forest);font-weight:600;}
   .src-rest{color:var(--trpa-purple);font-weight:600;}
+  .ag-theme-quartz .ag-floating-filter input{color:var(--trpa-navy);caret-color:var(--trpa-navy);}
+  .ag-theme-quartz .ag-floating-filter input::placeholder{color:#8a97a8;}
   .ep-link{color:var(--trpa-blue);text-decoration:none;}
   .ep-link:hover{text-decoration:underline;}
   .act{display:inline-block;font-size:11px;font-weight:600;line-height:1;padding:5px 10px;border-radius:5px;
@@ -115,8 +117,8 @@
     {field:'theme',headerName:'Theme',width:180},
     {field:'channel',headerName:'Channel',width:215},
     {field:'type',headerName:'Type',width:175},
-    {field:'geometry',headerName:'Geometry',width:125},
-    {field:'access',headerName:'Access',width:115,
+    {field:'geometry',headerName:'Geometry',width:125,filter:false},
+    {field:'access',headerName:'Access',width:115,filter:false,
       cellRenderer:p=>`<span class="acc ${accClass(p.value)}">${p.value}</span>`},
     {colId:'actions',headerName:'Get the Data',width:300,sortable:false,filter:false,
       cellRenderer:p=>{
