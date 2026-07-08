@@ -1,0 +1,144 @@
+{
+  "site": {
+    "title": "TRPA Maps",
+    "subtitle": "Mapping applications of the Tahoe Regional Planning Agency",
+    "domain": "maps.trpa.gov"
+  },
+  "categories": [
+    {
+      "slug": "planning",
+      "name": "Planning",
+      "color": "#0072CE",
+      "description": "Zoning, local plans, transportation, housing, and shoreline maps supporting the Regional Plan."
+    },
+    {
+      "slug": "permitting",
+      "name": "Permitting",
+      "color": "#E87722",
+      "description": "Parcel lookup, permit records, and property information tools."
+    },
+    {
+      "slug": "eip",
+      "name": "Environmental Improvement",
+      "color": "#4A6118",
+      "description": "Environmental Improvement Program (EIP) maps for stormwater, forest health, and restoration."
+    },
+    {
+      "slug": "tools",
+      "name": "Data and Tools",
+      "color": "#7B6A8A",
+      "description": "General map viewers, open data, and resources for GIS users and developers."
+    }
+  ],
+  "apps": [
+    {
+      "id": "localplans",
+      "title": "Local Plans and Zoning",
+      "category": "planning",
+      "url": "https://gis.trpa.org/localplans/",
+      "thumbnail": "assets/thumbs/localplans.png",
+      "description": "Explore zoning for the Lake Tahoe Region. Click individual plan area statements, community plans, and area plans for zoning information and links to plan documents.",
+      "tags": ["Zoning", "Area Plans"]
+    },
+    {
+      "id": "transportation",
+      "title": "Transportation Map",
+      "category": "planning",
+      "url": "https://gis.trpa.org/transportation/",
+      "thumbnail": "assets/thumbs/transportation.png",
+      "description": "Existing and proposed transit routes, active transportation facilities, areas identified for safety improvements, crash locations, and electric vehicle charging stations.",
+      "tags": ["Transportation"]
+    },
+    {
+      "id": "housing",
+      "title": "Housing Resources",
+      "category": "planning",
+      "url": "https://gis.trpa.org/housing",
+      "thumbnail": "assets/thumbs/housing.png",
+      "description": "Housing resources web map for the Tahoe Region.",
+      "tags": ["Housing"]
+    },
+    {
+      "id": "shoreline",
+      "title": "Shoreline Plan Map",
+      "category": "planning",
+      "url": "https://gis.trpa.org/shorelinemap",
+      "thumbnail": "assets/thumbs/shoreline.png",
+      "description": "Current inventory of shoreline structures, natural features, and environmental constraints along the 72 miles of Lake Tahoe shoreline.",
+      "tags": ["Shoreline"]
+    },
+    {
+      "id": "permitreview",
+      "title": "Permit Review Map",
+      "category": "permitting",
+      "url": "https://gis.trpa.org/PermitReview",
+      "thumbnail": "assets/thumbs/permitreview.png",
+      "description": "Displays the map layers necessary to review a TRPA permit application.",
+      "tags": ["Permits"]
+    },
+    {
+      "id": "parcels",
+      "title": "Parcel and Permit Records",
+      "category": "permitting",
+      "url": "https://parcels.laketahoeinfo.org",
+      "description": "Look up parcel details, permit records, land capability, and coverage information on Lake Tahoe Info.",
+      "tags": ["Parcels", "Permits"],
+      "external": true
+    },
+    {
+      "id": "bmp",
+      "title": "BMP Mapping Tool",
+      "category": "eip",
+      "url": "https://gis.trpa.org/bmpmappingtool",
+      "thumbnail": "assets/thumbs/bmp.png",
+      "description": "View best management practices (BMPs) layers, catchments, and APN labels. Locate parcels by address, APN, or catchment name and export selections.",
+      "tags": ["Stormwater", "BMP"]
+    },
+    {
+      "id": "sezviewer",
+      "title": "Tahoe SEZ Viewer",
+      "category": "eip",
+      "url": "https://gis.trpa.org/tahoesezviewer",
+      "thumbnail": "assets/thumbs/sezviewer.png",
+      "description": "Stream environment zone (SEZ) baseline condition assessment web map for the Lake Tahoe Basin.",
+      "tags": ["SEZ", "Restoration"]
+    },
+    {
+      "id": "smokemap",
+      "title": "48-Hour Smoke Forecast",
+      "category": "eip",
+      "url": "https://gis.trpa.org/smokemap",
+      "thumbnail": "assets/thumbs/smokemap.png",
+      "description": "Smoke forecast for the Tahoe Basin and surrounding region, updated every 24 hours by the National Weather Service. Concentrations reported in micrograms per cubic meter.",
+      "tags": ["Forest Health", "Fire"]
+    },
+    {
+      "id": "mapmaker",
+      "title": "Map Maker",
+      "category": "tools",
+      "url": "https://gis.trpa.org/mapmaker/",
+      "thumbnail": "assets/thumbs/mapmaker.png",
+      "description": "Interactive web map for exploring TRPA datasets. Turn layers on and off and export a map to PDF.",
+      "tags": ["General"]
+    },
+    {
+      "id": "opendata",
+      "title": "Tahoe Open Data",
+      "category": "tools",
+      "url": "https://www.tahoeopendata.org",
+      "thumbnail": "assets/thumbs/opendata.png",
+      "description": "Regional geographic data warehouse for the Tahoe Basin. Download GIS data and connect to shared services.",
+      "tags": ["Open Data"],
+      "external": true
+    },
+    {
+      "id": "rest",
+      "title": "ArcGIS REST Services",
+      "category": "tools",
+      "url": "https://maps.trpa.org/server/rest/services",
+      "description": "ArcGIS Server REST services directory for developers building on TRPA data.",
+      "tags": ["Developers", "REST"],
+      "external": true
+    }
+  ]
+}

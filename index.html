@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRPA Maps — Tahoe Regional Planning Agency</title>
+  <meta name="description" content="Official mapping applications of the Tahoe Regional Planning Agency. Planning, permitting, and Environmental Improvement Program maps for the Lake Tahoe Region." />
+  <link rel="icon" type="image/png" href="assets/TRPALogo_COLOR.png" />
+
+  <!-- Calcite Design System -->
+  <script type="module" src="https://js.arcgis.com/calcite-components/5.0"></script>
+  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/5.0/calcite.css" />
+
+  <!-- Open Sans -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="assets/site.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <a href="https://www.trpa.gov" title="Tahoe Regional Planning Agency">
+      <img class="logo" src="assets/TRPALogo_WHITE.png" alt="Tahoe Regional Planning Agency logo" />
+    </a>
+    <div class="titles">
+      <h1><a href="./">TRPA Maps</a></h1>
+      <div class="subtitle">Mapping applications of the Tahoe Regional Planning Agency</div>
+    </div>
+    <nav class="header-links">
+      <a href="https://www.trpa.gov">trpa.gov</a>
+      <a href="https://www.laketahoeinfo.org">Lake Tahoe Info</a>
+      <a href="https://www.tahoeopendata.org">Open Data</a>
+    </nav>
+  </header>
+  <div class="accent-bar"></div>
+
+  <div class="toolbar">
+    <calcite-input id="app-search" placeholder="Search maps and apps" icon="search" clearable scale="m"></calcite-input>
+    <nav class="cat-pills" id="cat-pills" aria-label="Categories"></nav>
+  </div>
+
+  <main class="gallery" id="gallery">
+    <calcite-loader label="Loading maps and apps"></calcite-loader>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        Tahoe Regional Planning Agency<br />
+        128 Market Street, Stateline, NV 89449 &middot; <a href="https://www.trpa.gov">trpa.gov</a>
+      </div>
+      <div>
+        <a href="https://maps.trpa.org/server/rest/services">REST Services</a> &middot;
+        <a href="https://www.tahoeopendata.org">Tahoe Open Data</a> &middot;
+        <a href="https://www.laketahoeinfo.org">Lake Tahoe Info</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>window.GALLERY_CONFIG = { base: '', category: null };</script>
+  <script src="assets/gallery.js"></script>
+</body>
+</html>
