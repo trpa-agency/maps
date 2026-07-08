@@ -86,6 +86,24 @@
       "external": true
     },
     {
+      "id": "eipprojects",
+      "title": "EIP Projects Map",
+      "category": "eip",
+      "url": "https://trpa-agency.github.io/EIP/html/projects-map.html",
+      "thumbnail": "assets/thumbs/eip-projects-map.png",
+      "description": "Every Environmental Improvement Program (EIP) project with a known location on an interactive 2D and 3D map. Filter by focus area, stage, watershed, jurisdiction, program, and funding source.",
+      "tags": ["EIP", "Projects"]
+    },
+    {
+      "id": "eiplocator",
+      "title": "Project Locator",
+      "category": "eip",
+      "url": "https://trpa-agency.github.io/EIP/html/locator.html",
+      "thumbnail": "assets/thumbs/eip-locator.png",
+      "description": "Make consistent, branded locator maps for presentations and reports. Search an address, APN, or EIP project, pick a style and layout, and export a PowerPoint slide or PNG.",
+      "tags": ["EIP", "Locator"]
+    },
+    {
       "id": "bmp",
       "title": "BMP Mapping Tool",
       "category": "eip",
