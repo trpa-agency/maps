@@ -10,14 +10,19 @@
     catch (e) { return ''; }
   }
 
+  function resolveUrl(url) {
+    // Absolute URLs pass through; repo-relative URLs get the page's base prefix
+    return /^[a-z]+:\/\//i.test(url) ? url : base + url;
+  }
+
   function cardHTML(app, catColor) {
     const thumb = app.thumbnail
       ? `<div class="thumb" style="--cat-color:${catColor}; background-image:url('${base}${app.thumbnail}')"></div>`
       : `<div class="thumb placeholder" style="--cat-color:${catColor}">${app.title.charAt(0)}</div>`;
     const tags = (app.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
-    const host = hostOf(app.url);
-    const external = app.external ? ' target="_blank" rel="noopener"' : ' target="_blank" rel="noopener"';
-    return `<a class="app-card" href="${app.url}"${external} data-search="${(app.title + ' ' + app.description + ' ' + (app.tags || []).join(' ')).toLowerCase()}">
+    const isAbsolute = /^[a-z]+:\/\//i.test(app.url);
+    const host = isAbsolute ? hostOf(app.url) : location.hostname.replace(/^www\./, '');
+    return `<a class="app-card" href="${resolveUrl(app.url)}" target="_blank" rel="noopener" data-search="${(app.title + ' ' + app.description + ' ' + (app.tags || []).join(' ')).toLowerCase()}">
       ${thumb}
       <div class="card-body">
         <h3>${app.title}</h3>

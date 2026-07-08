@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tahoe Open Data: Data Policy and Developer Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --trpa-blue:#0072CE; --trpa-navy:#003B71; --trpa-forest:#4A6118; --trpa-brick:#9C3E27;
+    --trpa-orange:#E87722; --trpa-purple:#7B6A8A; --trpa-ice:#B4CBE8;
+    --gray-med:#666; --gray-light:#F5F5F5; --border:#DDD; --white:#fff;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:'Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    font-size:15px;line-height:1.6;color:var(--trpa-navy);margin:0;background:var(--white);}
+  header{background:var(--trpa-navy);color:var(--white);padding:30px 0;}
+  .wrap{max-width:880px;margin:0 auto;padding:0 28px;}
+  header .badge{display:inline-block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--trpa-ice);font-weight:600;margin-bottom:8px;}
+  header h1{margin:0;font-size:27px;font-weight:700;line-height:1.2;}
+  header p.sub{margin:8px 0 0;color:#cfe0f2;font-size:15px;}
+  .meta{margin-top:14px;font-size:12.5px;color:#a9c4e0;}
+  main{padding:10px 0 60px;}
+  .section-label{display:block;background:var(--trpa-blue);color:#fff;font-size:19px;font-weight:700;
+    letter-spacing:.16em;text-transform:uppercase;padding:14px 20px;border-radius:6px;margin:46px 0 12px;
+    box-shadow:0 2px 6px rgba(0,59,113,.18);}
+  h2{font-size:20px;color:var(--trpa-navy);margin:26px 0 6px;padding-top:12px;border-top:2px solid var(--trpa-ice);}
+  h3{font-size:15px;color:var(--trpa-navy);margin:18px 0 4px;text-transform:uppercase;letter-spacing:.04em;font-size:12.5px;color:var(--gray-med);}
+  p{margin:8px 0;}
+  a{color:var(--trpa-blue);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  ul{margin:8px 0;padding-left:20px;}
+  li{margin:4px 0;}
+  code,pre{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;}
+  code{background:var(--gray-light);border:1px solid var(--border);border-radius:4px;padding:1px 5px;color:var(--trpa-brick);}
+  pre{position:relative;background:#0c2036;color:#e6eef8;padding:14px 16px;padding-right:74px;border-radius:8px;
+    overflow-x:auto;line-height:1.5;margin:10px 0;}
+  pre code{background:none;border:none;color:inherit;padding:0;}
+  .cmt{color:#7fa8cf;}
+  .copy-btn{position:absolute;top:8px;right:8px;font-family:'Open Sans',sans-serif;font-size:11px;font-weight:600;
+    letter-spacing:.04em;background:rgba(255,255,255,.12);color:#e6eef8;border:1px solid rgba(255,255,255,.28);
+    border-radius:5px;padding:3px 9px;cursor:pointer;}
+  .copy-btn:hover{background:rgba(255,255,255,.22);}
+  .copy-btn.done{background:var(--trpa-forest);border-color:var(--trpa-forest);color:#fff;}
+  .callout{border-left:4px solid var(--trpa-orange);background:#fdf3ea;padding:10px 15px;border-radius:0 6px 6px 0;margin:12px 0;}
+  .callout.blue{border-left-color:var(--trpa-blue);background:#eef6fd;}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px;}
+  th,td{border:1px solid var(--border);padding:7px 10px;text-align:left;vertical-align:top;}
+  th{background:var(--trpa-navy);color:var(--white);font-weight:600;}
+  tr:nth-child(even) td{background:var(--gray-light);}
+  footer{background:var(--gray-light);border-top:1px solid var(--border);padding:22px 0;font-size:13px;color:var(--gray-med);}
+  .draft{background:var(--trpa-orange);color:#fff;font-size:11px;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;padding:3px 10px;border-radius:4px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <span class="badge">Tahoe Regional Planning Agency</span>
+    <h1>Tahoe Open Data: Data Policy and Developer Guide</h1>
+    <p class="sub">How to use and access data published on tahoeopendata.org.</p>
+    <div class="meta"><span class="draft">Draft</span> &nbsp; v0.5 &middot; Jul. 7, 2026 &middot; TRPA GIS (gis@trpa.org) &middot; Disclaimer per tahoeopendata.org/pages/policy</div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+  <p>This page covers the terms that apply to TRPA open data and how to pull it programmatically. By using data
+     from tahoeopendata.org you accept the policy below.</p>
+
+  <!-- ============ POLICY ============ -->
+  <span class="section-label">Data and Use Policy</span>
+
+  <h2>How data is delivered</h2>
+  <p>Content is served two ways. Knowing which applies tells you whether it can be queried or only downloaded.</p>
+  <table>
+    <tr><th>Delivery</th><th>Content</th><th>Access</th></tr>
+    <tr>
+      <td>ArcGIS services (<code>maps.trpa.org</code>)</td>
+      <td>Vector map and feature services, including the nine <code>DataDownloader</code> themes.</td>
+      <td>ArcGIS REST API, or the download options on each item page.</td>
+    </tr>
+    <tr>
+      <td>Box file downloads</td>
+      <td>Large rasters and files (DEMs, bathymetry, Snow PALM, vegetation ecobject).</td>
+      <td>Direct file download from the item's link. Not available through the API.</td>
+    </tr>
+  </table>
+  <p>Program and indicator data (EIP, Parcel Tracker, Development Rights, thresholds) lives in a separate platform,
+     LT Info, described in the Developer Guide.</p>
+
+  <h2>Use and attribution</h2>
+  <p>There is no restriction on the use or distribution of the data contained in this portal. However, please
+     acknowledge the Tahoe Regional Planning Agency in any products or applications that reference this data. A
+     suggested credit:</p>
+  <pre><code>Source: Tahoe Regional Planning Agency (TRPA), Tahoe Open Data,
+tahoeopendata.org. Accessed [date].</code></pre>
+  <p>Some datasets include partner data (county assessors for parcels; USFS and NRCS for soils and vegetation).
+     Keep any added credits noted in the item metadata.</p>
+
+  <h2>Fair use</h2>
+  <p>These are shared public services. Please:</p>
+  <ul>
+    <li>Keep request rates reasonable; avoid aggressive parallel scraping.</li>
+    <li>For bulk needs, download the full dataset once instead of paging the API in a loop.</li>
+    <li>Filter server-side and request only the fields and extent you need.</li>
+    <li>Cache results locally.</li>
+    <li>Sync incrementally. Track a layer's edit date and only re-pull records that changed instead of
+        re-downloading the whole layer. Where a layer exposes an edit-date field or
+        <code>editingInfo.lastEditDate</code>, filter on it with a <code>where</code> clause; for LT Info, use the
+        nightly-updated endpoints on a daily schedule.</li>
+  </ul>
+  <p>TRPA does not guarantee uptime or a request quota for public services and may throttle traffic that affects
+     others. For high-volume or operational needs, contact TRPA GIS.</p>
+
+  <h2>Disclaimer</h2>
+  <p>The Tahoe Open Data portal is furnished as a public service by the Tahoe Regional Planning Agency (TRPA) to
+     provide its partners, local citizens, and other private entities with interest in tabular and spatial data
+     related to parcels, transportation, planning, monitoring, wildlife, and other related datasets of the agency.
+     The data provided are collected from various sources and will change over time without notice. In using the
+     data, users should be aware that some of these data are generalized and were created for use in regional
+     projects.</p>
+  <p>While TRPA believes the data is accurate and properly functioning, TRPA disclaims any responsibility for the
+     accuracy or correctness of the data. The data is provided on an "AS IS", "AS AVAILABLE" and "WITH ALL FAULTS"
+     basis. TRPA makes no warranties, express or implied, including but not limited to any warranties of
+     merchantability or fitness for a particular purpose, nor shall the distribution of this information constitute
+     any warranty.</p>
+  <p>In no event shall TRPA become liable to users of these data, or any other party, for any loss or damages,
+     consequential or otherwise, including but not limited to time, money, or goodwill, arising from the use,
+     operation or modification of the data. In using these data, you further agree to indemnify, defend, and hold
+     harmless and release TRPA for any and all liability of any nature arising out of or resulting from the lack of
+     accuracy or correctness of the data, or the use of the data.</p>
+
+  <h2>Sensitive data</h2>
+  <ul>
+    <li>The public parcel download includes parcel identifiers, addresses, and geometry. It does not include owner
+        names or assessed values. Nevada county parcels are not offered; contact the county assessor.</li>
+    <li>Some wildlife datasets show locations of protected or sensitive species. Use them responsibly and do not
+        use them to disturb wildlife. TRPA may generalize or restrict these layers.</li>
+  </ul>
+
+  <h2>Updates</h2>
+  <p>Datasets refresh on different schedules. Where a cadence is set, it appears on the item page. Applications
+     that embed TRPA data should re-fetch periodically rather than rely on a stored copy.</p>
+
+  <!-- ============ DEVELOPER GUIDE ============ -->
+  <span class="section-label">Developer Guide</span>
+
+  <h2>Access one dataset</h2>
+  <p>Each map or feature service item offers two endpoints from its page: a <strong>GeoService</strong> (the ArcGIS
+     REST layer, with fields and query tools) and a <strong>GeoJSON</strong> link (features ready for a web map).
+     For a packaged file, use the download options on the item page.</p>
+  <pre><code>GeoService  https://maps.trpa.org/server/rest/services/DataDownloader_Transportation/MapServer/14
+GeoJSON     .../MapServer/14/query?where=1=1&amp;outFields=*&amp;f=geojson</code></pre>
+
+  <h2>ArcGIS REST API</h2>
+  <p>No key is required for public services. Base URL:</p>
+  <pre><code>https://maps.trpa.org/server/rest/services</code></pre>
+  <p>The download themes are the nine <code>DataDownloader</code> services (Contours, Impervious, Parcels,
+     PlanningandJurisdictions, Recreation, Shorezone, SoilsandHydro, Transportation, Wildlife). Responses come as
+     <code>json</code>, <code>geojson</code>, or <code>pbf</code>.</p>
+  <pre><code><span class="cmt"># list the layers in a service</span>
+https://maps.trpa.org/server/rest/services/Datadownloader_PlanningandJurisdictions/MapServer?f=json
+
+<span class="cmt"># query a layer as GeoJSON</span>
+.../DataDownloader_Transportation/MapServer/14/query?where=1=1&amp;outFields=*&amp;f=geojson
+
+<span class="cmt"># filter by attribute, return only needed fields</span>
+.../DataDownloader_Parcels/MapServer/0/query?where=JURISDICTION='El Dorado'&amp;outFields=APN,APO_ADDRESS&amp;f=json</code></pre>
+  <p>Services return up to 2,000 records per request. Page through larger layers with <code>resultOffset</code> and
+     <code>resultRecordCount</code>:</p>
+  <pre><code>.../MapServer/0/query?where=1=1&amp;outFields=*&amp;resultOffset=0&amp;resultRecordCount=2000&amp;f=geojson
+.../MapServer/0/query?where=1=1&amp;outFields=*&amp;resultOffset=2000&amp;resultRecordCount=2000&amp;f=geojson</code></pre>
+
+  <h2>LT Info Data Center</h2>
+  <p><a href="https://www.laketahoeinfo.org/DataCenter">Lake Tahoe Info</a> is TRPA's program-data platform and the
+     system of record for EIP projects and performance measures, Parcel Tracker attributes, Development Rights,
+     threshold evaluations, and more. It is built on the open-source ProjectFirma platform (hosted by ESA). It
+     offers a token-based tabular API and a GeoServer for spatial layers.</p>
+
+  <h3>Tabular API (token required)</h3>
+  <p>Register a <a href="https://keystone.sitkatech.com/Authentication/Register">Keystone account</a>, generate a
+     token on the <a href="https://www.laketahoeinfo.org/WebServices/List">Web Services</a> page, and pass it in
+     each request. Treat the token like a password; do not embed it in public or client-side code. The legacy SOAP
+     interface is no longer maintained.</p>
+  <pre><code>https://www.laketahoeinfo.org/WebServices/{ServiceName}/{FORMAT}/{token}[/{param}]
+<span class="cmt"># FORMAT = CSV or JSON.  {param} = EIP Project #, OrganizationID, or Indicator ID where noted.</span>
+
+https://www.laketahoeinfo.org/WebServices/GetProjects/JSON/{token}
+https://www.laketahoeinfo.org/WebServices/GetTransactedAndBankedDevelopmentRights/JSON/{token}</code></pre>
+  <table>
+    <tr><th>Theme</th><th>Endpoints</th></tr>
+    <tr><td>EIP and projects</td>
+      <td><code>GetProjects</code>, <code>GetProject</code>, <code>GetProjectExpenditures</code>,
+          <code>GetReportedProjectAccomplishments</code>, <code>GetEIPIndicators</code>,
+          <code>GetEIPHomepageStats</code></td></tr>
+    <tr><td>Parcels</td>
+      <td><code>GetAllParcels</code>, <code>GetParcelsByLandCapability</code>, <code>GetParcelIPESScores</code>,
+          <code>GetDeedRestrictedParcels</code></td></tr>
+    <tr><td>Development Rights</td>
+      <td><code>GetBankedDevelopmentRights</code>, <code>GetTransactedAndBankedDevelopmentRights</code>,
+          <code>GetDevelopmentRightTransactions</code>, <code>GetDevelopmentRightPoolBalanceReport</code></td></tr>
+    <tr><td>Other</td>
+      <td><code>GetOrganizations</code>, <code>GetThresholdEvaluations</code>,
+          <code>GetTransitMonitoringData</code>, <code>GetAssignedMooringTags</code></td></tr>
+  </table>
+
+  <h3>GeoServer (WFS / WMS)</h3>
+  <p>LT Info spatial layers are served by GeoServer and can be added in ArcGIS Pro or QGIS over WFS or WMS, then
+     exported to Shapefile or File GDB.</p>
+  <pre><code>https://mapserver.laketahoeinfo.org/geoserver</code></pre>
+  <p>Layers include <code>AllParcels</code>, <code>TrackedParcels</code>, <code>AllStormwaterCatchments</code>,
+     <code>ParcelDevelopmentRightTransfers</code>, <code>Project</code>, <code>vEIPProjectLocationDetail</code>,
+     and mooring layers.</p>
+
+  <h2>Code snippets</h2>
+
+  <h3>Leaflet</h3>
+  <pre><code>const map = L.map('map').setView([39.09, -120.03], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+const url = 'https://maps.trpa.org/server/rest/services/'
+  + 'DataDownloader_Transportation/MapServer/14/query'
+  + '?where=1=1&amp;outFields=*&amp;f=geojson';
+
+fetch(url).then(r =&gt; r.json()).then(geojson =&gt; L.geoJSON(geojson).addTo(map));</code></pre>
+
+  <h3>Python (GeoPandas), ArcGIS layer</h3>
+  <pre><code>import geopandas as gpd
+
+url = ("https://maps.trpa.org/server/rest/services/"
+       "DataDownloader_SoilsandHydro/MapServer/5/query"
+       "?where=1=1&amp;outFields=*&amp;f=geojson")
+
+watersheds = gpd.read_file(url)
+print(watersheds.shape)</code></pre>
+
+  <h3>Python (requests), LT Info tabular API</h3>
+  <pre><code>import requests
+
+token = "YOUR_TOKEN"   # keep this private
+url = f"https://www.laketahoeinfo.org/WebServices/GetProjects/JSON/{token}"
+
+projects = requests.get(url, timeout=120).json()
+print(len(projects))</code></pre>
+
+  <h2>Support</h2>
+  <p>TRPA GIS: <a href="mailto:gis@trpa.org">gis@trpa.org</a> &middot;
+     Portal: <a href="https://www.tahoeopendata.org/">tahoeopendata.org</a> &middot;
+     LT Info help: <a href="https://www.laketahoeinfo.org/Help/Support">laketahoeinfo.org/Help/Support</a></p>
+  <p>Need a dataset that is not published? Email the GIS team with the data and your intended use.</p>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">&copy; 2026 Tahoe Regional Planning Agency &middot; Tahoe Open Data &middot; Draft for internal review, not yet adopted.</div>
+</footer>
+
+<script>
+  document.querySelectorAll('pre').forEach(function(pre){
+    var btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function(){
+      var code = pre.querySelector('code');
+      var text = (code ? code.innerText : pre.innerText);
+      var done = function(){ btn.textContent = 'Copied'; btn.classList.add('done');
+        setTimeout(function(){ btn.textContent = 'Copy'; btn.classList.remove('done'); }, 1500); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function(){ fb(text, done); });
+      } else { fb(text, done); }
+    });
+    pre.appendChild(btn);
+  });
+  function fb(text, done){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+</script>
+</body>
+</html>

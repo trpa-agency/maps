@@ -140,6 +140,24 @@
       "tags": ["General"]
     },
     {
+      "id": "datainventory",
+      "title": "Tahoe Data Inventory",
+      "category": "tools",
+      "url": "tools/data-inventory.html",
+      "thumbnail": "assets/thumbs/data-inventory.png",
+      "description": "Searchable inventory of 168 data assets across Tahoe Open Data and LT Info. Filter by source and channel, and export the list to CSV.",
+      "tags": ["Open Data", "Inventory"]
+    },
+    {
+      "id": "opendatapolicy",
+      "title": "Open Data Policy and Developer Guide",
+      "category": "tools",
+      "url": "tools/open-data-policy.html",
+      "thumbnail": "assets/thumbs/open-data-policy.png",
+      "description": "How to use and access data published on tahoeopendata.org, including attribution, delivery channels, and developer examples.",
+      "tags": ["Open Data", "Developers"]
+    },
+    {
       "id": "opendata",
       "title": "Tahoe Open Data",
       "category": "tools",
