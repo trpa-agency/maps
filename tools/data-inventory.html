@@ -75,10 +75,6 @@
     <calcite-label>Source
       <calcite-select id="fsource"><calcite-option value="">All</calcite-option></calcite-select>
     </calcite-label>
-    <calcite-label>Channel
-      <calcite-select id="fchannel"><calcite-option value="">All</calcite-option></calcite-select>
-    </calcite-label>
-    <calcite-button id="csv" icon-start="download" appearance="outline">CSV</calcite-button>
   </div>
 
   <div class="note">
@@ -133,34 +129,25 @@
     {field:'downloadUrl',headerName:'Open Data Page',hide:true}
   ];
 
-  let fSource='', fChannel='';
+  let fSource='';
   const gridOptions = {
     columnDefs, rowData: ROWS,
     defaultColDef:{sortable:true,filter:true,resizable:true,floatingFilter:true},
     pagination:true, paginationPageSize:50,
-    isExternalFilterPresent:()=> fSource!=='' || fChannel!=='',
+    isExternalFilterPresent:()=> fSource!=='',
     doesExternalFilterPass:node=>{
       const d=node.data;
-      if(fSource && d.source!==fSource) return false;
-      if(fChannel && d.channel!==fChannel) return false;
-      return true;
+      return !fSource || d.source===fSource;
     }
   };
   const api = agGrid.createGrid(document.querySelector('#grid'), gridOptions);
 
   const uniq = k => [...new Set(ROWS.map(r=>r[k]))].sort();
   const selSource=document.querySelector('#fsource');
-  const selChannel=document.querySelector('#fchannel');
   uniq('source').forEach(v=>{const o=document.createElement('calcite-option');o.value=v;o.textContent=v;selSource.appendChild(o);});
-  uniq('channel').forEach(v=>{const o=document.createElement('calcite-option');o.value=v;o.textContent=v;selChannel.appendChild(o);});
 
   selSource.addEventListener('calciteSelectChange',e=>{fSource=e.target.value;api.onFilterChanged();});
-  selChannel.addEventListener('calciteSelectChange',e=>{fChannel=e.target.value;api.onFilterChanged();});
   document.querySelector('#q').addEventListener('calciteInputInput',e=>api.setGridOption('quickFilterText',e.target.value));
-  document.querySelector('#csv').addEventListener('click',()=>api.exportDataAsCsv({
-    fileName:'Tahoe_Data_Inventory.csv',
-    columnKeys:['name','theme','channel','type','geometry','access','source','serviceUrl','downloadUrl']
-  }));
 </script>
 </body>
 </html>
