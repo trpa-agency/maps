@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Story Map Gallery — TRPA Maps</title>
+  <meta name="description" content="Narrative story maps published by the Tahoe Regional Planning Agency on ArcGIS Online." />
+  <link rel="icon" type="image/png" href="../assets/TRPALogo_COLOR.png" />
+
+  <!-- Calcite Design System -->
+  <script type="module" src="https://js.arcgis.com/calcite-components/5.0"></script>
+  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/5.0/calcite.css" />
+
+  <!-- Open Sans -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="../assets/site.css" />
+
+  <style>
+    /* ── Story mosaic ── */
+    .story-toolbar {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.25rem 2rem 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .story-toolbar calcite-input { flex: 1; min-width: 220px; max-width: 420px; }
+    .story-count {
+      display: inline-block;
+      background: var(--trpa-navy);
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      padding: 0.15rem 0.6rem;
+      margin-left: 0.5rem;
+      vertical-align: 2px;
+    }
+    .mosaic {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 2rem 2.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      grid-auto-rows: 215px;
+      grid-auto-flow: dense;
+      gap: 1rem;
+    }
+    .story-tile {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--trpa-ice) center/cover no-repeat;
+      display: block;
+      text-decoration: none;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+    .story-tile.lg { grid-column: span 2; grid-row: span 2; }
+    .story-tile.wide { grid-column: span 2; }
+    @media (max-width: 640px) {
+      .story-tile.lg, .story-tile.wide { grid-column: span 1; grid-row: span 1; }
+    }
+    .story-tile::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0, 27, 58, 0) 35%, rgba(0, 27, 58, 0.88) 100%);
+      transition: background 0.2s;
+    }
+    .story-tile:hover::after {
+      background: linear-gradient(180deg, rgba(0, 27, 58, 0.15) 0%, rgba(0, 27, 58, 0.92) 100%);
+    }
+    .story-tile .tile-text {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      padding: 0.9rem 1.1rem 0.9rem;
+      z-index: 1;
+    }
+    .story-tile h3 {
+      margin: 0;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.3;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+    .story-tile.lg h3 { font-size: 1.35rem; }
+    .story-tile p {
+      margin: 0.3rem 0 0;
+      color: #dbe7f5;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .story-tile .tile-date {
+      margin-top: 0.35rem;
+      color: var(--trpa-ice);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+    .mosaic-status {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      color: var(--gray-medium);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <a href="https://www.trpa.gov" title="Tahoe Regional Planning Agency">
+      <img class="logo" src="../assets/TRPALogo_WHITE.png" alt="Tahoe Regional Planning Agency logo" />
+    </a>
+    <div class="titles">
+      <h1><a href="../">TRPA Maps</a></h1>
+      <div class="subtitle">Mapping applications of the Tahoe Regional Planning Agency</div>
+    </div>
+    <nav class="header-links">
+      <a href="https://www.trpa.gov">trpa.gov</a>
+      <a href="https://www.laketahoeinfo.org">Lake Tahoe Info</a>
+      <a href="https://www.tahoeopendata.org">Open Data</a>
+    </nav>
+  </header>
+  <div class="accent-bar"></div>
+
+  <nav class="breadcrumb"><a href="../">All maps and apps</a> &rsaquo; Story Map Gallery</nav>
+
+  <div class="story-toolbar">
+    <h2 style="margin:0;font-size:1.25rem;">Story Map Gallery <span class="story-count" id="story-count"></span></h2>
+    <calcite-input id="story-search" placeholder="Search story maps" icon="search" clearable scale="m"></calcite-input>
+  </div>
+  <p class="cat-desc" style="max-width:1200px;margin:0.25rem auto 0;padding:0 2rem;color:var(--gray-medium);font-size:0.88rem;">
+    Narrative maps and reports published by TRPA on ArcGIS Online, newest first. Updated automatically.
+  </p>
+
+  <main>
+    <div class="mosaic" id="mosaic"></div>
+    <p class="mosaic-status" id="mosaic-status">Loading story maps&hellip;</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        Tahoe Regional Planning Agency<br />
+        128 Market Street, Stateline, NV 89449 &middot; <a href="https://www.trpa.gov">trpa.gov</a>
+      </div>
+      <div>
+        <a href="https://maps.trpa.org/server/rest/services">REST Services</a> &middot;
+        <a href="https://www.tahoeopendata.org">Tahoe Open Data</a> &middot;
+        <a href="https://www.laketahoeinfo.org">Lake Tahoe Info</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const ORG_ID = 'fXXSUzHD5JjcOt1v';
+
+    async function fetchAllStories() {
+      const stories = [];
+      let start = 1;
+      while (start > 0) {
+        const params = new URLSearchParams({
+          q: `orgid:${ORG_ID} type:"StoryMap"`,
+          sortField: 'modified',
+          sortOrder: 'desc',
+          num: '50',
+          start: String(start),
+          f: 'json'
+        });
+        const resp = await fetch('https://www.arcgis.com/sharing/rest/search?' + params);
+        const data = await resp.json();
+        stories.push(...(data.results || []).filter(it => it.type === 'StoryMap'));
+        start = data.nextStart > 0 ? data.nextStart : 0;
+      }
+      return stories;
+    }
+
+    function tileHTML(it, idx) {
+      // Mosaic rhythm: first tile is a 2x2 feature, then a wide tile every sixth slot
+      const size = idx === 0 ? 'lg' : (idx % 6 === 3 ? 'wide' : '');
+      const width = size ? 800 : 400;
+      const thumb = it.thumbnail
+        ? ` style="background-image:url('https://www.arcgis.com/sharing/rest/content/items/${it.id}/info/${it.thumbnail}?w=${width}')"`
+        : '';
+      const snippet = (it.snippet || '').trim();
+      const date = new Date(it.modified).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+      const search = (it.title + ' ' + snippet).toLowerCase().replace(/"/g, '');
+      return `<a class="story-tile ${size}" href="https://storymaps.arcgis.com/stories/${it.id}"
+                 target="_blank" rel="noopener" data-search="${search}"${thumb}>
+        <div class="tile-text">
+          <h3>${it.title}</h3>
+          ${snippet && size ? `<p>${snippet}</p>` : ''}
+          <div class="tile-date">Updated ${date}</div>
+        </div>
+      </a>`;
+    }
+
+    fetchAllStories()
+      .then(stories => {
+        document.getElementById('mosaic-status').style.display = 'none';
+        document.getElementById('story-count').textContent = `${stories.length} published`;
+        document.getElementById('mosaic').innerHTML = stories.map(tileHTML).join('');
+
+        const input = document.getElementById('story-search');
+        input.addEventListener('calciteInputInput', () => {
+          const q = (input.value || '').trim().toLowerCase();
+          document.querySelectorAll('.story-tile').forEach(t => {
+            t.style.display = !q || t.dataset.search.includes(q) ? '' : 'none';
+          });
+        });
+      })
+      .catch(() => {
+        document.getElementById('mosaic-status').textContent =
+          'Unable to load story maps from ArcGIS Online right now. Please try again later.';
+      });
+  </script>
+</body>
+</html>

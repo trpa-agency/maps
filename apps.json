@@ -173,6 +173,18 @@
       ]
     },
     {
+      "id": "storymaps",
+      "title": "Story Map Gallery",
+      "category": "tools",
+      "url": "storymaps/",
+      "thumbnail": "assets/thumbs/storymaps.png",
+      "description": "Gallery of narrative story maps published by TRPA on ArcGIS Online. Loads live from TRPA's organization, newest first.",
+      "tags": [
+        "Story Maps"
+      ],
+      "beta": true
+    },
+    {
       "id": "datainventory",
       "title": "Tahoe Data Inventory",
       "category": "tools",
