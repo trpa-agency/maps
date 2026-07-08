@@ -8,7 +8,6 @@ Official production mapping apps of TRPA, served at **maps.trpa.gov** via GitHub
 maps/
 ├── index.html          # Main gallery — all apps grouped by category
 ├── apps.json           # Single source of truth for the app registry
-├── CNAME               # Custom domain (maps.trpa.gov)
 ├── 404.html            # Branded not-found page
 ├── assets/
 │   ├── site.css        # Shared styles (TRPA brand)
@@ -61,4 +60,12 @@ Then open http://localhost:8000.
 
 ## Deployment
 
-Pushed to `main` → published by GitHub Pages. Custom domain is set by `CNAME`; DNS for `maps.trpa.gov` must point to GitHub Pages (CNAME record to `trpa-agency.github.io`) and HTTPS enforced in repo settings.
+Pushed to `main` → published by GitHub Pages at `trpa-agency.github.io/maps`.
+
+To cut over to the maps.trpa.gov custom domain later:
+
+1. Add a DNS CNAME record pointing `maps.trpa.gov` to `trpa-agency.github.io`.
+2. Add a `CNAME` file at the repo root containing `maps.trpa.gov` (or set the custom domain in Settings → Pages, which commits the file).
+3. Enforce HTTPS in Settings → Pages once the certificate provisions.
+
+Do not commit the `CNAME` file before DNS is in place — GitHub Pages redirects the github.io URL to the custom domain, which breaks the site if the domain does not resolve.
