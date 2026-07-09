@@ -54,20 +54,31 @@ MIN_KEEP_RATIO = 0.7
 
 THEMES = [
     ("Imagery & Elevation", ["imagery", "ortho", "aerial", "lidar", "elevation", "hillshade", "dem", "basemap", "bathymetr"]),
-    ("Vegetation & Forest", ["vegetation", "forest", "tree", "fuel", "timber", "silvicult", "stand", "conifer", "aspen", "meadow"]),
-    ("Parcels & Ownership", ["parcel", "assessor", "apn", "ownership", "property", "tax", "address", "situs", "deed"]),
+    ("Vegetation & Forest", ["vegetation", "forest", "tree", "fuel", "timber", "silvicult", "stand", "conifer",
+                             "aspen", "meadow", "agricult", "crop"]),
+    ("Parcels & Ownership", ["parcel", "assessor", "apn", "ownership", "property", "tax", "address", "situs",
+                             "deed", "assessed", "leasehold", "easement"]),
     ("Permitting", ["permit", "accela", "inspection", "code_enforce", "bmp", "ipes", "land capability", "land_capability", "coverage"]),
-    ("Planning & Zoning", ["planning", "zoning", "land_use", "land use", "landuse", "boundar", "district", "general_plan",
-                           "redistrict", "census", "jurisdiction", "town center", "area plan", "development"]),
-    ("Transportation", ["transportation", "road", "street", "traffic", "transit", "bike", "bridge", "pavement", "highway", "crash", "taz"]),
+    ("Air & Climate", ["air quality", "climate", "carbon", "emission", "greenhouse", "ghg", "ozone",
+                       "renewable", "solar", "electrif", "energy"]),
+    ("Planning & Zoning", ["planning", "zoning", "zoned", "land_use", "land use", "landuse", "boundar", "district",
+                           "general_plan", "redistrict", "census", "jurisdiction", "town center", "area plan",
+                           "development", "housing", "homeless", "affordable", "dwelling", "building", "built environment"]),
+    ("Transportation", ["transportation", "road", "street", "traffic", "transit", "bike", "bridge", "pavement",
+                        "highway", "crash", "taz", "nbi", "airport", "aluc", "mobility"]),
     ("Recreation", ["recreation", "trail", "park", "campground", "ski", "beach", "boat"]),
+    ("Utilities", ["utilit", "sewer", "wastewater", "septic", "well "]),
     ("Soils & Hydrology", ["soil", "hydro", "water", "stream", "flood", "fema", "storm", "watershed", "sez",
                            "wetland", "drainage", "erosion", "geol", "impervious", "catchment", "contour", "nhd", "wbd"]),
     ("Shorezone", ["shorezone", "shoreline", "pier", "buoy", "mooring", "calcium"]),
-    ("Utilities", ["utilit", "sewer", "wastewater", "septic", "well "]),
     ("Wildlife & Aquatic", ["wildlife", "habitat", "fish", "species", "invasive", "eagle", "osprey", "goshawk",
-                            "falcon", "frog", "marten", "bat ", "biodiversity", "edna"]),
-    ("Fire & Emergency", ["fire", "emergency", "evac", "hazard", "eoc", "rapidsos", "spillman", "wildfire", "burn", "smoke", "avalanche"]),
+                            "falcon", "frog", "marten", "bat ", "biodiversity", "edna", "aquatic", "ais ", "aip "]),
+    ("Fire & Emergency", ["fire", "emergency", "evac", "hazard", "eoc", "rapidsos", "spillman", "wildfire",
+                          "burn", "smoke", "avalanche", "cwpp", "defensible"]),
+    ("Demographics", ["demograph", "population", "zip code", "zip data", "zipdata", "block group"]),
+    ("Civic & Elections", ["ballot", "election", "precinct", "supervisor", "voting", "vote "]),
+    # Monitoring is nearly a catch-all — keep it after every specific theme
+    ("Monitoring", ["monitoring", "survey", "transect", "sampling", "sample", "periphyton", "site assessment"]),
     ("Historic", ["histor", "heritage", "archaeo"]),
 ]
 
@@ -89,15 +100,29 @@ def fetch_json(url, timeout=30, tries=3):
     raise last
 
 
+# Folder names that make useless themes (org/plumbing folders, not topics)
+FOLDER_THEME_SKIP = {"edw", "hosted", "agol", "opendata", "datasharing", "publicrequests",
+                     "ugotnetandextracts", "csd_app", "dts", "douglas", "pw", "basemaps"}
+# Folder names that map onto an existing theme instead of minting a duplicate
+FOLDER_THEME_ALIAS = {"parcels": "Parcels & Ownership", "stormwater": "Soils & Hydrology",
+                      "hydrology": "Soils & Hydrology", "fema": "Soils & Hydrology",
+                      "boundaries": "Planning & Zoning", "trakit": "Permitting",
+                      "spillman": "Fire & Emergency", "wastewater": "Utilities"}
+
+
 def theme_for(name, folder=""):
     key = name.lower()
     for theme, kws in THEMES:
         if any(k in key for k in kws):
             return theme
     if folder:
-        f = folder.replace("_", " ").strip()
-        if len(f) <= 24:
-            return f
+        fl = folder.lower()
+        if fl in FOLDER_THEME_ALIAS:
+            return FOLDER_THEME_ALIAS[fl]
+        if fl not in FOLDER_THEME_SKIP:
+            f = folder.replace("_", " ").strip()
+            if len(f) <= 24:
+                return f
     return "General"
 
 
