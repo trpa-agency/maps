@@ -190,7 +190,7 @@
       "category": "tools",
       "url": "tools/data-inventory.html",
       "thumbnail": "assets/thumbs/data-inventory.png",
-      "description": "Searchable inventory of 263 data assets across Tahoe Open Data, LT Info, and the maps.trpa.org REST services directory. Filter by source and channel, and export the list to CSV.",
+      "description": "Searchable inventory of 1,316 data assets across Tahoe Open Data, LT Info, TRPA REST services, and seven partner agencies (USFS, CTC, counties, and the City of South Lake Tahoe).",
       "tags": [
         "Open Data",
         "Inventory"
