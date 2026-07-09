@@ -374,10 +374,10 @@ def main():
     for r in out_rows:
         r["category"] = category_for(r.get("theme", ""), r.get("name", ""))
 
-    # The three TRPA-side builders present as a single "TRPA" source; the
-    # builder identity moves to sourceDetail (used by the failsafe above)
+    # Tahoe Open Data + REST Only present as a single "TRPA" source (LT Info
+    # stays its own); builder identity moves to sourceDetail for the failsafe
     for r in out_rows:
-        if r["source"] in ("Tahoe Open Data", "LT Info", "REST Only"):
+        if r["source"] in ("Tahoe Open Data", "REST Only"):
             r["sourceDetail"] = r["source"]
             r["source"] = "TRPA"
 

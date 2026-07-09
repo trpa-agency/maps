@@ -55,6 +55,14 @@
     color:var(--trpa-navy);border-radius:999px;padding:7px 15px;font-size:.82rem;font-weight:600;white-space:nowrap;}
   .updated-pill .dot{width:8px;height:8px;border-radius:50%;background:#6EBE44;}
   .updated-sub{font-size:.7rem;color:var(--trpa-ice);padding-right:8px;opacity:.9;}
+  /* Small screens: header stacks, pill aligns left under the title */
+  @media (max-width: 760px){
+    .hdr{flex-direction:column;align-items:flex-start;gap:10px;}
+    .hdr h1{font-size:1.2rem;}
+    .updated-wrap{align-items:flex-start;}
+    .updated-pill{font-size:.76rem;padding:6px 12px;}
+    .updated-sub{padding:0 0 0 8px;}
+  }
   /* Filter pill rows — click toggles, double-click isolates */
   .pill-row{display:flex;flex-wrap:wrap;gap:8px;padding:4px 26px 6px;align-items:center;}
   .pill-row:first-of-type{padding-top:14px;}
@@ -92,7 +100,7 @@
 
   <div class="note">
     <calcite-notice icon="information" scale="s" open>
-      <span slot="message">Sources: TRPA (Tahoe Open Data, the LT Info web services, and the maps.trpa.org REST directory) and the public REST directories of partner agencies (USFS EDW, California Tahoe Conservancy, Tahoe RCD, El Dorado, Placer, Washoe, and Douglas NV counties, and the City of South Lake Tahoe) — one row per service; the pills above the grid filter by category and agency. Token endpoints require an LT Info account. Copy URL copies the live service URL; Open in Map opens the layer in ArcGIS Online; Download opens the Tahoe Open Data details page.</span>
+      <span slot="message">Sources: TRPA (Tahoe Open Data and the maps.trpa.org REST directory), the LT Info web services, and the public REST directories of partner agencies (USFS EDW, California Tahoe Conservancy, Tahoe RCD, El Dorado, Placer, Washoe, and Douglas NV counties, and the City of South Lake Tahoe) — one row per service; the pills above the grid filter by category and agency. Token endpoints require an LT Info account. Copy URL copies the live service URL; Open in Map opens the layer in ArcGIS Online; Download opens the Tahoe Open Data details page.</span>
     </calcite-notice>
   </div>
 
@@ -207,8 +215,9 @@
 
     const srcCounts = {};
     ROWS.forEach(r => { srcCounts[r.source] = true; });
-    const sources = [...(srcCounts["TRPA"] ? ["TRPA"] : []),
-                     ...Object.keys(srcCounts).filter(s => s !== "TRPA").sort()];
+    const CORE = ["TRPA", "LT Info"];
+    const sources = [...CORE.filter(s => srcCounts[s]),
+                     ...Object.keys(srcCounts).filter(s => !CORE.includes(s)).sort()];
     pillRow('srcPills', 'Source', sources, 'source', activeSrc, true);
 
     document.querySelector('#q').addEventListener('calciteInputInput',e=>api.setGridOption('quickFilterText',e.target.value));
