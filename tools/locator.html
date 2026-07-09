@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Project Locator — TRPA Maps</title>
-  <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
-  <link rel="apple-touch-icon" href="../assets/favicon.ico" />
+  <!-- Favicon follows the active style — EIP mark by default, TRPA when toggled (applyBrand) -->
+  <link rel="icon" id="faviconLink" href="assets/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/favicon.png" />
 
   <!-- Calcite Design System -->
   <script type="module" src="https://js.arcgis.com/calcite-components/5.0"></script>
@@ -529,11 +530,11 @@
       eip: { agency: "Environmental Improvement Program", exportName: "Lake Tahoe EIP",
         exportSub: "Environmental Improvement Program", primary: "#007DC3", accent: "#F16022",
         dark: "#0B1F41", font: "'Lexend Deca', system-ui, sans-serif",
-        logo: "assets/eip-logo.png", pin: "#007DC3", slideLogoH: 100 },
+        logo: "assets/eip-logo.png", favicon: "assets/favicon.png", pin: "#007DC3", slideLogoH: 100 },
       trpa: { agency: "Tahoe Regional Planning Agency", exportName: "Tahoe Regional Planning Agency",
         exportSub: "Lake Tahoe Region", primary: "#0072CE", accent: "#E87722",
         dark: "#003B71", font: "'Open Sans', system-ui, sans-serif",
-        logo: "assets/trpa-logo.png", pin: "#0072CE", slideLogoH: 150 },
+        logo: "assets/trpa-logo.png", favicon: "../assets/favicon.ico", pin: "#0072CE", slideLogoH: 150 },
     };
     let brandKey = "eip";
     const brand = () => BRANDS[brandKey];
@@ -1166,6 +1167,7 @@
       r.setProperty("--brand-dark", b.dark); r.setProperty("--brand-font", b.font);
       const key = brandKey;   // a slow logo load must not overwrite a newer brand's logo
       getLogo().then(im => { if (key === brandKey && im && im._durl) $("brandLogo").src = im._durl; });
+      $("faviconLink").href = b.favicon;
       $("brandAgency").textContent = b.agency;
       $("brandSeg").querySelectorAll("button").forEach(btn => btn.classList.toggle("active", btn.dataset.brand === brandKey));
       // Header shows the related map for the active style
