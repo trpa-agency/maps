@@ -53,7 +53,7 @@ Edit `apps.json` — every page reads from it, so no HTML changes are needed:
 The Tahoe Data Inventory ([tools/data-inventory.html](tools/data-inventory.html)) reads its rows
 from `tools/data-inventory.json`, which is rebuilt by `scripts/build_inventory.py` (stdlib-only
 Python). The script crawls the Tahoe Open Data DCAT feed, the maps.trpa.org REST directory, and
-seven partner agency directories; the LT Info rows come from the static seed
+eight partner agency directories; the LT Info rows come from the static seed
 `scripts/inventory_seed.json` (no crawlable directory exists — edit that file to change them).
 
 A GitHub Action (`.github/workflows/refresh-inventory.yml`) reruns the script on the first of

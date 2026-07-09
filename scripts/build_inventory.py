@@ -44,6 +44,7 @@ PARTNERS = [
     ("Douglas County NV", "https://gisservices.douglasnv.us/server/rest/services", None, True),
     ("Placer County", "https://services9.arcgis.com/NENkjkswKTzMfG3A/ArcGIS/rest/services", None, False),
     ("City of South Lake Tahoe", "https://services2.arcgis.com/gWRYLIS16mKUskSO/arcgis/rest/services", None, False),
+    ("Tahoe RCD", "https://services6.arcgis.com/1KtlSd2mklZMBKaz/arcgis/rest/services", None, False),
 ]
 PARTNER_SOURCES = {p[0] for p in PARTNERS}
 KEEP_TYPES = {"MapServer", "FeatureServer", "ImageServer", "SceneServer", "GPServer"}

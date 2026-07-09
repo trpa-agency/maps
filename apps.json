@@ -190,7 +190,7 @@
       "category": "tools",
       "url": "tools/data-inventory.html",
       "thumbnail": "assets/thumbs/data-inventory.png",
-      "description": "Searchable inventory of every data asset across Tahoe Open Data, LT Info, TRPA REST services, and seven partner agencies. Rebuilt automatically each month.",
+      "description": "Searchable inventory of every data asset across Tahoe Open Data, LT Info, TRPA REST services, and eight partner agencies. Rebuilt automatically each month.",
       "tags": [
         "Open Data",
         "Inventory"
