@@ -451,11 +451,13 @@
     <span class="tip-text"><strong>Style</strong> picks the EIP or TRPA look (logo, colors, pin —
       and the related map link in the header). <strong>Layout</strong>: <em>Title Slide</em> —
       text block + basin map (16:9); <em>Detail + Basin</em> — close-up beside the basin
-      locator (16:9); <em>Basin Only</em> — full-basin portrait page (8.5×11).</span>
+      locator (16:9); <em>Detail Only</em> — full-frame close-up (16:9);
+      <em>Basin Only</em> — full-basin portrait page (8.5×11).</span>
   </calcite-tooltip>
   <calcite-tooltip reference-element="secNum3" placement="right" close-on-click>
     <span class="tip-text">The <strong>basemap</strong> and <strong>detail zoom</strong> set the
-      close-up map used by the <em>Detail + Basin</em> layout. Draw tools (pencil on the map)
+      close-up map used by the <em>Detail + Basin</em> and <em>Detail Only</em> layouts.
+      Draw tools (pencil on the map)
       add annotations to that view; Home returns to the Tahoe Basin.</span>
   </calcite-tooltip>
   <calcite-tooltip reference-element="secNum4" placement="right" close-on-click>
@@ -496,11 +498,12 @@
           <span class="ui-sample ui-seg"><span class="on">EIP</span><span>TRPA</span></span>
           sets the look (and the related map link in the header), then a layout:
           <em>Title Slide</em> (text + basin map, 16:9), <em>Detail + Basin</em> (close-up
-          beside the basin locator, 16:9), or <em>Basin Only</em> (full basin, portrait
-          8.5×11).</li>
+          beside the basin locator, 16:9), <em>Detail Only</em> (full-frame close-up, 16:9),
+          or <em>Basin Only</em> (full basin, portrait 8.5×11).</li>
         <li><strong>Set the detail view</strong> — the basemap thumbnails and zoom buttons
           <span class="ui-sample ui-seg"><span class="on">Fit</span><span>1:5k</span><span>1:24k</span></span>
-          control the <em>Detail + Basin</em> layout's close-up panel. The draw tools
+          control the close-up map of the <em>Detail + Basin</em> and <em>Detail Only</em>
+          layouts. The draw tools
           <span class="ui-sample ui-btn square"><calcite-icon icon="pencil" scale="s"></calcite-icon></span>
           (top-right of the map) add annotations that appear in that panel too;
           <span class="ui-sample ui-btn square"><calcite-icon icon="home" scale="s"></calcite-icon></span>
@@ -1965,6 +1968,37 @@
         slide.addImage({ data: await northArrowDataUrl(arrow, b.dark),
           x: IN(W - 96 - arrow/2), y: IN(mapH - 96 - arrow/2), w: IN(arrow), h: IN(arrow) });
         if (caption) await addEditableCaption(slide, pptx, IN, PT, 0, mapH, W, capH, b, font, true);
+      }
+
+      // LOCATION(S) card as native parts (mirrors drawLocationCard) — same
+      // measured geometry as the canvas version; shared by split + detail
+      function addLocationCard(slide, pptx, IN, PT, mapH, b, font) {
+        const L = locationCardLayout(1.15);
+        if (!L) return;
+        const cx = 44, cy = mapH - 44 - L.h;
+        slide.addShape(pptx.ShapeType.roundRect, { x: IN(cx), y: IN(cy), w: IN(L.w), h: IN(L.h),
+          rectRadius: IN(14 * 1.15), fill: { color: "FFFFFF" }, ...noLine,
+          shadow: { type: "outer", angle: 90, blur: 8, offset: 2, color: "0B1F41", opacity: 0.3 } });
+        slide.addShape(pptx.ShapeType.rect, { x: IN(cx), y: IN(cy), w: IN(L.bar), h: IN(L.h),
+          fill: { color: pptHex(b.accent) }, ...noLine });
+        const tx = cx + L.bar + L.pad;
+        slide.addText(L.single ? "LOCATION" : "LOCATIONS", { x: IN(tx), y: IN(cy + L.pad*0.5),
+          w: IN(L.w - L.bar - L.pad*1.5), h: IN(L.fsL*1.6), fontFace: font,
+          fontSize: PT(L.fsL), bold: true, color: pptHex(b.accent), align: "left", valign: "middle" });
+        const rowRuns = [];
+        for (const r of L.rows) {
+          if (r.bold) rowRuns.push({ text: r.bold,
+            options: { bold: true, color: pptHex(b.dark),
+              fontSize: PT(L.single ? L.fsA : L.fsM*1.15), breakLine: !r.grayAppend } });
+          if (r.grayAppend) rowRuns.push({ text: r.grayAppend,
+            options: { color: PPT_GRAY, fontSize: PT(L.fsM), breakLine: true } });
+          if (r.gray && !r.bold) rowRuns.push({ text: r.gray,
+            options: { color: PPT_GRAY, fontSize: PT(L.fsM), breakLine: true } });
+        }
+        slide.addText(rowRuns, { x: IN(tx), y: IN(cy + L.pad*0.5 + L.fsL*1.6),
+          w: IN(L.w - L.bar - L.pad*1.5), h: IN(L.h - L.pad - L.fsL*1.6),
+          fontFace: font, align: "left", valign: "top",
+          lineSpacing: L.single ? undefined : PT(L.rowH) });
       }
 
       // Caption strip as native parts (mirrors drawCaption): accent bar,

@@ -211,6 +211,18 @@
       "beta": true
     },
     {
+      "id": "nearmap",
+      "title": "Nearmap Imagery",
+      "category": "tools",
+      "url": "https://apps.nearmap.com/maps",
+      "thumbnail": "assets/thumbs/nearmap.png",
+      "description": "High-resolution aerial imagery in Nearmap MapBrowser, updated multiple times per year. Requires a TRPA Nearmap account.",
+      "tags": [
+        "Imagery"
+      ],
+      "external": true
+    },
+    {
       "id": "opendata",
       "title": "Tahoe Open Data",
       "category": "tools",
