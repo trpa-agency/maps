@@ -5,7 +5,7 @@
 Two new .gov addresses, continuing what we started with data.trpa.gov:
 
 - **maps.trpa.gov:** Front door. A landing page linking to everything maps.
-- **gis.trpa.gov** — our ArcGIS Enterprise portal landing URL, replacing the legacy .org URL.
+- **gis.trpa.gov:**  ArcGIS Enterprise portal landing URL, replacing the legacy .org URL.
 
 ## Who does what
 
