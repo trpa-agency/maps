@@ -135,6 +135,9 @@
     .suggest-group { padding: 0.4rem 0.85rem 0.15rem; font-size: 0.62rem; font-weight: 700;
       letter-spacing: 0.07em; text-transform: uppercase; color: #8A93A3;
       background: #fff; border-bottom: 1px solid #eef1f5; }
+    /* Parcel-service outage notice (e.g., CORS/DNS trouble on internal networks) */
+    .suggest-warn { padding: 0.5rem 0.85rem; font-size: 0.74rem; line-height: 1.45;
+      color: #9C3E27; background: #fdf3ea; border-bottom: 1px solid #f5e2d3; }
 
     .seg { display: flex; border-radius: 7px; overflow: hidden; border: 1px solid var(--gray-border); }
     /* ── EIP style: pill-rounded controls, matching the Projects Map's
@@ -694,7 +697,7 @@
 
     // ───────────── Search + suggestions (parcels · EIP projects · coordinates) ─────────────
     const input = $("searchInput"), list = $("suggestList"), clearBtn = $("searchClear");
-    let suggestItems = [], debounceT = null, activeSugg = -1, suggestSeq = 0;
+    let suggestItems = [], debounceT = null, activeSugg = -1, suggestSeq = 0, lastParcelErr = false;
     const escSql  = (s) => s.replace(/'/g, "''");
     // Escape LIKE wildcards typed by the user; paired with ESCAPE '\' in the clause
     // (verified supported by the TRPA service's standardized SQL).
@@ -780,8 +783,9 @@
       items.push(...(projFirst ? [...projectItems, ...parcelItems] : [...parcelItems, ...projectItems]));
 
       suggestItems = items;
-      if (!items.length && parcelRes._err) {
-        list.innerHTML = `<div class="suggest-empty">Search error — check the connection.</div>`;
+      lastParcelErr = !!parcelRes._err;
+      if (!items.length && lastParcelErr) {
+        list.innerHTML = `<div class="suggest-empty">Parcel search is unavailable — check the network connection and try again.</div>`;
         openSuggest(); return;
       }
       renderSuggest(term);
@@ -794,6 +798,12 @@
         openSuggest(); return;
       }
       let html = "", lastKind = null;
+      // Parcel query failed but other results matched — say so, or the user
+      // concludes the address doesn't exist (seen with CORS trouble on
+      // internal networks).
+      if (lastParcelErr)
+        html += `<div class="suggest-warn">Parcel search is unavailable — addresses and APNs
+          can't be searched right now (network issue).</div>`;
       suggestItems.forEach((it, i) => {
         if (it.kind !== lastKind) { html += `<div class="suggest-group">${GROUP_LABELS[it.kind]}</div>`; lastKind = it.kind; }
         let primary, secondary;
