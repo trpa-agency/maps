@@ -48,7 +48,7 @@
   .acc-nokey{background:#e6f0fa;color:var(--trpa-navy);}
   .acc-token{background:#fdeadb;color:#9C3E27;}
   .acc-file{background:#efeaf3;color:#7B6A8A;}
-  .note{padding:0 26px 14px;}
+  .note{padding:0 26px 26px;}
   /* Updated-date pill + refresh cadence subtext (lives in the navy header) */
   .updated-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
   .updated-pill{display:inline-flex;align-items:center;gap:8px;background:#fff;
@@ -98,13 +98,14 @@
   <div class="pill-row" id="catPills"></div>
   <div class="pill-row" id="srcPills"></div>
 
+  <div class="wrap"><div id="grid" class="ag-theme-quartz"></div></div>
+
   <div class="note">
     <calcite-notice icon="information" scale="s" open>
       <span slot="message">Sources: TRPA (Tahoe Open Data and the maps.trpa.org REST directory), the LT Info web services, and the public REST directories of partner agencies (USFS EDW, California Tahoe Conservancy, Tahoe RCD, El Dorado, Placer, Washoe, and Douglas NV counties, and the City of South Lake Tahoe) — one row per service; the pills above the grid filter by category and agency. Token endpoints require an LT Info account. Copy URL copies the live service URL; Open in Map opens the layer in ArcGIS Online; Download opens the Tahoe Open Data details page.</span>
     </calcite-notice>
   </div>
 
-  <div class="wrap"><div id="grid" class="ag-theme-quartz"></div></div>
 
 <script>
   window.copyUrl = function (btn, url) {
