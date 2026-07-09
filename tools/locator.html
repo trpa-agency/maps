@@ -70,6 +70,11 @@
     #panelToggle:hover { background: var(--gray-bg); color: var(--brand-primary); }
 
     .panel-sec { display: flex; flex-direction: column; gap: 0.55rem; }
+    /* Detail-view section is dimmed (still usable) unless the Detail + Basin
+       layout is active; the note explains why. */
+    .panel-sec.dimmed > .field, .panel-sec.dimmed > .bm-grid { opacity: 0.45; }
+    .sec-note { margin: -0.2rem 0 0; font-size: 0.7rem; line-height: 1.45; color: #8A93A3; display: none; }
+    .panel-sec.dimmed .sec-note { display: block; }
     .sec-title { display: flex; align-items: center; gap: 0.45rem; margin: 0;
       font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
       color: #6B7688; }
@@ -287,34 +292,11 @@
     <!-- ── Left panel: the workflow, grouped like the help steps ── -->
     <aside id="sidePanel" aria-label="Map and export controls">
 
+      <!-- Locations first: users arrive with a place in hand, and the ?eip=
+           deep link enters with locations pre-filled. Style/layout have good
+           defaults and re-apply instantly if changed later. -->
       <section class="panel-sec freeze">
-        <h2 class="sec-title"><span class="sec-num" id="secNum1" tabindex="0">1</span> Style &amp; layout</h2>
-        <label class="field">Style
-          <div class="seg seg-fill" id="brandSeg">
-            <button data-brand="eip" class="active">EIP</button>
-            <button data-brand="trpa">TRPA</button>
-          </div>
-        </label>
-        <label class="field">Layout
-          <div class="layout-picker" id="layoutSeg" role="radiogroup" aria-label="Export layout">
-            <button data-layout="slide" class="active" role="radio" aria-checked="true">
-              <span class="lp-text"><span class="lp-name">Title Slide</span>
-                <span class="lp-dims">Text + basin map · 16:9</span></span>
-            </button>
-            <button data-layout="split" role="radio" aria-checked="false">
-              <span class="lp-text"><span class="lp-name">Detail + Basin</span>
-                <span class="lp-dims">Close-up beside basin · 16:9</span></span>
-            </button>
-            <button data-layout="locator" role="radio" aria-checked="false">
-              <span class="lp-text"><span class="lp-name">Basin Only</span>
-                <span class="lp-dims">Full basin, portrait · 8.5×11</span></span>
-            </button>
-          </div>
-        </label>
-      </section>
-
-      <section class="panel-sec freeze">
-        <h2 class="sec-title"><span class="sec-num" id="secNum2" tabindex="0">2</span> Locations
+        <h2 class="sec-title"><span class="sec-num" id="secNum1" tabindex="0">1</span> Locations
           <button id="geojsonBtn" class="sec-tool" title="Paste GeoJSON (advanced)"
                   aria-label="Paste GeoJSON (advanced)">
             <calcite-icon icon="code" scale="s"></calcite-icon>
@@ -341,7 +323,35 @@
       </section>
 
       <section class="panel-sec freeze">
-        <h2 class="sec-title"><span class="sec-num" id="secNum3" tabindex="0">3</span> Map view</h2>
+        <h2 class="sec-title"><span class="sec-num" id="secNum2" tabindex="0">2</span> Style &amp; layout</h2>
+        <label class="field">Style
+          <div class="seg seg-fill" id="brandSeg">
+            <button data-brand="eip" class="active">EIP</button>
+            <button data-brand="trpa">TRPA</button>
+          </div>
+        </label>
+        <label class="field">Layout
+          <div class="layout-picker" id="layoutSeg" role="radiogroup" aria-label="Export layout">
+            <button data-layout="slide" class="active" role="radio" aria-checked="true">
+              <span class="lp-text"><span class="lp-name">Title Slide</span>
+                <span class="lp-dims">Text + basin map · 16:9</span></span>
+            </button>
+            <button data-layout="split" role="radio" aria-checked="false">
+              <span class="lp-text"><span class="lp-name">Detail + Basin</span>
+                <span class="lp-dims">Close-up beside basin · 16:9</span></span>
+            </button>
+            <button data-layout="locator" role="radio" aria-checked="false">
+              <span class="lp-text"><span class="lp-name">Basin Only</span>
+                <span class="lp-dims">Full basin, portrait · 8.5×11</span></span>
+            </button>
+          </div>
+        </label>
+      </section>
+
+      <section class="panel-sec freeze" id="detailSec">
+        <h2 class="sec-title"><span class="sec-num" id="secNum3" tabindex="0">3</span> Detail view</h2>
+        <p class="sec-note">Sets the close-up panel of the <strong>Detail + Basin</strong> layout —
+          pick that layout in step 2 to use it.</p>
         <label class="field">Basemap <span class="field-hint">(detail map)</span></label>
         <div class="bm-grid" id="basemapSeg" role="radiogroup" aria-label="Basemap">
           <button data-value="imagery" class="bm-btn active" role="radio" aria-checked="true">
@@ -423,17 +433,17 @@
 
   <!-- ── Hover help for each workflow step (anchored to the number badges) ── -->
   <calcite-tooltip reference-element="secNum1" placement="right" close-on-click>
-    <span class="tip-text"><strong>Style</strong> picks the EIP or TRPA look (logo, colors, pin —
-      and the related map link in the header). <strong>Layout</strong>: <em>Title Slide</em> —
-      text block + basin map (16:9); <em>Detail + Basin</em> — close-up beside the basin
-      locator (16:9); <em>Basin Only</em> — full-basin portrait page (8.5×11).</span>
-  </calcite-tooltip>
-  <calcite-tooltip reference-element="secNum2" placement="right" close-on-click>
     <span class="tip-text">Add up to 9 locations, each with a numbered pin. Search an
       <strong>address</strong>, <strong>APN</strong>, <strong>EIP project</strong> (name or
       number), or <strong>coordinates</strong> ("39.0968, -119.9435"). Advanced: the
       ⟨⟩ button pastes GeoJSON. Remove a location with its chip, or all of them
       with the trash button.</span>
+  </calcite-tooltip>
+  <calcite-tooltip reference-element="secNum2" placement="right" close-on-click>
+    <span class="tip-text"><strong>Style</strong> picks the EIP or TRPA look (logo, colors, pin —
+      and the related map link in the header). <strong>Layout</strong>: <em>Title Slide</em> —
+      text block + basin map (16:9); <em>Detail + Basin</em> — close-up beside the basin
+      locator (16:9); <em>Basin Only</em> — full-basin portrait page (8.5×11).</span>
   </calcite-tooltip>
   <calcite-tooltip reference-element="secNum3" placement="right" close-on-click>
     <span class="tip-text">The <strong>basemap</strong> and <strong>detail zoom</strong> set the
@@ -467,12 +477,6 @@
       <p>Make consistent, branded <strong>EIP</strong> or <strong>TRPA</strong> locator maps of
         project locations for presentations and reports.</p>
       <ol>
-        <li><strong>Pick style and layout</strong> —
-          <span class="ui-sample ui-seg"><span class="on">EIP</span><span>TRPA</span></span>
-          sets the look (and the related map link in the header), then a layout:
-          <em>Title Slide</em> (text + basin map, 16:9), <em>Detail + Basin</em> (close-up
-          beside the basin locator, 16:9), or <em>Basin Only</em> (full basin, portrait
-          8.5×11).</li>
         <li><strong>Search</strong>
           <span class="ui-sample ui-chip"><calcite-icon icon="search" scale="s"></calcite-icon> Address, APN, EIP project…</span>
           — an address, APN, <strong>EIP project name or number</strong>, or coordinates
@@ -480,6 +484,12 @@
           (numbered pins). Remove one with its chip, or the trash button removes them all.
           Advanced: the <span class="ui-sample ui-btn square"><calcite-icon icon="code" scale="s"></calcite-icon></span>
           button pastes GeoJSON directly.</li>
+        <li><strong>Pick style and layout</strong> —
+          <span class="ui-sample ui-seg"><span class="on">EIP</span><span>TRPA</span></span>
+          sets the look (and the related map link in the header), then a layout:
+          <em>Title Slide</em> (text + basin map, 16:9), <em>Detail + Basin</em> (close-up
+          beside the basin locator, 16:9), or <em>Basin Only</em> (full basin, portrait
+          8.5×11).</li>
         <li><strong>Set the detail view</strong> — the basemap thumbnails and zoom buttons
           <span class="ui-sample ui-seg"><span class="on">Fit</span><span>1:5k</span><span>1:24k</span></span>
           control the <em>Detail + Basin</em> layout's close-up panel. The draw tools
@@ -1163,7 +1173,12 @@
         x.classList.toggle("active", x === btn);
         x.setAttribute("aria-checked", x === btn ? "true" : "false");
       });
+      syncDetailSec();
     });
+    // The Detail view section only affects the Detail + Basin layout —
+    // dim it (still usable) and show its note under the other layouts.
+    function syncDetailSec() { $("detailSec").classList.toggle("dimmed", exportLayout !== "split"); }
+    syncDetailSec();
     // Small helper: radiogroup-of-buttons behavior (active class + aria-checked).
     function wireSeg(id, onPick) {
       $(id).addEventListener("click", (e) => {
@@ -1209,24 +1224,19 @@
     // ───────────── Export ─────────────
     function loadImage(src) { return new Promise((res, rej) => { const im = new Image();
       im.onload = () => res(im); im.onerror = () => rej(new Error("img " + src)); im.src = src; }); }
-    // The brand logo PNGs ship with a baked-in opaque BLACK background; content is
-    // never pure black, so we key near-black pixels to transparent at load time.
-    function keyBlack(img) {
-      const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
-      const c = document.createElement("canvas"); c.width = w; c.height = h;
-      const x = c.getContext("2d"); x.drawImage(img, 0, 0);
-      const d = x.getImageData(0, 0, w, h), p = d.data;
-      for (let i = 0; i < p.length; i += 4)
-        if (p[i] < 18 && p[i+1] < 18 && p[i+2] < 18) p[i+3] = 0;
-      x.putImageData(d, 0, 0); return c;
-    }
+    // The logo PNGs ship with real transparency (unmixed offline from the old
+    // black-background sources). Converted to a data URL once so the SVG and
+    // PPTX exports embed a self-contained copy.
     function getLogo() {
       const src = brand().logo;
       if (!LOGO_CACHE[src]) LOGO_CACHE[src] = (async () => {
         const img = await loadImage(src).catch(() => null);
         // Don't cache a transient failure — retry on the next export
         if (!img) { delete LOGO_CACHE[src]; return null; }
-        const durl = keyBlack(img).toDataURL("image/png");
+        const c = document.createElement("canvas");
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        c.getContext("2d").drawImage(img, 0, 0);
+        const durl = c.toDataURL("image/png");
         const out = await loadImage(durl); out._durl = durl; return out;
       })();
       return LOGO_CACHE[src];
@@ -2049,8 +2059,7 @@
       }
     } catch (e) { /* storage blocked (private mode) — skip auto-open */ }
 
-    // Brand the header immediately (view.when re-applies once the map is up) —
-    // otherwise the raw black-background logo flashes until the basemap loads.
+    // Brand the header immediately (view.when re-applies once the map is up).
     applyBrand();
   </script>
 </body>
