@@ -37,5 +37,5 @@ Front door stays fast and always up, separate from the portal's maintenance cycl
 - **Data Team + IT:** register maps.trpa.gov and gis.trpa.gov.
 - **Data Team:** build the maps.trpa.gov landing page.
 - **Data Team + IT:** migrate the Enterprise portal to gis.trpa.gov; redirect the legacy .org addresses.
-- **Comms:** update trpa.gov (incl. programs/maps) to point at maps.trpa.gov; refresh the link in print, decks, email signatures, and social.
+- **Comms:** update trpa.gov/programs/maps to point at (embed?) maps.trpa.gov.
 - **Comms + Data Team:** align on announcement timing and messaging once the domains are live and secured.
