@@ -92,7 +92,7 @@
 
   <div class="note">
     <calcite-notice icon="information" scale="s" open>
-      <span slot="message">Sources: TRPA ArcGIS services (maps.trpa.org), the LT Info web services list, the maps.trpa.org REST directory, and the public REST directories of partner agencies (USFS EDW, California Tahoe Conservancy, Tahoe RCD, El Dorado, Placer, Washoe, and Douglas NV counties, and the City of South Lake Tahoe) — one row per service; the source pills above the grid filter by agency. 'REST Only' services are published on the server but not cataloged on Tahoe Open Data or LT Info. Token endpoints require an LT Info account. Copy URL copies the live service URL; Open in Map opens the layer in ArcGIS Online; Download opens the Tahoe Open Data details page.</span>
+      <span slot="message">Sources: TRPA (Tahoe Open Data, the LT Info web services, and the maps.trpa.org REST directory) and the public REST directories of partner agencies (USFS EDW, California Tahoe Conservancy, Tahoe RCD, El Dorado, Placer, Washoe, and Douglas NV counties, and the City of South Lake Tahoe) — one row per service; the pills above the grid filter by category and agency. Token endpoints require an LT Info account. Copy URL copies the live service URL; Open in Map opens the layer in ArcGIS Online; Download opens the Tahoe Open Data details page.</span>
     </calcite-notice>
   </div>
 
@@ -207,9 +207,8 @@
 
     const srcCounts = {};
     ROWS.forEach(r => { srcCounts[r.source] = true; });
-    const CORE = ["Tahoe Open Data", "LT Info", "REST Only"];
-    const sources = [...CORE.filter(s => srcCounts[s]),
-                     ...Object.keys(srcCounts).filter(s => !CORE.includes(s)).sort()];
+    const sources = [...(srcCounts["TRPA"] ? ["TRPA"] : []),
+                     ...Object.keys(srcCounts).filter(s => s !== "TRPA").sort()];
     pillRow('srcPills', 'Source', sources, 'source', activeSrc, true);
 
     document.querySelector('#q').addEventListener('calciteInputInput',e=>api.setGridOption('quickFilterText',e.target.value));

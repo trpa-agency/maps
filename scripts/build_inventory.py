@@ -326,7 +326,9 @@ def main():
     previous = {}
     if OUT.exists():
         for r in json.loads(OUT.read_text(encoding="utf-8")).get("rows", []):
-            previous.setdefault(r["source"], []).append(r)
+            # TRPA rows keep their builder identity in sourceDetail — the
+            # failsafe compares per-builder counts, not the merged label
+            previous.setdefault(r.get("sourceDetail") or r["source"], []).append(r)
 
     notes, out_rows = [], []
 
@@ -371,6 +373,13 @@ def main():
     # Broad category for the pill filter — applied to every row, seed included
     for r in out_rows:
         r["category"] = category_for(r.get("theme", ""), r.get("name", ""))
+
+    # The three TRPA-side builders present as a single "TRPA" source; the
+    # builder identity moves to sourceDetail (used by the failsafe above)
+    for r in out_rows:
+        if r["source"] in ("Tahoe Open Data", "LT Info", "REST Only"):
+            r["sourceDetail"] = r["source"]
+            r["source"] = "TRPA"
 
     generated = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     # generated on its own line so CI can diff-ignore timestamp-only changes
