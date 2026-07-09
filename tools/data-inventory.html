@@ -13,17 +13,10 @@
 <style>
   :root{--trpa-blue:#0072CE;--trpa-navy:#003B71;--trpa-forest:#4A6118;--trpa-orange:#E87722;--trpa-ice:#B4CBE8;--trpa-purple:#7B6A8A;}
   html,body{margin:0;padding:0;font-family:'Open Sans',system-ui,sans-serif;color:var(--trpa-navy);background:#f4f6f8;}
-  .hdr{background:var(--trpa-navy);color:#fff;padding:16px 26px;}
+  .hdr{background:var(--trpa-navy);color:#fff;padding:16px 26px;
+    display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
   .hdr .sub{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--trpa-ice);font-weight:600;}
   .hdr h1{font-size:1.5rem;font-weight:700;margin:2px 0 0;}
-  .kpis{display:flex;gap:14px;padding:18px 26px 4px;flex-wrap:wrap;}
-  .kpi{background:#fff;border-radius:8px;padding:14px 18px;flex:1;min-width:150px;box-shadow:0 1px 3px rgba(0,0,0,.08);border-top:3px solid var(--trpa-blue);}
-  .kpi .v{font-size:1.8rem;font-weight:700;color:var(--trpa-navy);}
-  .kpi .l{font-size:.78rem;color:#5a6577;margin-top:2px;}
-  .kpi.lt{border-top-color:var(--trpa-forest);}
-  .kpi.tok{border-top-color:var(--trpa-orange);}
-  .kpi.rest{border-top-color:var(--trpa-purple, #7B6A8A);}
-  .kpi.partner{border-top-color:#B5A64C;}
   .controls{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;padding:14px 26px 6px;}
   .controls .grow{flex:1;min-width:220px;}
   .wrap{padding:6px 26px 26px;}
@@ -56,15 +49,17 @@
   .acc-token{background:#fdeadb;color:#9C3E27;}
   .acc-file{background:#efeaf3;color:#7B6A8A;}
   .note{padding:0 26px 14px;}
-  /* Updated-date pill + refresh cadence subtext */
-  .updated-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px;}
-  .updated-pill{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--trpa-blue);
+  /* Updated-date pill + refresh cadence subtext (lives in the navy header) */
+  .updated-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+  .updated-pill{display:inline-flex;align-items:center;gap:8px;background:#fff;
     color:var(--trpa-navy);border-radius:999px;padding:7px 15px;font-size:.82rem;font-weight:600;white-space:nowrap;}
-  .updated-pill .dot{width:8px;height:8px;border-radius:50%;background:#4A6118;}
-  .updated-sub{font-size:.7rem;color:#8a97a8;padding-right:8px;}
-  /* Source pill bar — click toggles, double-click isolates */
-  .src-pills{display:flex;flex-wrap:wrap;gap:8px;padding:4px 26px 10px;align-items:center;}
-  .src-pills .lbl{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a97a8;margin-right:2px;}
+  .updated-pill .dot{width:8px;height:8px;border-radius:50%;background:#6EBE44;}
+  .updated-sub{font-size:.7rem;color:var(--trpa-ice);padding-right:8px;opacity:.9;}
+  /* Filter pill rows — click toggles, double-click isolates */
+  .pill-row{display:flex;flex-wrap:wrap;gap:8px;padding:4px 26px 6px;align-items:center;}
+  .pill-row:first-of-type{padding-top:14px;}
+  .pill-row .lbl{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a97a8;
+    margin-right:2px;min-width:74px;}
   .pill{display:inline-flex;align-items:center;gap:7px;border:1.5px solid #c9d4e2;background:#fff;color:var(--trpa-navy);
     border-radius:999px;padding:5px 13px;font-size:.8rem;font-weight:600;cursor:pointer;user-select:none;
     font-family:'Open Sans',system-ui,sans-serif;transition:border-color .12s,background .12s;}
@@ -77,29 +72,23 @@
 </head>
 <body>
   <div class="hdr">
-    <div class="sub">Tahoe Regional Planning Agency</div>
-    <h1>Tahoe Data Inventory: TRPA + Partner Agency Services</h1>
-  </div>
-
-  <div class="kpis">
-    <div class="kpi"><div class="v" id="kpiTotal">—</div><div class="l">Total data assets</div></div>
-    <div class="kpi"><div class="v" id="kpiTod">—</div><div class="l">Tahoe Open Data (layers &amp; items)</div></div>
-    <div class="kpi lt"><div class="v" id="kpiLt">—</div><div class="l">LT Info services</div></div>
-    <div class="kpi rest"><div class="v" id="kpiRest">—</div><div class="l">REST-only services</div></div>
-    <div class="kpi partner"><div class="v" id="kpiPartner">—</div><div class="l">Partner agency services</div></div>
-    <div class="kpi tok"><div class="v" id="kpiToken">—</div><div class="l">Require an LT Info token</div></div>
+    <div>
+      <div class="sub">Tahoe Regional Planning Agency</div>
+      <h1>Tahoe Data Inventory: TRPA + Partner Agency Services</h1>
+    </div>
+    <div class="updated-wrap">
+      <span class="updated-pill"><span class="dot"></span><span id="compiledDate">Loading&hellip;</span></span>
+      <span class="updated-sub">Refreshes monthly &middot; automated crawl of every source</span>
+    </div>
   </div>
 
   <div class="controls">
     <calcite-label class="grow">Search
       <calcite-input id="q" placeholder="Filter across all columns" clearable></calcite-input>
     </calcite-label>
-    <div class="updated-wrap">
-      <span class="updated-pill"><span class="dot"></span><span id="compiledDate">Loading&hellip;</span></span>
-      <span class="updated-sub">Refreshes monthly &middot; automated crawl of every source</span>
-    </div>
   </div>
-  <div class="src-pills" id="srcPills"></div>
+  <div class="pill-row" id="catPills"></div>
+  <div class="pill-row" id="srcPills"></div>
 
   <div class="note">
     <calcite-notice icon="information" scale="s" open>
@@ -153,21 +142,7 @@
   ];
 
   // Rows live in data-inventory.json, rebuilt by scripts/build_inventory.py
-  // (monthly GitHub Action). KPIs, pills, and the updated date derive from the data.
-  const PARTNER_EXCLUDE = new Set(["Tahoe Open Data", "LT Info", "REST Only"]);
-  // KPI cards follow the current filters (search, pills, column filters)
-  function updateKpis(rows) {
-    const n = (x) => x.toLocaleString("en-US");
-    const bySrc = {};
-    rows.forEach(r => { bySrc[r.source] = (bySrc[r.source] || 0) + 1; });
-    document.getElementById("kpiTotal").textContent = n(rows.length);
-    document.getElementById("kpiTod").textContent = n(bySrc["Tahoe Open Data"] || 0);
-    document.getElementById("kpiLt").textContent = n(bySrc["LT Info"] || 0);
-    document.getElementById("kpiRest").textContent = n(bySrc["REST Only"] || 0);
-    document.getElementById("kpiPartner").textContent =
-      n(rows.filter(r => !PARTNER_EXCLUDE.has(r.source)).length);
-    document.getElementById("kpiToken").textContent = n(rows.filter(r => r.access === "Token").length);
-  }
+  // (monthly GitHub Action). Pills and the updated date derive from the data.
   function stampDate(inv) {
     const d = new Date(inv.generated);
     const M = ["Jan.","Feb.","March","April","May","June","July","Aug.","Sept.","Oct.","Nov.","Dec."];
@@ -176,55 +151,66 @@
   }
 
   function init(ROWS) {
-    const active = new Set();   // selected source pills; empty = all sources
+    const activeSrc = new Set(), activeCat = new Set();   // empty set = All
     const gridOptions = {
       columnDefs, rowData: ROWS,
       defaultColDef:{sortable:true,filter:true,resizable:true,floatingFilter:true},
       pagination:true, paginationPageSize:50,
-      isExternalFilterPresent:()=> active.size>0,
-      doesExternalFilterPass:node=> !active.size || active.has(node.data.source),
-      onModelUpdated:(p)=>{
-        const shown=[]; p.api.forEachNodeAfterFilter(nd=>{ if(nd.data) shown.push(nd.data); });
-        updateKpis(shown);
-      }
+      isExternalFilterPresent:()=> activeSrc.size>0 || activeCat.size>0,
+      doesExternalFilterPass:node=>
+        (!activeSrc.size || activeSrc.has(node.data.source)) &&
+        (!activeCat.size || activeCat.has(node.data.category))
     };
     const api = agGrid.createGrid(document.querySelector('#grid'), gridOptions);
 
-    // ── Source pills — click toggles, double-click isolates, All clears ──
-    const counts={}; ROWS.forEach(r=>{counts[r.source]=(counts[r.source]||0)+1;});
-    const CORE=["Tahoe Open Data","LT Info","REST Only"];
-    const sources=[...CORE.filter(s=>counts[s]),
-                   ...Object.keys(counts).filter(s=>!CORE.includes(s)).sort()];
-    const bar=document.getElementById('srcPills');
-    const mkPill=(label,src)=>{
-      const b=document.createElement('button');
-      b.type='button'; b.className='pill'; b.dataset.src=src;
-      b.innerHTML=label+(src?`<span class="n">${counts[src].toLocaleString('en-US')}</span>`:'');
-      b.title=src?'Click to toggle · double-click to show only '+label:'Show every source';
-      return b;
-    };
-    bar.appendChild(Object.assign(document.createElement('span'),{className:'lbl',textContent:'Source'}));
-    bar.appendChild(mkPill('All',''));
-    sources.forEach(s=>bar.appendChild(mkPill(s,s)));
-    bar.appendChild(Object.assign(document.createElement('span'),
-      {className:'pills-hint',textContent:'click to toggle · double-click to isolate'}));
-    const sync=()=>{
-      bar.querySelectorAll('.pill').forEach(p=>
-        p.classList.toggle('active', p.dataset.src ? active.has(p.dataset.src) : active.size===0));
-      api.onFilterChanged();
-    };
-    bar.addEventListener('click',e=>{
-      const p=e.target.closest('.pill'); if(!p) return;
-      if(!p.dataset.src) active.clear();
-      else if(active.has(p.dataset.src)) active.delete(p.dataset.src);
-      else active.add(p.dataset.src);
+    // ── Pill rows — click toggles (multi-select), double-click isolates, All clears ──
+    const total = ROWS.length.toLocaleString('en-US');
+    function pillRow(elId, label, values, field, active, hint) {
+      const counts = {};
+      ROWS.forEach(r => { counts[r[field]] = (counts[r[field]] || 0) + 1; });
+      const bar = document.getElementById(elId);
+      const mk = (text, val) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'pill'; b.dataset.val = val;
+        b.innerHTML = text + `<span class="n">${val ? (counts[val] || 0).toLocaleString('en-US') : total}</span>`;
+        b.title = val ? `Click to toggle · double-click to show only ${text}` : `Show all (${total})`;
+        return b;
+      };
+      bar.appendChild(Object.assign(document.createElement('span'), {className: 'lbl', textContent: label}));
+      bar.appendChild(mk('All', ''));
+      values.filter(v => counts[v]).forEach(v => bar.appendChild(mk(v, v)));
+      if (hint) bar.appendChild(Object.assign(document.createElement('span'),
+        {className: 'pills-hint', textContent: 'click to toggle · double-click to isolate'}));
+      const sync = () => {
+        bar.querySelectorAll('.pill').forEach(p =>
+          p.classList.toggle('active', p.dataset.val ? active.has(p.dataset.val) : active.size === 0));
+        api.onFilterChanged();
+      };
+      bar.addEventListener('click', e => {
+        const p = e.target.closest('.pill'); if (!p) return;
+        if (!p.dataset.val) active.clear();
+        else if (active.has(p.dataset.val)) active.delete(p.dataset.val);
+        else active.add(p.dataset.val);
+        sync();
+      });
+      bar.addEventListener('dblclick', e => {
+        const p = e.target.closest('.pill'); if (!p || !p.dataset.val) return;
+        active.clear(); active.add(p.dataset.val); sync();
+      });
       sync();
-    });
-    bar.addEventListener('dblclick',e=>{
-      const p=e.target.closest('.pill'); if(!p||!p.dataset.src) return;
-      active.clear(); active.add(p.dataset.src); sync();
-    });
-    sync();
+    }
+
+    const CATEGORY_ORDER = ["Environment", "Land Use & Planning", "Transportation", "Recreation",
+                            "Public Safety", "Infrastructure", "Demographic & Economic",
+                            "Basemaps & Imagery", "Other"];
+    pillRow('catPills', 'Category', CATEGORY_ORDER, 'category', activeCat, false);
+
+    const srcCounts = {};
+    ROWS.forEach(r => { srcCounts[r.source] = true; });
+    const CORE = ["Tahoe Open Data", "LT Info", "REST Only"];
+    const sources = [...CORE.filter(s => srcCounts[s]),
+                     ...Object.keys(srcCounts).filter(s => !CORE.includes(s)).sort()];
+    pillRow('srcPills', 'Source', sources, 'source', activeSrc, true);
 
     document.querySelector('#q').addEventListener('calciteInputInput',e=>api.setGridOption('quickFilterText',e.target.value));
   }

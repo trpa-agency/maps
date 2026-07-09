@@ -100,6 +100,40 @@ def fetch_json(url, timeout=30, tries=3):
     raise last
 
 
+# Broad categories for the pill filter — derived from theme, with a
+# title-keyword override for economic datasets (no theme captures those).
+THEME_CATEGORY = {
+    "Vegetation & Forest": "Environment", "Soils & Hydrology": "Environment",
+    "Wildlife & Aquatic": "Environment", "Air & Climate": "Environment",
+    "Shorezone": "Environment", "Monitoring": "Environment", "Stormwater": "Environment",
+    "EIP / Projects": "Environment", "EIP / Indicators": "Environment",
+    "Thresholds": "Environment", "Mooring": "Environment", "Contours": "Environment",
+    "Impervious": "Environment",
+    "Planning & Zoning": "Land Use & Planning", "Parcels & Ownership": "Land Use & Planning",
+    "Permitting": "Land Use & Planning", "Historic": "Land Use & Planning",
+    "Development Rights": "Land Use & Planning", "Parcels": "Land Use & Planning",
+    "Boundaries": "Land Use & Planning", "Planning & Jurisdictions": "Land Use & Planning",
+    "Transportation": "Transportation",
+    "Recreation": "Recreation",
+    "Fire & Emergency": "Public Safety",
+    "Utilities": "Infrastructure",
+    "Demographics": "Demographic & Economic", "Civic & Elections": "Demographic & Economic",
+    "Imagery & Elevation": "Basemaps & Imagery",
+}
+ECON_KEYWORDS = ["economic", "economy", "business", "sales tax", "income", "employment",
+                 "lodging", "occupancy", "visitation", "workforce", "labor"]
+CATEGORY_ORDER = ["Environment", "Land Use & Planning", "Transportation", "Recreation",
+                  "Public Safety", "Infrastructure", "Demographic & Economic",
+                  "Basemaps & Imagery", "Other"]
+
+
+def category_for(theme, name):
+    key = name.lower()
+    if any(k in key for k in ECON_KEYWORDS):
+        return "Demographic & Economic"
+    return THEME_CATEGORY.get(theme, "Other")
+
+
 # Folder names that make useless themes (org/plumbing folders, not topics)
 FOLDER_THEME_SKIP = {"edw", "hosted", "agol", "opendata", "datasharing", "publicrequests",
                      "ugotnetandextracts", "csd_app", "dts", "douglas", "pw", "basemaps"}
@@ -333,6 +367,10 @@ def main():
     for source, base, only, crawl in PARTNERS:
         log(f"{source}…")
         take(source, lambda s=source, b=base, o=only, c=crawl: build_partner_rows(s, b, o, c))
+
+    # Broad category for the pill filter — applied to every row, seed included
+    for r in out_rows:
+        r["category"] = category_for(r.get("theme", ""), r.get("name", ""))
 
     generated = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     # generated on its own line so CI can diff-ignore timestamp-only changes
