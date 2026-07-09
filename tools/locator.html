@@ -9,7 +9,6 @@
 
   <!-- Calcite Design System -->
   <script type="module" src="https://js.arcgis.com/calcite-components/5.0"></script>
-  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/5.0/calcite.css" />
 
   <!-- ArcGIS Maps SDK -->
   <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
@@ -273,7 +272,7 @@
         <button id="feedbackDismiss" type="button" title="Hide" aria-label="Hide feedback button">×</button>
       </span>
       <!-- One related-map link at a time, matched to the active Style -->
-      <calcite-button id="projectsLink" href="projects-map.html" target="_blank" rel="noopener"
+      <calcite-button id="projectsLink" href="https://trpa-agency.github.io/EIP/html/projects-map.html" target="_blank" rel="noopener"
         icon-start="launch" appearance="transparent" kind="neutral" scale="s"
         title="Open the EIP Projects Map in a new window"><span class="link-label">EIP Projects Map</span></calcite-button>
       <calcite-button id="permitLink" href="https://gis.trpa.org/PermitReview/" target="_blank" rel="noopener" hidden
@@ -681,8 +680,9 @@
       (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 
     // EIP project search source — the projects-map feed (nightly LTinfo snapshot),
-    // lazy-loaded once and searched client-side.
-    const PROJECTS_URL = "../data/projects.geojson";
+    // lazy-loaded once and searched client-side. Served from the EIP repo, which
+    // owns the nightly refresh job.
+    const PROJECTS_URL = "https://trpa-agency.github.io/EIP/data/projects.geojson";
     let projectsCache = null, projectsLoad = null;
     function ensureProjects() {
       if (!projectsLoad) projectsLoad = (async () => {
@@ -938,7 +938,7 @@
       // Round trip: the header "EIP Projects Map" link returns the user to
       // the same selection (matches projects-map's #v=1&sel=… hash schema)
       if (matched.length) {
-        $("projectsLink").href = "projects-map.html#v=1&sel=" +
+        $("projectsLink").href = "https://trpa-agency.github.io/EIP/html/projects-map.html#v=1&sel=" +
           matched.map(encodeURIComponent).join(",");
       }
       if (added) { refreshLocations(); zoomToLocations(); }

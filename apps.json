@@ -116,7 +116,7 @@
       "id": "eiplocator",
       "title": "Project Locator",
       "category": "tools",
-      "url": "https://trpa-agency.github.io/EIP/html/locator.html",
+      "url": "tools/locator.html",
       "thumbnail": "assets/thumbs/eip-locator.png",
       "description": "Make consistent, branded locator maps for presentations and reports. Search an address, APN, or EIP project, pick a style and layout, and export a PowerPoint slide or PNG.",
       "tags": [
