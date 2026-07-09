@@ -1,0 +1,45 @@
+name: Refresh data inventory
+
+on:
+  schedule:
+    - cron: "0 14 1 * *"   # 1st of each month, 06:00 Pacific (14:00 UTC)
+  workflow_dispatch:        # manual "Run workflow" button
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild inventory
+        run: python scripts/build_inventory.py
+
+      - name: Open PR if the data changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # -I ignores the generated-timestamp line: no PR when only the date moved
+          if git diff -I '^{"generated' --quiet tools/data-inventory.json; then
+            echo "Inventory unchanged — nothing to do."
+            git checkout -- tools/data-inventory.json
+            exit 0
+          fi
+          BRANCH="inventory-refresh-$(date -u +%Y-%m)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add tools/data-inventory.json
+          git commit -m "Refresh data inventory ($(date -u '+%Y-%m-%d'))"
+          git push -u origin "$BRANCH" --force
+          # One PR per month; if this month's PR is already open, the push above updated it.
+          gh pr create --title "Refresh data inventory ($(date -u '+%B %Y'))" \
+            --body-file inventory_summary.md --base main --head "$BRANCH" \
+            || echo "PR already open — branch updated."

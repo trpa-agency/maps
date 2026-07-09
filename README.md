@@ -48,6 +48,20 @@ Edit `apps.json` — every page reads from it, so no HTML changes are needed:
 2. Update its entry in `apps.json` to the new relative URL.
 3. Set up a redirect from the old gis.trpa.org URL once DNS and traffic cut over.
 
+## Data inventory refresh
+
+The Tahoe Data Inventory ([tools/data-inventory.html](tools/data-inventory.html)) reads its rows
+from `tools/data-inventory.json`, which is rebuilt by `scripts/build_inventory.py` (stdlib-only
+Python). The script crawls the Tahoe Open Data DCAT feed, the maps.trpa.org REST directory, and
+seven partner agency directories; the LT Info rows come from the static seed
+`scripts/inventory_seed.json` (no crawlable directory exists — edit that file to change them).
+
+A GitHub Action (`.github/workflows/refresh-inventory.yml`) reruns the script on the first of
+each month and opens a PR when the data changed — review the diff and merge to publish. Run it
+on demand from the Actions tab ("Refresh data inventory" → Run workflow), or locally with
+`python scripts/build_inventory.py`. Failsafe: if an agency's crawl fails or shrinks by more
+than 30 percent, its previous rows are kept and the PR body flags it.
+
 ## Local preview
 
 Serve the repo root (fetch of `apps.json` requires http, not file://):

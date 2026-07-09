@@ -219,3 +219,6 @@ __marimo__/
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Build artifact from scripts/build_inventory.py (used as the PR body in CI)
+inventory_summary.md
