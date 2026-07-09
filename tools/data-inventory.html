@@ -56,6 +56,23 @@
   .acc-token{background:#fdeadb;color:#9C3E27;}
   .acc-file{background:#efeaf3;color:#7B6A8A;}
   .note{padding:0 26px 14px;}
+  /* Updated-date pill + refresh cadence subtext */
+  .updated-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px;}
+  .updated-pill{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--trpa-blue);
+    color:var(--trpa-navy);border-radius:999px;padding:7px 15px;font-size:.82rem;font-weight:600;white-space:nowrap;}
+  .updated-pill .dot{width:8px;height:8px;border-radius:50%;background:#4A6118;}
+  .updated-sub{font-size:.7rem;color:#8a97a8;padding-right:8px;}
+  /* Source pill bar — click toggles, double-click isolates */
+  .src-pills{display:flex;flex-wrap:wrap;gap:8px;padding:4px 26px 10px;align-items:center;}
+  .src-pills .lbl{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a97a8;margin-right:2px;}
+  .pill{display:inline-flex;align-items:center;gap:7px;border:1.5px solid #c9d4e2;background:#fff;color:var(--trpa-navy);
+    border-radius:999px;padding:5px 13px;font-size:.8rem;font-weight:600;cursor:pointer;user-select:none;
+    font-family:'Open Sans',system-ui,sans-serif;transition:border-color .12s,background .12s;}
+  .pill:hover{border-color:var(--trpa-blue);}
+  .pill .n{font-size:.68rem;font-weight:700;background:#eef3f9;border-radius:999px;padding:1px 7px;color:#5a6577;}
+  .pill.active{background:var(--trpa-navy);border-color:var(--trpa-navy);color:#fff;}
+  .pill.active .n{background:rgba(255,255,255,.18);color:#fff;}
+  .pills-hint{font-size:.7rem;color:#8a97a8;margin-left:4px;}
 </style>
 </head>
 <body>
@@ -77,14 +94,16 @@
     <calcite-label class="grow">Search
       <calcite-input id="q" placeholder="Filter across all columns" clearable></calcite-input>
     </calcite-label>
-    <calcite-label>Source
-      <calcite-select id="fsource"><calcite-option value="">All</calcite-option></calcite-select>
-    </calcite-label>
+    <div class="updated-wrap">
+      <span class="updated-pill"><span class="dot"></span><span id="compiledDate">Loading&hellip;</span></span>
+      <span class="updated-sub">Refreshes monthly &middot; automated crawl of every source</span>
+    </div>
   </div>
+  <div class="src-pills" id="srcPills"></div>
 
   <div class="note">
     <calcite-notice icon="information" scale="s" open>
-      <span slot="message">Sources: TRPA ArcGIS services (maps.trpa.org), the LT Info web services list, the maps.trpa.org REST directory, and the public REST directories of partner agencies (USFS EDW, California Tahoe Conservancy, El Dorado, Placer, Washoe, and Douglas NV counties, and the City of South Lake Tahoe) — one row per service; use the Source dropdown to pick an agency. 'REST Only' services are published on the server but not cataloged on Tahoe Open Data or LT Info; one row per service. Token endpoints require an LT Info account. Copy URL copies the live service URL; Open in Map opens the layer in ArcGIS Online; Download opens the Tahoe Open Data details page. <span id="compiledDate"></span></span>
+      <span slot="message">Sources: TRPA ArcGIS services (maps.trpa.org), the LT Info web services list, the maps.trpa.org REST directory, and the public REST directories of partner agencies (USFS EDW, California Tahoe Conservancy, El Dorado, Placer, Washoe, and Douglas NV counties, and the City of South Lake Tahoe) — one row per service; the source pills above the grid filter by agency. 'REST Only' services are published on the server but not cataloged on Tahoe Open Data or LT Info. Token endpoints require an LT Info account. Copy URL copies the live service URL; Open in Map opens the layer in ArcGIS Online; Download opens the Tahoe Open Data details page.</span>
     </calcite-notice>
   </div>
 
@@ -114,6 +133,7 @@
 
   const columnDefs = [
     {field:'name',headerName:'Name',flex:1.2,minWidth:250},
+    {field:'source',headerName:'Source',width:200,filter:false},
     {field:'theme',headerName:'Theme',width:180},
     {field:'channel',headerName:'Channel',width:215},
     {field:'type',headerName:'Type',width:175},
@@ -128,56 +148,90 @@
         if(p.data.downloadUrl) b.push(`<a class="act act-dl" href="${p.data.downloadUrl}" target="_blank" rel="noopener" title="Open Data details and download page">Download</a>`);
         return b.join(' ');
       }},
-    {field:'source',headerName:'Source',hide:true},
     {field:'serviceUrl',headerName:'Service URL',hide:true},
     {field:'downloadUrl',headerName:'Open Data Page',hide:true}
   ];
 
   // Rows live in data-inventory.json, rebuilt by scripts/build_inventory.py
-  // (monthly GitHub Action). KPIs and the compiled date derive from the data.
+  // (monthly GitHub Action). KPIs, pills, and the updated date derive from the data.
   const PARTNER_EXCLUDE = new Set(["Tahoe Open Data", "LT Info", "REST Only"]);
-  function stampHeader(inv, ROWS) {
+  // KPI cards follow the current filters (search, pills, column filters)
+  function updateKpis(rows) {
     const n = (x) => x.toLocaleString("en-US");
     const bySrc = {};
-    ROWS.forEach(r => { bySrc[r.source] = (bySrc[r.source] || 0) + 1; });
-    document.getElementById("kpiTotal").textContent = n(ROWS.length);
+    rows.forEach(r => { bySrc[r.source] = (bySrc[r.source] || 0) + 1; });
+    document.getElementById("kpiTotal").textContent = n(rows.length);
     document.getElementById("kpiTod").textContent = n(bySrc["Tahoe Open Data"] || 0);
     document.getElementById("kpiLt").textContent = n(bySrc["LT Info"] || 0);
     document.getElementById("kpiRest").textContent = n(bySrc["REST Only"] || 0);
     document.getElementById("kpiPartner").textContent =
-      n(ROWS.filter(r => !PARTNER_EXCLUDE.has(r.source)).length);
-    document.getElementById("kpiToken").textContent = n(ROWS.filter(r => r.access === "Token").length);
+      n(rows.filter(r => !PARTNER_EXCLUDE.has(r.source)).length);
+    document.getElementById("kpiToken").textContent = n(rows.filter(r => r.access === "Token").length);
+  }
+  function stampDate(inv) {
     const d = new Date(inv.generated);
     const M = ["Jan.","Feb.","March","April","May","June","July","Aug.","Sept.","Oct.","Nov.","Dec."];
     document.getElementById("compiledDate").textContent =
-      `Compiled ${M[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}.`;
+      `Data updated ${M[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
   }
 
   function init(ROWS) {
-    let fSource='';
+    const active = new Set();   // selected source pills; empty = all sources
     const gridOptions = {
       columnDefs, rowData: ROWS,
       defaultColDef:{sortable:true,filter:true,resizable:true,floatingFilter:true},
       pagination:true, paginationPageSize:50,
-      isExternalFilterPresent:()=> fSource!=='',
-      doesExternalFilterPass:node=>{
-        const d=node.data;
-        return !fSource || d.source===fSource;
+      isExternalFilterPresent:()=> active.size>0,
+      doesExternalFilterPass:node=> !active.size || active.has(node.data.source),
+      onModelUpdated:(p)=>{
+        const shown=[]; p.api.forEachNodeAfterFilter(nd=>{ if(nd.data) shown.push(nd.data); });
+        updateKpis(shown);
       }
     };
     const api = agGrid.createGrid(document.querySelector('#grid'), gridOptions);
 
-    const uniq = k => [...new Set(ROWS.map(r=>r[k]))].sort();
-    const selSource=document.querySelector('#fsource');
-    uniq('source').forEach(v=>{const o=document.createElement('calcite-option');o.value=v;o.textContent=v;selSource.appendChild(o);});
+    // ── Source pills — click toggles, double-click isolates, All clears ──
+    const counts={}; ROWS.forEach(r=>{counts[r.source]=(counts[r.source]||0)+1;});
+    const CORE=["Tahoe Open Data","LT Info","REST Only"];
+    const sources=[...CORE.filter(s=>counts[s]),
+                   ...Object.keys(counts).filter(s=>!CORE.includes(s)).sort()];
+    const bar=document.getElementById('srcPills');
+    const mkPill=(label,src)=>{
+      const b=document.createElement('button');
+      b.type='button'; b.className='pill'; b.dataset.src=src;
+      b.innerHTML=label+(src?`<span class="n">${counts[src].toLocaleString('en-US')}</span>`:'');
+      b.title=src?'Click to toggle · double-click to show only '+label:'Show every source';
+      return b;
+    };
+    bar.appendChild(Object.assign(document.createElement('span'),{className:'lbl',textContent:'Source'}));
+    bar.appendChild(mkPill('All',''));
+    sources.forEach(s=>bar.appendChild(mkPill(s,s)));
+    bar.appendChild(Object.assign(document.createElement('span'),
+      {className:'pills-hint',textContent:'click to toggle · double-click to isolate'}));
+    const sync=()=>{
+      bar.querySelectorAll('.pill').forEach(p=>
+        p.classList.toggle('active', p.dataset.src ? active.has(p.dataset.src) : active.size===0));
+      api.onFilterChanged();
+    };
+    bar.addEventListener('click',e=>{
+      const p=e.target.closest('.pill'); if(!p) return;
+      if(!p.dataset.src) active.clear();
+      else if(active.has(p.dataset.src)) active.delete(p.dataset.src);
+      else active.add(p.dataset.src);
+      sync();
+    });
+    bar.addEventListener('dblclick',e=>{
+      const p=e.target.closest('.pill'); if(!p||!p.dataset.src) return;
+      active.clear(); active.add(p.dataset.src); sync();
+    });
+    sync();
 
-    selSource.addEventListener('calciteSelectChange',e=>{fSource=e.target.value;api.onFilterChanged();});
     document.querySelector('#q').addEventListener('calciteInputInput',e=>api.setGridOption('quickFilterText',e.target.value));
   }
 
   fetch("data-inventory.json")
     .then(r => { if (!r.ok) throw new Error("inventory " + r.status); return r.json(); })
-    .then(inv => { stampHeader(inv, inv.rows); init(inv.rows); })
+    .then(inv => { stampDate(inv); init(inv.rows); })
     .catch(e => {
       console.error(e);
       document.getElementById("grid").innerHTML =
