@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Project Locator — Lake Tahoe EIP</title>
-  <link rel="icon" type="image/png" href="assets/favicon.png" />
-  <link rel="apple-touch-icon" href="assets/favicon.png" />
+  <title>Project Locator — TRPA Maps</title>
+  <link rel="icon" type="image/png" href="../assets/TRPALogo_COLOR.png" />
+  <link rel="apple-touch-icon" href="../assets/TRPALogo_COLOR.png" />
 
   <!-- Calcite Design System -->
   <script type="module" src="https://js.arcgis.com/calcite-components/5.0"></script>
@@ -319,6 +319,10 @@
                   aria-label="Paste GeoJSON (advanced)">
             <calcite-icon icon="code" scale="s"></calcite-icon>
           </button>
+          <button id="clearAllBtn" class="sec-tool" title="Remove all locations"
+                  aria-label="Remove all locations" hidden>
+            <calcite-icon icon="trash" scale="s"></calcite-icon>
+          </button>
         </h2>
         <div class="hdr-search">
           <div class="search-box">
@@ -428,7 +432,8 @@
     <span class="tip-text">Add up to 9 locations, each with a numbered pin. Search an
       <strong>address</strong>, <strong>APN</strong>, <strong>EIP project</strong> (name or
       number), or <strong>coordinates</strong> ("39.0968, -119.9435"). Advanced: the
-      ⟨⟩ button pastes GeoJSON. Remove a location with its chip.</span>
+      ⟨⟩ button pastes GeoJSON. Remove a location with its chip, or all of them
+      with the trash button.</span>
   </calcite-tooltip>
   <calcite-tooltip reference-element="secNum3" placement="right" close-on-click>
     <span class="tip-text">The <strong>basemap</strong> and <strong>detail zoom</strong> set the
@@ -472,7 +477,7 @@
           <span class="ui-sample ui-chip"><calcite-icon icon="search" scale="s"></calcite-icon> Address, APN, EIP project…</span>
           — an address, APN, <strong>EIP project name or number</strong>, or coordinates
           ("39.0968, -119.9435") — and pick a result. Repeat to add up to 9 locations
-          (numbered pins). Remove one with its chip, or clear the search to start over.
+          (numbered pins). Remove one with its chip, or the trash button removes them all.
           Advanced: the <span class="ui-sample ui-btn square"><calcite-icon icon="code" scale="s"></calcite-icon></span>
           button pastes GeoJSON directly.</li>
         <li><strong>Set the detail view</strong> — the basemap thumbnails and zoom buttons
@@ -578,7 +583,7 @@
 
     // ───────────────────────── App ─────────────────────────
     let map, view, pinLayer, mapPinLayer, parcelsFL;
-    let basinView, basinReady = false;
+    let basinView, basinCtors = null, basinInitPromise = null;
     let locations = [];                 // selected parcels: {apn, address, jurisdiction, county, geometry, point}
     const MAX_LOCATIONS = 9;            // single-digit pin numbers stay legible
     const loc0 = () => locations[0] || null;
@@ -646,27 +651,35 @@
         view.ui.add(sketchExpand, "top-right");
         applyBrand();
         applyEipParam();
+        $("exportBtn").disabled = false;
+        $("copyBtn").disabled = false;
       });
 
-      buildBasin(Map, MapView, FeatureLayer);
+      basinCtors = { Map, MapView, FeatureLayer };
     });
 
-    function buildBasin(Map, MapView, FeatureLayer) {
-      const s = basinLayers(FeatureLayer);
-      const bmap = new Map({ basemap: null, layers: [s.mask, s.lake, s.juris, s.cslt, s.bnd] });
-      basinView = new MapView({ container: "basinDiv", map: bmap, background: { color: [255,255,255,1] },
-        constraints: { snapToZoom: false, rotationEnabled: false }, ui: { components: [] } });
-      basinView.when(async () => {
+    // Offscreen basin locator view — built lazily on the first export (it's a
+    // second WebGL context; users who never export shouldn't pay for it).
+    // A failed init is not cached, so the next export retries.
+    function ensureBasin() {
+      if (basinInitPromise) return basinInitPromise;
+      basinInitPromise = (async () => {
+        const { Map, MapView, FeatureLayer } = basinCtors;
+        const s = basinLayers(FeatureLayer);
+        const bmap = new Map({ basemap: null, layers: [s.mask, s.lake, s.juris, s.cslt, s.bnd] });
+        basinView = new MapView({ container: "basinDiv", map: bmap, background: { color: [255,255,255,1] },
+          constraints: { snapToZoom: false, rotationEnabled: false }, ui: { components: [] } });
+        await basinView.when();
         await s.bnd.when();
         basinView._basinExtent = s.bnd.fullExtent.clone().expand(1.06);
         await basinView.goTo(basinView._basinExtent, { animate: false });
-        basinReady = true;
-        $("exportBtn").disabled = false;
-        $("copyBtn").disabled = false;
-      }).catch((e) => {
+      })().catch((e) => {
+        basinInitPromise = null;
+        if (basinView) { basinView.destroy(); basinView = null; }
         console.error("Basin locator failed to load:", e);
-        toast("Basin locator map failed to load — exports unavailable. Reload to retry.", 6000);
+        throw new Error("Basin locator map failed to load — check the connection and try again.");
       });
+      return basinInitPromise;
     }
 
     // ───────────── Search + suggestions (parcels · EIP projects · coordinates) ─────────────
@@ -854,7 +867,9 @@
         const loc = { key: apn, label: a.APO_ADDRESS || "(no address on file)",
           sub: [`APN ${apn}`, countyLabel({ county: a.COUNTY })].filter(Boolean).join("  ·  "),
           short: `APN ${apn}`, geometry: geom,
-          point: geom.extent ? geom.extent.center : geom, fitZoom: 17 };
+          // centroid over extent.center — the extent center of an L-shaped
+          // parcel can fall outside the parcel itself
+          point: geom.centroid || (geom.extent ? geom.extent.center : geom), fitZoom: 17 };
         return loc;
       }
       if (item.kind === "project") {
@@ -977,6 +992,7 @@
     function renderLocationChips() {
       const row = $("locChips");
       row.hidden = !locations.length;
+      $("clearAllBtn").hidden = !locations.length;
       row.innerHTML = "";
       locations.forEach((loc, i) => {
         const chip = document.createElement("calcite-chip");
@@ -1029,14 +1045,32 @@
       else if (obj.type && obj.coordinates) features = [{ type: "Feature", geometry: obj, properties: {} }];
       else throw new Error("Not a FeatureCollection, Feature, or geometry.");
       if (!features.length) throw new Error("No features found.");
+      // Every position must be plausible WGS84 lon/lat — catches the common
+      // mistake of pasting projected data (web mercator / UTM meters).
+      const coordsValid = (c) => typeof c[0] === "number"
+        ? Number.isFinite(c[0]) && Number.isFinite(c[1]) && Math.abs(c[0]) <= 180 && Math.abs(c[1]) <= 90
+        : Array.isArray(c) && c.length > 0 && c.every(coordsValid);
+      // Explode MultiPoint into numbered single-point locations — one pin per
+      // point instead of one pin at the group centroid.
+      const expanded = [];
+      for (const f of features) {
+        if (f.geometry && f.geometry.type === "MultiPoint" && Array.isArray(f.geometry.coordinates))
+          f.geometry.coordinates.forEach((c, j) => expanded.push({ type: "Feature",
+            geometry: { type: "Point", coordinates: c },
+            properties: { ...(f.properties || {}), __mpIndex: j + 1 } }));
+        else expanded.push(f);
+      }
       const locs = []; let skipped = 0;
-      features.forEach((f, i) => {
+      expanded.forEach((f, i) => {
+        if (f.geometry && f.geometry.coordinates && !coordsValid(f.geometry.coordinates))
+          throw new Error("Coordinates must be WGS84 longitude/latitude — found values out of range (projected data?).");
         const geom = gjToGeometry(f.geometry);
         if (!geom) { skipped++; return; }
-        const label = gjLabel(f.properties, i);
+        let label = gjLabel(f.properties, i);
+        if (f.properties && f.properties.__mpIndex) label += ` (${f.properties.__mpIndex})`;
         locs.push({ key: `geojson-${++gjCounter}`, label,
           sub: `${f.geometry.type} · pasted GeoJSON`, short: label,
-          geometry: geom, point: geom.extent ? geom.extent.center : geom, fitZoom: 16 });
+          geometry: geom, point: geom.centroid || (geom.extent ? geom.extent.center : geom), fitZoom: 16 });
       });
       if (!locs.length) throw new Error("No supported geometries (GeometryCollection is not supported).");
       return { locs, skipped };
@@ -1086,10 +1120,19 @@
       clearBtn.style.display = input.value ? "block" : "none";
       clearTimeout(debounceT); debounceT = setTimeout(() => runSuggest(input.value), 220);
     });
-    input.addEventListener("focus", () => { if (suggestItems.length && input.value.length >= 3) list.classList.add("open"); });
+    // Re-render on focus (closeSuggest empties the list's HTML — re-adding
+    // the .open class alone would show an empty box)
+    input.addEventListener("focus", () => { if (suggestItems.length && input.value.length >= 3) renderSuggest(input.value); });
+    // ✕ clears the search text only — locations are removed via their chips
+    // or the trash button (wiping 9 pins on a text-clear surprised testers).
     clearBtn.addEventListener("click", () => {
       input.value = ""; clearBtn.style.display = "none"; closeSuggest();
-      suggestItems = []; locations = [];
+      suggestItems = [];
+    });
+    $("clearAllBtn").addEventListener("click", () => {
+      locations = [];
+      input.value = ""; clearBtn.style.display = "none"; closeSuggest();
+      suggestItems = [];
       refreshLocations();
       view.goTo({ center: BASIN.center, zoom: BASIN.zoom }, { duration: 500 });
     });
@@ -1150,6 +1193,18 @@
       // The editable-elements option only applies to PPTX
       $("editableRow").hidden = v !== "pptx";
     });
+    // Arrow-key support for the button radiogroups (ARIA radio pattern)
+    function radioKeys(id) {
+      $(id).addEventListener("keydown", (e) => {
+        const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+        if (!step) return;
+        const btns = [...$(id).querySelectorAll("button")];
+        const cur = Math.max(0, btns.findIndex(b => b.classList.contains("active")));
+        const next = btns[(cur + step + btns.length) % btns.length];
+        e.preventDefault(); next.click(); next.focus();
+      });
+    }
+    ["brandSeg", "layoutSeg", "basemapSeg", "scaleSeg", "formatSeg"].forEach(radioKeys);
 
     // ───────────── Export ─────────────
     function loadImage(src) { return new Promise((res, rej) => { const im = new Image();
@@ -1168,7 +1223,9 @@
     function getLogo() {
       const src = brand().logo;
       if (!LOGO_CACHE[src]) LOGO_CACHE[src] = (async () => {
-        const img = await loadImage(src).catch(() => null); if (!img) return null;
+        const img = await loadImage(src).catch(() => null);
+        // Don't cache a transient failure — retry on the next export
+        if (!img) { delete LOGO_CACHE[src]; return null; }
         const durl = keyBlack(img).toDataURL("image/png");
         const out = await loadImage(durl); out._durl = durl; return out;
       })();
@@ -1228,6 +1285,10 @@
     // Waits are event-driven (reactiveUtils) with timeout caps, NOT stacked setTimeout
     // polls — background tabs throttle timers to ~1/s, which turned polling into a crawl.
     async function shotBasin(wPx, hPx) {
+      // Lazy-built here (not in runExport) so copyPng's clipboard.write still
+      // happens inside the click gesture — Safari's transient activation
+      // would expire if we awaited the basin init before calling it.
+      await ensureBasin();
       const d = $("basinDiv"); d.style.width = wPx + "px"; d.style.height = hPx + "px";
       await withTimeout(window._reactiveUtils.whenOnce(() => Math.abs(basinView.width - wPx) <= 2),
         3000, "Basin resize").catch(() => {});   // background tabs may never fire ResizeObserver — proceed
@@ -1472,7 +1533,6 @@
     let exporting = false;
     async function runExport(btn, busyMsg, worker) {
       if (!view || exporting) return;
-      if (!basinReady) { toast("Basin map still loading — try again in a moment."); return; }
       if (exportLayout === "split" && !locations.length) {
         toast("Add a location first — the Detail + Basin layout needs one."); return;
       }
@@ -1481,7 +1541,9 @@
       document.body.classList.add("exporting");   // freezes brand/layout/caption/basemap controls
       toast(busyMsg, 0);
       try { await worker(); }
-      catch (e) { console.error(e); toast("Export failed — see console."); }
+      catch (e) { console.error(e);
+        toast(e && e.message && e.message.startsWith("Basin locator")
+          ? e.message : "Export failed — see console.", 5000); }
       finally {
         exporting = false; btn.loading = false;
         document.body.classList.remove("exporting");
@@ -1491,7 +1553,11 @@
     function exportPng() {
       return runExport($("exportBtn"), "Rendering PNG…", async () => {
         const cv = await composeCurrent();
-        downloadUrl(cv.toDataURL("image/png"), `${brandKey}-${exportLayout}-${exportSlug()}.png`);
+        // Blob + object URL — a base64 data URL doubles the multi-MB canvas in memory
+        const blob = await new Promise(res => cv.toBlob(res, "image/png"));
+        const url = URL.createObjectURL(blob);
+        downloadUrl(url, `${brandKey}-${exportLayout}-${exportSlug()}.png`);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
         toast("PNG downloaded.");
       });
     }
@@ -1508,7 +1574,7 @@
     function svgPin(tipX, tipY, h, hex, num) {
       const s = h / 34;
       const head = num != null
-        ? `<text x="13" y="12.5" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="700" fill="#FFFFFF">${num}</text>`
+        ? `<text x="13" y="12.5" text-anchor="middle" dominant-baseline="central" font-family="${baseFont()}" font-size="13" font-weight="700" fill="#FFFFFF">${num}</text>`
         : `<circle cx="13" cy="12" r="4.5" fill="#FFFFFF"/>`;
       return `<g transform="translate(${(tipX - 13*s).toFixed(1)} ${(tipY - 35*s).toFixed(1)}) scale(${s.toFixed(3)})">` +
         `<path d="${PIN_PATH}" fill="${hex}" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>${head}</g>`;
