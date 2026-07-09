@@ -17,7 +17,7 @@ Two new .gov addresses, continuing what we started with data.trpa.gov:
 | **tahoeopendata.org** | Downloads and web services. |
 | **ltinfo.org** | Indicators, trackers, and threshold evaluations. |
 | **trpa.gov/programs/maps** | Program context page. Links into maps.trpa.gov. |
-| **maps.trpa.org / gis.trpa.org** | Legacy .org. Retire and redirect into gis.trpa.gov. |
+| **maps.trpa.org / gis.trpa.org** | Legacy .org. Retire and redirect into gis.trpa.gov / maps.trpa.gov. |
 
 Keep the pages distinct: **maps** on maps.trpa.gov, **visualize** on data.trpa.gov, **download** on Tahoe Open Data, **report** on Lake Tahoe Info.
 
