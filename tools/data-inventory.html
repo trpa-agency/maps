@@ -95,7 +95,6 @@
   </div>
   <div class="pill-row" id="catPills"></div>
   <div class="pill-row" id="srcPills"></div>
-  <div class="pill-row" id="colPills"></div>
 
   <div class="wrap"><div id="grid" class="ag-theme-quartz"></div></div>
 
@@ -128,15 +127,15 @@
 
   const accClass = a => a === 'Token' ? 'acc-token' : (a === 'File' ? 'acc-file' : 'acc-nokey');
 
-  // Condensed by default — the Columns pill row toggles the hidden ones on
+  // Channel (the host server) is implied by Source — it stays in the data,
+  // not on screen. Theme reads as "Topic".
   const columnDefs = [
     {field:'name',headerName:'Name',flex:1.2,minWidth:250},
-    {field:'source',headerName:'Source',width:200,filter:false},
-    {field:'theme',headerName:'Theme',width:180,hide:true},
-    {field:'channel',headerName:'Channel',width:215,hide:true},
-    {field:'type',headerName:'Type',width:175},
-    {field:'geometry',headerName:'Geometry',width:125,filter:false,hide:true},
-    {field:'access',headerName:'Access',width:115,filter:false,hide:true,
+    {field:'source',headerName:'Source',width:190,filter:false},
+    {field:'theme',headerName:'Topic',width:175},
+    {field:'type',headerName:'Type',width:170},
+    {field:'geometry',headerName:'Geometry',width:120,filter:false},
+    {field:'access',headerName:'Access',width:110,filter:false,
       cellRenderer:p=>`<span class="acc ${accClass(p.value)}">${p.value}</span>`},
     {colId:'actions',headerName:'Get the Data',width:300,sortable:false,filter:false,
       cellRenderer:p=>{
@@ -220,41 +219,6 @@
     const sources = [...CORE.filter(s => srcCounts[s]),
                      ...Object.keys(srcCounts).filter(s => !CORE.includes(s)).sort()];
     pillRow('srcPills', 'Source', sources, 'source', activeSrc, true);
-
-    // ── Columns pill row — show/hide grid columns (condensed by default) ──
-    const TOGGLE_COLS = [
-      {id: 'source', label: 'Source'}, {id: 'theme', label: 'Theme'},
-      {id: 'channel', label: 'Channel'}, {id: 'type', label: 'Type'},
-      {id: 'geometry', label: 'Geometry'}, {id: 'access', label: 'Access'},
-      {id: 'actions', label: 'Get the Data'}
-    ];
-    const colBar = document.getElementById('colPills');
-    colBar.appendChild(Object.assign(document.createElement('span'), {className: 'lbl', textContent: 'Columns'}));
-    const mkColPill = (text, id) => {
-      const b = document.createElement('button');
-      b.type = 'button'; b.className = 'pill'; b.dataset.col = id;
-      b.textContent = text;
-      b.title = id ? `Show or hide the ${text} column` : 'Show every column';
-      return b;
-    };
-    colBar.appendChild(mkColPill('All', ''));
-    TOGGLE_COLS.forEach(c => colBar.appendChild(mkColPill(c.label, c.id)));
-    colBar.appendChild(Object.assign(document.createElement('span'),
-      {className: 'pills-hint', textContent: 'click to show or hide a column'}));
-    const colSync = () => colBar.querySelectorAll('.pill').forEach(p => {
-      if (!p.dataset.col) {
-        p.classList.toggle('active', TOGGLE_COLS.every(c => api.getColumn(c.id)?.isVisible()));
-      } else {
-        p.classList.toggle('active', !!api.getColumn(p.dataset.col)?.isVisible());
-      }
-    });
-    colBar.addEventListener('click', e => {
-      const p = e.target.closest('.pill'); if (!p) return;
-      if (!p.dataset.col) api.setColumnsVisible(TOGGLE_COLS.map(c => c.id), true);
-      else api.setColumnsVisible([p.dataset.col], !api.getColumn(p.dataset.col).isVisible());
-      colSync();
-    });
-    colSync();
 
     document.querySelector('#q').addEventListener('calciteInputInput',e=>api.setGridOption('quickFilterText',e.target.value));
   }
