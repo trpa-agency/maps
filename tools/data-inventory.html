@@ -148,6 +148,14 @@
     }
   };
 
+  // Search matches the name, the topic, and the service name in the endpoint —
+  // nothing else. Matching Source/Category/Type/Geometry as free text buried
+  // real name hits ("feature" once returned 1,139 rows, 6 of them by name),
+  // and those fields already have their own controls. Endpoint drops its
+  // /MapServer|/FeatureServer suffix or "feature" would match everything.
+  const stripServer = s => String(s || '').replace(/\/(Map|Feature|Image|Scene|GP)Server(\/\d+)?$/i, '');
+  const noSearch = () => '';   // getQuickFilterText: excluded from search
+
   // Category is the one topical axis — the column and the dropdown show the
   // same nine values. The finer `theme` stays in the data and the search
   // index (so "stormwater" still matches), but not on screen. Channel and
@@ -157,10 +165,10 @@
       cellRenderer:p=>p.data.access==='Token'
         ? `${p.value} <span class="acc acc-token" title="Requires an LT Info account token">Token</span>`
         : p.value},
-    {field:'source',headerName:'Source',width:190,filter:false},
-    {field:'category',headerName:'Category',width:190},
-    {field:'type',headerName:'Type',width:170},
-    {field:'geometry',headerName:'Geometry',width:120,filter:false},
+    {field:'source',headerName:'Source',width:190,filter:false,getQuickFilterText:noSearch},
+    {field:'category',headerName:'Category',width:190,getQuickFilterText:noSearch},
+    {field:'type',headerName:'Type',width:170,getQuickFilterText:noSearch},
+    {field:'geometry',headerName:'Geometry',width:120,filter:false,getQuickFilterText:noSearch},
     {colId:'actions',headerName:'Get the Data',width:300,sortable:false,filter:false,
       cellRenderer:p=>{
         const b=[];
@@ -170,12 +178,12 @@
         return b.join(' ');
       }},
     // Hidden but searchable (includeHiddenColumnsInQuickFilter) — keep this
-    // set identical to SEARCH_FIELDS below, or the facet counts will disagree
-    // with the grid. URLs are excluded from search: they'd match everything.
+    // set identical to matchesQuery() below, or the facet counts will
+    // disagree with the grid.
     {field:'theme',headerName:'Topic',hide:true},
-    {field:'endpoint',headerName:'Endpoint',hide:true},
-    {field:'serviceUrl',headerName:'Service URL',hide:true,getQuickFilterText:()=>''},
-    {field:'downloadUrl',headerName:'Open Data Page',hide:true,getQuickFilterText:()=>''}
+    {field:'endpoint',headerName:'Endpoint',hide:true,getQuickFilterText:p=>stripServer(p.value)},
+    {field:'serviceUrl',headerName:'Service URL',hide:true,getQuickFilterText:noSearch},
+    {field:'downloadUrl',headerName:'Open Data Page',hide:true,getQuickFilterText:noSearch}
   ];
 
   // Rows live in data-inventory.json, rebuilt by scripts/build_inventory.py
@@ -204,9 +212,10 @@
     const api = agGrid.createGrid(document.querySelector('#grid'), gridOptions);
 
     // Mirrors AG Grid's quick filter so facet counts agree with the grid
-    const SEARCH_FIELDS = ['name','source','theme','type','geometry','category','endpoint'];
     const matchesQuery = r => !query ||
-      SEARCH_FIELDS.some(f => String(r[f] || '').toLowerCase().includes(query));
+      String(r.name || '').toLowerCase().includes(query) ||
+      String(r.theme || '').toLowerCase().includes(query) ||
+      stripServer(r.endpoint).toLowerCase().includes(query);
     const n = x => x.toLocaleString('en-US');
 
     // ── Facet counts — each control counts rows passing the OTHER filters,
