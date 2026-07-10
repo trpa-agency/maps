@@ -76,6 +76,18 @@
   .pill.active{background:var(--trpa-navy);border-color:var(--trpa-navy);color:#fff;}
   .pill.active .n{background:rgba(255,255,255,.18);color:#fff;}
   .pills-hint{font-size:.7rem;color:#8a97a8;margin-left:4px;}
+  .pill.empty{opacity:.4;cursor:default;}
+  .pill.empty:hover{border-color:#c9d4e2;}
+  /* Collapsible source section */
+  #srcSection{overflow:hidden;max-height:400px;transition:max-height .2s ease,opacity .15s;}
+  #srcSection.collapsed{max-height:0;opacity:0;}
+  .sec-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:none;background:none;
+    cursor:pointer;color:var(--trpa-blue);font-family:'Open Sans',system-ui,sans-serif;
+    font-size:.74rem;font-weight:600;padding:4px 6px;border-radius:6px;}
+  .sec-toggle:hover{background:#eef3f9;}
+  .sec-toggle .tg-caret{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
+    border-top:6px solid currentColor;transition:transform .15s;}
+  .sec-toggle[aria-expanded="false"] .tg-caret{transform:rotate(-90deg);}
 </style>
 </head>
 <body>
@@ -92,13 +104,20 @@
 
   <div class="pill-row">
     <span class="lbl">Search</span>
-    <calcite-input id="q" placeholder="Filter across all columns" clearable scale="s"></calcite-input>
+    <calcite-input id="q" scale="s" clearable
+      placeholder="Search by feature layer name or topic (e.g., parcels, trails, BMP)"
+      title="Search by feature layer name or topic area (e.g., parcels, trails, BMP, imagery)"></calcite-input>
     <span class="lbl cat-lbl">Category</span>
     <calcite-select id="fcat" scale="s" label="Filter by category">
       <calcite-option value="">All categories</calcite-option>
     </calcite-select>
+    <button type="button" id="srcToggle" class="sec-toggle" aria-expanded="true" aria-controls="srcPills">
+      <span class="tg-caret"></span><span class="tg-text">Hide sources</span>
+    </button>
   </div>
-  <div class="pill-row" id="srcPills"></div>
+  <div id="srcSection">
+    <div class="pill-row" id="srcPills"><span class="lbl">Source</span></div>
+  </div>
 
   <div class="wrap"><div id="grid" class="ag-theme-quartz"></div></div>
 
@@ -165,9 +184,10 @@
   function init(ROWS) {
     const activeSrc = new Set();   // empty set = all sources
     let activeCat = '';            // '' = all categories
+    let query = '';
     const gridOptions = {
       columnDefs, rowData: ROWS,
-      defaultColDef:{sortable:true,filter:true,resizable:true,floatingFilter:true},
+      defaultColDef:{sortable:true,filter:false,resizable:true},
       pagination:true, paginationPageSize:50,
       isExternalFilterPresent:()=> activeSrc.size>0 || activeCat!=='',
       doesExternalFilterPass:node=>
@@ -176,67 +196,104 @@
     };
     const api = agGrid.createGrid(document.querySelector('#grid'), gridOptions);
 
-    // ── Pill rows — click toggles (multi-select), double-click isolates, All clears ──
-    const total = ROWS.length.toLocaleString('en-US');
-    function pillRow(elId, label, values, field, active, hint) {
-      const counts = {};
-      ROWS.forEach(r => { counts[r[field]] = (counts[r[field]] || 0) + 1; });
-      const bar = document.getElementById(elId);
-      const mk = (text, val) => {
-        const b = document.createElement('button');
-        b.type = 'button'; b.className = 'pill'; b.dataset.val = val;
-        b.innerHTML = text + `<span class="n">${val ? (counts[val] || 0).toLocaleString('en-US') : total}</span>`;
-        b.title = val ? `Click to toggle · double-click to show only ${text}` : `Show all (${total})`;
-        return b;
-      };
-      bar.appendChild(Object.assign(document.createElement('span'), {className: 'lbl', textContent: label}));
-      bar.appendChild(mk('All', ''));
-      values.filter(v => counts[v]).forEach(v => bar.appendChild(mk(v, v)));
-      if (hint) bar.appendChild(Object.assign(document.createElement('span'),
-        {className: 'pills-hint', textContent: 'click to toggle · double-click to isolate'}));
-      const sync = () => {
-        bar.querySelectorAll('.pill').forEach(p =>
-          p.classList.toggle('active', p.dataset.val ? active.has(p.dataset.val) : active.size === 0));
-        api.onFilterChanged();
-      };
-      bar.addEventListener('click', e => {
-        const p = e.target.closest('.pill'); if (!p) return;
-        if (!p.dataset.val) active.clear();
-        else if (active.has(p.dataset.val)) active.delete(p.dataset.val);
-        else active.add(p.dataset.val);
-        sync();
-      });
-      bar.addEventListener('dblclick', e => {
-        const p = e.target.closest('.pill'); if (!p || !p.dataset.val) return;
-        active.clear(); active.add(p.dataset.val); sync();
-      });
-      sync();
-    }
+    // Mirrors AG Grid's quick filter so facet counts agree with the grid
+    const SEARCH_FIELDS = ['name','source','theme','type','geometry','category','endpoint'];
+    const matchesQuery = r => !query ||
+      SEARCH_FIELDS.some(f => String(r[f] || '').toLowerCase().includes(query));
+    const n = x => x.toLocaleString('en-US');
 
-    // Category — a dropdown rather than a pill row (two pill rows read as noise)
+    // ── Facet counts — each control counts rows passing the OTHER filters,
+    //    so the numbers narrow as you filter (a pill hitting 0 disables). ──
+    const catSel = document.getElementById('fcat');
+    const srcBar = document.getElementById('srcPills');
+    function refreshCounts() {
+      // Category options: respect search + active sources
+      const catBase = ROWS.filter(r => matchesQuery(r) &&
+        (!activeSrc.size || activeSrc.has(r.source)));
+      const catCounts = {};
+      catBase.forEach(r => { catCounts[r.category] = (catCounts[r.category] || 0) + 1; });
+      catSel.querySelectorAll('calcite-option').forEach(o => {
+        if (!o.value) { o.textContent = `All categories (${n(catBase.length)})`; return; }
+        const c = catCounts[o.value] || 0;
+        o.textContent = `${o.dataset.label} (${n(c)})`;
+        o.disabled = c === 0 && activeCat !== o.value;
+      });
+      // Source pills: respect search + category (not the source selection itself)
+      const srcBase = ROWS.filter(r => matchesQuery(r) && (!activeCat || r.category === activeCat));
+      const srcCounts = {};
+      srcBase.forEach(r => { srcCounts[r.source] = (srcCounts[r.source] || 0) + 1; });
+      srcBar.querySelectorAll('.pill').forEach(p => {
+        const v = p.dataset.val;
+        const c = v ? (srcCounts[v] || 0) : srcBase.length;
+        p.querySelector('.n').textContent = n(c);
+        p.classList.toggle('empty', !!v && c === 0);
+        p.classList.toggle('active', v ? activeSrc.has(v) : activeSrc.size === 0);
+      });
+    }
+    const applyFilters = () => { api.onFilterChanged(); refreshCounts(); };
+
+    // ── Category dropdown ──
     const CATEGORY_ORDER = ["Environment", "Land Use & Planning", "Transportation", "Recreation",
                             "Public Safety", "Infrastructure", "Demographic & Economic",
                             "Basemaps & Imagery", "Other"];
-    const catCounts = {};
-    ROWS.forEach(r => { catCounts[r.category] = (catCounts[r.category] || 0) + 1; });
-    const catSel = document.getElementById('fcat');
-    CATEGORY_ORDER.filter(c => catCounts[c]).forEach(c => {
+    const baseCatCounts = {};
+    ROWS.forEach(r => { baseCatCounts[r.category] = (baseCatCounts[r.category] || 0) + 1; });
+    catSel.querySelector('calcite-option').dataset.label = 'All categories';
+    CATEGORY_ORDER.filter(c => baseCatCounts[c]).forEach(c => {
       const o = document.createElement('calcite-option');
-      o.value = c; o.textContent = `${c} (${catCounts[c].toLocaleString('en-US')})`;
+      o.value = c; o.dataset.label = c; o.textContent = c;
       catSel.appendChild(o);
     });
     catSel.addEventListener('calciteSelectChange', e => {
-      activeCat = e.target.selectedOption.value; api.onFilterChanged();
+      activeCat = e.target.selectedOption.value; applyFilters();
     });
 
-    const srcCounts = {};
-    ROWS.forEach(r => { srcCounts[r.source] = true; });
+    // ── Source pills: click toggles, double-click isolates, All clears ──
+    const seen = {};
+    ROWS.forEach(r => { seen[r.source] = true; });
     const CORE = ["TRPA", "LT Info"];
-    const sources = [...CORE.filter(s => srcCounts[s]),
-                     ...Object.keys(srcCounts).filter(s => !CORE.includes(s)).sort()];
-    pillRow('srcPills', 'Source', sources, 'source', activeSrc, true);
+    const sources = [...CORE.filter(s => seen[s]),
+                     ...Object.keys(seen).filter(s => !CORE.includes(s)).sort()];
+    const mkPill = (text, val) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'pill'; b.dataset.val = val;
+      b.innerHTML = `${text}<span class="n"></span>`;
+      b.title = val ? `Click to toggle · double-click to show only ${text}` : 'Show all sources';
+      return b;
+    };
+    srcBar.appendChild(mkPill('All', ''));
+    sources.forEach(s => srcBar.appendChild(mkPill(s, s)));
+    srcBar.appendChild(Object.assign(document.createElement('span'),
+      {className: 'pills-hint', textContent: 'click to toggle · double-click to isolate'}));
+    srcBar.addEventListener('click', e => {
+      const p = e.target.closest('.pill'); if (!p || p.classList.contains('empty')) return;
+      if (!p.dataset.val) activeSrc.clear();
+      else if (activeSrc.has(p.dataset.val)) activeSrc.delete(p.dataset.val);
+      else activeSrc.add(p.dataset.val);
+      applyFilters();
+    });
+    srcBar.addEventListener('dblclick', e => {
+      const p = e.target.closest('.pill'); if (!p || !p.dataset.val || p.classList.contains('empty')) return;
+      activeSrc.clear(); activeSrc.add(p.dataset.val); applyFilters();
+    });
 
-    document.querySelector('#q').addEventListener('calciteInputInput',e=>api.setGridOption('quickFilterText',e.target.value));
+    // ── Collapse / expand the source pills ──
+    const toggle = document.getElementById('srcToggle');
+    const setCollapsed = (c) => {
+      document.getElementById('srcSection').classList.toggle('collapsed', c);
+      toggle.setAttribute('aria-expanded', String(!c));
+      toggle.querySelector('.tg-text').textContent = c ? 'Show sources' : 'Hide sources';
+    };
+    toggle.addEventListener('click', () =>
+      setCollapsed(!document.getElementById('srcSection').classList.contains('collapsed')));
+
+    document.querySelector('#q').addEventListener('calciteInputInput', e => {
+      query = (e.target.value || '').trim().toLowerCase();
+      api.setGridOption('quickFilterText', e.target.value);
+      refreshCounts();
+    });
+
+    refreshCounts();
   }
 
   fetch("data-inventory.json")
