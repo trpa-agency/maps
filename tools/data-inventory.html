@@ -17,7 +17,9 @@
     display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
   .hdr .sub{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--trpa-ice);font-weight:600;}
   .hdr h1{font-size:1.5rem;font-weight:700;margin:2px 0 0;}
-  .pill-row calcite-input{flex:1;min-width:220px;max-width:520px;}
+  .pill-row calcite-input{flex:1;min-width:200px;max-width:460px;}
+  .pill-row calcite-select{min-width:200px;}
+  .pill-row .cat-lbl{min-width:0;margin-left:10px;}
   .wrap{padding:6px 26px 26px;}
   #grid{width:100%;height:640px;}
   .ag-theme-quartz{--ag-header-background-color:var(--trpa-navy);--ag-header-foreground-color:#fff;
@@ -43,10 +45,9 @@
     font-family:'Open Sans',system-ui,sans-serif;}
   .act-copy:hover{background:var(--gray-light, #F5F5F5);}
   .act-copy.done{background:var(--trpa-forest);border-color:var(--trpa-forest);color:#fff;}
-  .acc{display:inline-block;font-size:11px;font-weight:600;padding:1px 8px;border-radius:9px;}
-  .acc-nokey{background:#e6f0fa;color:var(--trpa-navy);}
+  .acc{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:9px;
+    letter-spacing:.04em;text-transform:uppercase;vertical-align:1px;}
   .acc-token{background:#fdeadb;color:#9C3E27;}
-  .acc-file{background:#efeaf3;color:#7B6A8A;}
   .note{padding:0 26px 26px;}
   /* Updated-date pill + refresh cadence subtext (lives in the navy header) */
   .updated-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
@@ -92,15 +93,18 @@
   <div class="pill-row">
     <span class="lbl">Search</span>
     <calcite-input id="q" placeholder="Filter across all columns" clearable scale="s"></calcite-input>
+    <span class="lbl cat-lbl">Category</span>
+    <calcite-select id="fcat" scale="s" label="Filter by category">
+      <calcite-option value="">All categories</calcite-option>
+    </calcite-select>
   </div>
-  <div class="pill-row" id="catPills"></div>
   <div class="pill-row" id="srcPills"></div>
 
   <div class="wrap"><div id="grid" class="ag-theme-quartz"></div></div>
 
   <div class="note">
     <calcite-notice icon="information" scale="s" open>
-      <span slot="message">Sources: TRPA (Tahoe Open Data and the maps.trpa.org REST directory), the LT Info web services, and the public REST directories of partner agencies (USFS EDW, California Tahoe Conservancy, Tahoe RCD, El Dorado, Placer, Washoe, and Douglas NV counties, and the City of South Lake Tahoe) — one row per service; the pills above the grid filter by category and agency. Token endpoints require an LT Info account. Copy URL copies the live service URL; Open in Map opens the layer in ArcGIS Online; Download opens the Tahoe Open Data details page.</span>
+      <span slot="message">Sources: TRPA (Tahoe Open Data and the maps.trpa.org REST directory), the LT Info web services, and the public REST directories of partner agencies (USFS EDW, California Tahoe Conservancy, Tahoe RCD, El Dorado, Placer, Washoe, and Douglas NV counties, and the City of South Lake Tahoe) — one row per service; filter by category above the grid and by agency with the source pills. Rows marked Token require an LT Info account. Copy URL copies the live service URL; Open in Map opens the layer in ArcGIS Online; Download opens the Tahoe Open Data details page.</span>
     </calcite-notice>
   </div>
 
@@ -125,18 +129,18 @@
     }
   };
 
-  const accClass = a => a === 'Token' ? 'acc-token' : (a === 'File' ? 'acc-file' : 'acc-nokey');
-
-  // Channel (the host server) is implied by Source — it stays in the data,
-  // not on screen. Theme reads as "Topic".
+  // Channel (the host server) is implied by Source, and Access was 98% "No
+  // key" — both stay in the data, not on screen. The 28 token-gated rows get
+  // a badge beside the name instead. Theme reads as "Topic".
   const columnDefs = [
-    {field:'name',headerName:'Name',flex:1.2,minWidth:250},
+    {field:'name',headerName:'Name',flex:1.2,minWidth:250,
+      cellRenderer:p=>p.data.access==='Token'
+        ? `${p.value} <span class="acc acc-token" title="Requires an LT Info account token">Token</span>`
+        : p.value},
     {field:'source',headerName:'Source',width:190,filter:false},
     {field:'theme',headerName:'Topic',width:175},
     {field:'type',headerName:'Type',width:170},
     {field:'geometry',headerName:'Geometry',width:120,filter:false},
-    {field:'access',headerName:'Access',width:110,filter:false,
-      cellRenderer:p=>`<span class="acc ${accClass(p.value)}">${p.value}</span>`},
     {colId:'actions',headerName:'Get the Data',width:300,sortable:false,filter:false,
       cellRenderer:p=>{
         const b=[];
@@ -159,15 +163,16 @@
   }
 
   function init(ROWS) {
-    const activeSrc = new Set(), activeCat = new Set();   // empty set = All
+    const activeSrc = new Set();   // empty set = all sources
+    let activeCat = '';            // '' = all categories
     const gridOptions = {
       columnDefs, rowData: ROWS,
       defaultColDef:{sortable:true,filter:true,resizable:true,floatingFilter:true},
       pagination:true, paginationPageSize:50,
-      isExternalFilterPresent:()=> activeSrc.size>0 || activeCat.size>0,
+      isExternalFilterPresent:()=> activeSrc.size>0 || activeCat!=='',
       doesExternalFilterPass:node=>
         (!activeSrc.size || activeSrc.has(node.data.source)) &&
-        (!activeCat.size || activeCat.has(node.data.category))
+        (!activeCat || node.data.category===activeCat)
     };
     const api = agGrid.createGrid(document.querySelector('#grid'), gridOptions);
 
@@ -208,10 +213,21 @@
       sync();
     }
 
+    // Category — a dropdown rather than a pill row (two pill rows read as noise)
     const CATEGORY_ORDER = ["Environment", "Land Use & Planning", "Transportation", "Recreation",
                             "Public Safety", "Infrastructure", "Demographic & Economic",
                             "Basemaps & Imagery", "Other"];
-    pillRow('catPills', 'Category', CATEGORY_ORDER, 'category', activeCat, false);
+    const catCounts = {};
+    ROWS.forEach(r => { catCounts[r.category] = (catCounts[r.category] || 0) + 1; });
+    const catSel = document.getElementById('fcat');
+    CATEGORY_ORDER.filter(c => catCounts[c]).forEach(c => {
+      const o = document.createElement('calcite-option');
+      o.value = c; o.textContent = `${c} (${catCounts[c].toLocaleString('en-US')})`;
+      catSel.appendChild(o);
+    });
+    catSel.addEventListener('calciteSelectChange', e => {
+      activeCat = e.target.selectedOption.value; api.onFilterChanged();
+    });
 
     const srcCounts = {};
     ROWS.forEach(r => { srcCounts[r.source] = true; });
