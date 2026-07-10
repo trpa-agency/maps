@@ -148,16 +148,17 @@
     }
   };
 
-  // Channel (the host server) is implied by Source, and Access was 98% "No
-  // key" — both stay in the data, not on screen. The 28 token-gated rows get
-  // a badge beside the name instead. Theme reads as "Topic".
+  // Category is the one topical axis — the column and the dropdown show the
+  // same nine values. The finer `theme` stays in the data and the search
+  // index (so "stormwater" still matches), but not on screen. Channel and
+  // Access are likewise data-only; the 28 token-gated rows get a name badge.
   const columnDefs = [
     {field:'name',headerName:'Name',flex:1.2,minWidth:250,
       cellRenderer:p=>p.data.access==='Token'
         ? `${p.value} <span class="acc acc-token" title="Requires an LT Info account token">Token</span>`
         : p.value},
     {field:'source',headerName:'Source',width:190,filter:false},
-    {field:'theme',headerName:'Topic',width:175},
+    {field:'category',headerName:'Category',width:190},
     {field:'type',headerName:'Type',width:170},
     {field:'geometry',headerName:'Geometry',width:120,filter:false},
     {colId:'actions',headerName:'Get the Data',width:300,sortable:false,filter:false,
@@ -168,8 +169,13 @@
         if(p.data.downloadUrl) b.push(`<a class="act act-dl" href="${p.data.downloadUrl}" target="_blank" rel="noopener" title="Open Data details and download page">Download</a>`);
         return b.join(' ');
       }},
-    {field:'serviceUrl',headerName:'Service URL',hide:true},
-    {field:'downloadUrl',headerName:'Open Data Page',hide:true}
+    // Hidden but searchable (includeHiddenColumnsInQuickFilter) — keep this
+    // set identical to SEARCH_FIELDS below, or the facet counts will disagree
+    // with the grid. URLs are excluded from search: they'd match everything.
+    {field:'theme',headerName:'Topic',hide:true},
+    {field:'endpoint',headerName:'Endpoint',hide:true},
+    {field:'serviceUrl',headerName:'Service URL',hide:true,getQuickFilterText:()=>''},
+    {field:'downloadUrl',headerName:'Open Data Page',hide:true,getQuickFilterText:()=>''}
   ];
 
   // Rows live in data-inventory.json, rebuilt by scripts/build_inventory.py
@@ -189,6 +195,7 @@
       columnDefs, rowData: ROWS,
       defaultColDef:{sortable:true,filter:false,resizable:true},
       pagination:true, paginationPageSize:50,
+      includeHiddenColumnsInQuickFilter:true,   // Topic and Endpoint stay searchable
       isExternalFilterPresent:()=> activeSrc.size>0 || activeCat!=='',
       doesExternalFilterPass:node=>
         (!activeSrc.size || activeSrc.has(node.data.source)) &&
