@@ -2,18 +2,18 @@
 """Rebuild tools/data-inventory.json for the Tahoe Data Inventory grid.
 
 Sources, in order:
-  1. Tahoe Open Data  — every dataset in the tahoeopendata.org DCAT feed,
+  1. Tahoe Open Data , every dataset in the tahoeopendata.org DCAT feed,
                         with geometry probed from the live layer.
-  2. LT Info          — static seed (scripts/inventory_seed.json); no
+  2. LT Info         , static seed (scripts/inventory_seed.json); no
                         crawlable directory exists for the tabular API.
-  3. REST Only        — services on maps.trpa.org not referenced by the
+  3. REST Only       , services on maps.trpa.org not referenced by the
                         DCAT feed or the LT Info seed.
-  4. Partner agencies — public REST directories (USFS EDW, CTC, El Dorado,
+  4. Partner agencies, public REST directories (USFS EDW, CTC, El Dorado,
                         Placer, Washoe, Douglas NV, City of South Lake Tahoe).
 
 Failsafe: if a source errors out or returns less than MIN_KEEP_RATIO of its
 previous row count, the previous rows for that source are kept and the drop
-is flagged in inventory_summary.md. Stdlib only — safe for GitHub Actions.
+is flagged in inventory_summary.md. Stdlib only, safe for GitHub Actions.
 """
 import concurrent.futures
 import datetime
@@ -77,7 +77,7 @@ THEMES = [
                           "burn", "smoke", "avalanche", "cwpp", "defensible"]),
     ("Demographics", ["demograph", "population", "zip code", "zip data", "zipdata", "block group"]),
     ("Civic & Elections", ["ballot", "election", "precinct", "supervisor", "voting", "vote "]),
-    # Monitoring is nearly a catch-all — keep it after every specific theme
+    # Monitoring is nearly a catch-all, keep it after every specific theme
     ("Monitoring", ["monitoring", "survey", "transect", "sampling", "sample", "periphyton", "site assessment"]),
     ("Historic", ["histor", "heritage", "archaeo"]),
 ]
@@ -94,13 +94,13 @@ def fetch_json(url, timeout=30, tries=3):
             req = urllib.request.Request(url, headers={"User-Agent": "TRPA-inventory-bot/1.0"})
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return json.load(r)
-        except Exception as e:  # noqa: BLE001 — retry any transport/parse error
+        except Exception as e:  # noqa: BLE001, retry any transport/parse error
             last = e
             time.sleep(2 * (attempt + 1))
     raise last
 
 
-# Broad categories for the pill filter — derived from theme, with a
+# Broad categories for the pill filter, derived from theme, with a
 # title-keyword override for economic datasets (no theme captures those).
 THEME_CATEGORY = {
     "Vegetation & Forest": "Environment", "Soils & Hydrology": "Environment",
@@ -326,7 +326,7 @@ def main():
     previous = {}
     if OUT.exists():
         for r in json.loads(OUT.read_text(encoding="utf-8")).get("rows", []):
-            # TRPA rows keep their builder identity in sourceDetail — the
+            # TRPA rows keep their builder identity in sourceDetail, the
             # failsafe compares per-builder counts, not the merged label
             previous.setdefault(r.get("sourceDetail") or r["source"], []).append(r)
 
@@ -337,12 +337,12 @@ def main():
         old = previous.get(source, [])
         try:
             new = builder()
-        except Exception as e:  # noqa: BLE001 — a dead server must not empty the catalog
-            notes.append(f"- **{source}: crawl failed ({type(e).__name__}) — kept previous {len(old)} rows.**")
+        except Exception as e:  # noqa: BLE001, a dead server must not empty the catalog
+            notes.append(f"- **{source}: crawl failed ({type(e).__name__}), kept previous {len(old)} rows.**")
             out_rows.extend(old)
             return
         if old and len(new) < len(old) * MIN_KEEP_RATIO:
-            notes.append(f"- **{source}: count dropped {len(old)} -> {len(new)} (>30%) — kept previous rows; investigate.**")
+            notes.append(f"- **{source}: count dropped {len(old)} -> {len(new)} (>30%), kept previous rows; investigate.**")
             out_rows.extend(old)
             return
         delta = f" ({len(old)} -> {len(new)})" if old and len(old) != len(new) else ""
@@ -370,7 +370,7 @@ def main():
         log(f"{source}…")
         take(source, lambda s=source, b=base, o=only, c=crawl: build_partner_rows(s, b, o, c))
 
-    # Broad category for the pill filter — applied to every row, seed included
+    # Broad category for the pill filter, applied to every row, seed included
     for r in out_rows:
         r["category"] = category_for(r.get("theme", ""), r.get("name", ""))
 
@@ -388,7 +388,7 @@ def main():
                    encoding="utf-8")
 
     counts = Counter(r["source"] for r in out_rows)
-    lines = [f"Data inventory refresh — {generated}", "",
+    lines = [f"Data inventory refresh, {generated}", "",
              f"**{len(out_rows):,} total rows**", ""] + notes
     SUMMARY.write_text("\n".join(lines) + "\n", encoding="utf-8")
     log("\n".join(lines))

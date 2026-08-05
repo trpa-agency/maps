@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Project Locator — TRPA Maps</title>
-  <!-- Favicon follows the active style — EIP mark by default, TRPA when toggled (applyBrand) -->
+  <title>Project Locator - TRPA Maps</title>
+  <!-- Favicon follows the active style, EIP mark by default, TRPA when toggled (applyBrand) -->
   <link rel="icon" id="faviconLink" href="assets/favicon.png" />
   <link rel="apple-touch-icon" href="assets/favicon.png" />
 
@@ -49,7 +49,7 @@
     .hdr-brand .hagency { font-size: 0.58rem; font-weight: 600; letter-spacing: 0.06em;
       text-transform: uppercase; color: var(--brand-primary); }
     .hdr-brand .hname { font-size: 0.95rem; font-weight: 700; color: var(--brand-dark); }
-    /* ← Tools back-link (white header — projects-map's navy version lives there) */
+    /* ← Tools back-link (white header, projects-map's navy version lives there) */
     .hdr-back {
       font-size: 0.72rem; font-weight: 600; color: #8A93A3; text-decoration: none;
       border-left: 1px solid var(--gray-border); padding-left: 0.7rem; white-space: nowrap;
@@ -158,7 +158,7 @@
       font-size: 0.76rem; font-weight: 600; color: #6B7688; padding: 0.35rem 0.65rem; transition: all 120ms; }
     .seg button.active { background: var(--brand-primary); color: #fff; }
 
-    /* Layout picker — vertical options with always-visible wireframe previews */
+    /* Layout picker, vertical options with always-visible wireframe previews */
     .layout-picker { display: flex; flex-direction: column; gap: 0.4rem; }
     .layout-picker button {
       display: flex; align-items: center; gap: 0.6rem; text-align: left; cursor: pointer;
@@ -277,7 +277,7 @@
     </div>
     <div class="hdr-links">
       <span id="feedbackChip" class="beta-chip" hidden>
-        <a id="feedbackLink" target="_blank" rel="noopener">Beta — feedback</a>
+        <a id="feedbackLink" target="_blank" rel="noopener">Beta, feedback</a>
         <button id="feedbackDismiss" type="button" title="Hide" aria-label="Hide feedback button">×</button>
       </span>
       <!-- One related-map link at a time, matched to the active Style -->
@@ -359,7 +359,7 @@
       <section class="panel-sec freeze" id="detailSec">
         <h2 class="sec-title"><span class="sec-num" id="secNum3" tabindex="0">3</span> Detail view</h2>
         <p class="sec-note">Sets the close-up map of the <strong>Detail + Basin</strong> and
-          <strong>Detail Only</strong> layouts — pick one in step 2 to use it.</p>
+          <strong>Detail Only</strong> layouts, pick one in step 2 to use it.</p>
         <label class="field">Basemap <span class="field-hint">(detail map)</span></label>
         <div class="bm-grid" id="basemapSeg" role="radiogroup" aria-label="Basemap">
           <button data-value="imagery" class="bm-btn active" role="radio" aria-checked="true">
@@ -401,7 +401,7 @@
               <button data-value="png" class="active" role="radio" aria-checked="true">PNG</button>
               <button data-value="pptx" role="radio" aria-checked="false">PPTX</button>
               <button data-value="svg" role="radio" aria-checked="false"
-                title="Vector graphic — pins, text, and shapes stay editable in Illustrator, Inkscape, or Affinity; modern PowerPoint can convert it to shapes">SVG</button>
+                title="Vector graphic, pins, text, and shapes stay editable in Illustrator, Inkscape, or Affinity; modern PowerPoint can convert it to shapes">SVG</button>
             </div>
           </label>
           <label class="cap-toggle" title="Include the styled caption strip in the export">
@@ -430,8 +430,8 @@
       <div id="viewDiv"></div>
       <div class="loc-card" id="locCard">
         <div class="loc-label">Location</div>
-        <div class="loc-addr" id="locAddr">—</div>
-        <div class="loc-meta" id="locMeta">—</div>
+        <div class="loc-addr" id="locAddr">-</div>
+        <div class="loc-meta" id="locMeta">-</div>
       </div>
       <div class="toast" id="toast"></div>
     </div>
@@ -448,11 +448,11 @@
       with the trash button.</span>
   </calcite-tooltip>
   <calcite-tooltip reference-element="secNum2" placement="right" close-on-click>
-    <span class="tip-text"><strong>Style</strong> picks the EIP or TRPA look (logo, colors, pin —
-      and the related map link in the header). <strong>Layout</strong>: <em>Title Slide</em> —
-      text block + basin map (16:9); <em>Detail + Basin</em> — close-up beside the basin
-      locator (16:9); <em>Detail Only</em> — full-frame close-up (16:9);
-      <em>Basin Only</em> — full-basin portrait page (8.5×11).</span>
+    <span class="tip-text"><strong>Style</strong> picks the EIP or TRPA look (logo, colors, pin -
+      and the related map link in the header). <strong>Layout</strong>: <em>Title Slide</em> -
+      text block + basin map (16:9); <em>Detail + Basin</em>, close-up beside the basin
+      locator (16:9); <em>Detail Only</em>, full-frame close-up (16:9);
+      <em>Basin Only</em>, full-basin portrait page (8.5×11).</span>
   </calcite-tooltip>
   <calcite-tooltip reference-element="secNum3" placement="right" close-on-click>
     <span class="tip-text">The <strong>basemap</strong> and <strong>detail zoom</strong> set the
@@ -489,18 +489,18 @@
       <ol>
         <li><strong>Search</strong>
           <span class="ui-sample ui-chip"><calcite-icon icon="search" scale="s"></calcite-icon> Address, APN, EIP project…</span>
-          — an address, APN, <strong>EIP project name or number</strong>, or coordinates
-          ("39.0968, -119.9435") — and pick a result. Repeat to add up to 9 locations
+         , an address, APN, <strong>EIP project name or number</strong>, or coordinates
+          ("39.0968, -119.9435"), and pick a result. Repeat to add up to 9 locations
           (numbered pins). Remove one with its chip, or the trash button removes them all.
           Advanced: the <span class="ui-sample ui-btn square"><calcite-icon icon="code" scale="s"></calcite-icon></span>
           button pastes GeoJSON directly.</li>
-        <li><strong>Pick style and layout</strong> —
+        <li><strong>Pick style and layout</strong> -
           <span class="ui-sample ui-seg"><span class="on">EIP</span><span>TRPA</span></span>
           sets the look (and the related map link in the header), then a layout:
           <em>Title Slide</em> (text + basin map, 16:9), <em>Detail + Basin</em> (close-up
           beside the basin locator, 16:9), <em>Detail Only</em> (full-frame close-up, 16:9),
           or <em>Basin Only</em> (full basin, portrait 8.5×11).</li>
-        <li><strong>Set the detail view</strong> — the basemap thumbnails and zoom buttons
+        <li><strong>Set the detail view</strong>, the basemap thumbnails and zoom buttons
           <span class="ui-sample ui-seg"><span class="on">Fit</span><span>1:5k</span><span>1:24k</span></span>
           control the close-up map of the <em>Detail + Basin</em> and <em>Detail Only</em>
           layouts. The draw tools
@@ -508,7 +508,7 @@
           (top-right of the map) add annotations that appear in that panel too;
           <span class="ui-sample ui-btn square"><calcite-icon icon="home" scale="s"></calcite-icon></span>
           returns to the Tahoe Basin.</li>
-        <li><strong>Export</strong> — pick
+        <li><strong>Export</strong>, pick
           <span class="ui-sample ui-seg"><span class="on">PNG</span><span>PPTX</span></span> and
           <span class="ui-sample ui-btn solid"><calcite-icon icon="save" scale="s"></calcite-icon> Save</span>,
           or <span class="ui-sample ui-btn outline"><calcite-icon icon="copy-to-clipboard" scale="s"></calcite-icon> Copy</span>
@@ -519,7 +519,7 @@
       </ol>
       <p class="info-fine">Parcel data: TRPA GIS · Home button returns to the Tahoe Basin.
         Browse and filter all EIP projects on the <strong>EIP Projects Map</strong>
-        (link in the header) — its <em>Locator map</em> button sends a selection here.</p>
+        (link in the header), its <em>Locator map</em> button sends a selection here.</p>
     </div>
   </calcite-dialog>
 
@@ -566,7 +566,7 @@
       stateln: [124, 124, 124, 0.9], cslt: [150, 160, 172, 0.9],
     };  // outside mask = EIP navy #0B1F41 @ 64% opacity (36% transparent)
 
-    // Export canvas geometry — one source of truth for all layouts.
+    // Export canvas geometry, one source of truth for all layouts.
     // 16:9 canvases are 180 px/in on a 13.33×7.5 in slide; portrait is 200 px/in letter.
     const EXPORT = {
       slide:   { W: 2400, H: 1350, margin: 90,  pinH: 74,  arrow: 84 },   // margin = 0.5" at 180px/in
@@ -581,7 +581,7 @@
     // With `num` (multi-location mode) the white dot becomes a white number.
     // Intrinsic size is 4× the display size: ArcGIS rasterizes picture-markers
     // at the SVG's declared width/height, so a 1× bitmap looks pixelated on
-    // hi-DPI screens — 4× renders sharp and downscales cleanly.
+    // hi-DPI screens, 4× renders sharp and downscales cleanly.
     function makiPinDataUrl(hex, num) {
       const head = num != null
         ? `<text x="13" y="16" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#FFFFFF">${num}</text>`
@@ -680,7 +680,7 @@
       basinCtors = { Map, MapView, FeatureLayer };
     });
 
-    // Offscreen basin locator view — built lazily on the first export (it's a
+    // Offscreen basin locator view, built lazily on the first export (it's a
     // second WebGL context; users who never export shouldn't pay for it).
     // A failed init is not cached, so the next export retries.
     function ensureBasin() {
@@ -699,7 +699,7 @@
         basinInitPromise = null;
         if (basinView) { basinView.destroy(); basinView = null; }
         console.error("Basin locator failed to load:", e);
-        throw new Error("Basin locator map failed to load — check the connection and try again.");
+        throw new Error("Basin locator map failed to load, check the connection and try again.");
       });
       return basinInitPromise;
     }
@@ -714,7 +714,7 @@
     const escHtml = (s) => String(s).replace(/[&<>"']/g,
       (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 
-    // EIP project search source — the projects-map feed (nightly LTinfo snapshot),
+    // EIP project search source, the projects-map feed (nightly LTinfo snapshot),
     // lazy-loaded once and searched client-side. Served from the EIP repo, which
     // owns the nightly refresh job.
     const PROJECTS_URL = "https://trpa-agency.github.io/EIP/data/projects.geojson";
@@ -745,7 +745,7 @@
         (digits.length >= 4 && p.num.replace(/\D/g, "").includes(digits))
       ).slice(0, 6);
     }
-    // "39.0968, -119.9435" (lat, lon — comma or space separated; order auto-corrected)
+    // "39.0968, -119.9435" (lat, lon, comma or space separated; order auto-corrected)
     function parseCoords(term) {
       const m = term.match(/^\s*(-?\d{1,3}(?:\.\d+)?)[,\s]+(-?\d{1,3}(?:\.\d+)?)\s*$/);
       if (!m) return null;
@@ -763,7 +763,7 @@
       const seq = ++suggestSeq;   // drop stale responses that resolve out of order
       const items = [];
 
-      // 1) Coordinates — exact match, shown first
+      // 1) Coordinates, exact match, shown first
       const coord = parseCoords(term);
       if (coord) items.push({ kind: "coord", ...coord });
 
@@ -773,7 +773,7 @@
         `UPPER(APO_ADDRESS) LIKE '%${t}%' ESCAPE '\\'`,
         `UPPER(APN) LIKE '${t}%' ESCAPE '\\'`,
       ];
-      // Dash-insensitive APN match for pure-digit input (digits only — no escaping needed)
+      // Dash-insensitive APN match for pure-digit input (digits only, no escaping needed)
       if (/^\d{4,}$/.test(term)) clauses.push(`APN LIKE '${term.split("").join("%")}%'`);
       const [parcelRes] = await Promise.all([
         parcelsFL.queryFeatures({ where: clauses.join(" OR "),
@@ -794,7 +794,7 @@
       suggestItems = items;
       lastParcelErr = !!parcelRes._err;
       if (!items.length && lastParcelErr) {
-        list.innerHTML = `<div class="suggest-empty">Parcel search is unavailable — check the network connection and try again.</div>`;
+        list.innerHTML = `<div class="suggest-empty">Parcel search is unavailable, check the network connection and try again.</div>`;
         openSuggest(); return;
       }
       renderSuggest(term);
@@ -803,15 +803,15 @@
     function renderSuggest(term) {
       activeSugg = -1;
       if (!suggestItems.length) {
-        list.innerHTML = `<div class="suggest-empty">No matches for “${escHtml(term)}” — try an address, APN, EIP project, or “lat, lon”.</div>`;
+        list.innerHTML = `<div class="suggest-empty">No matches for “${escHtml(term)}”, try an address, APN, EIP project, or “lat, lon”.</div>`;
         openSuggest(); return;
       }
       let html = "", lastKind = null;
-      // Parcel query failed but other results matched — say so, or the user
+      // Parcel query failed but other results matched, say so, or the user
       // concludes the address doesn't exist (seen with CORS trouble on
       // internal networks).
       if (lastParcelErr)
-        html += `<div class="suggest-warn">Parcel search is unavailable — addresses and APNs
+        html += `<div class="suggest-warn">Parcel search is unavailable, addresses and APNs
           can't be searched right now (network issue).</div>`;
       suggestItems.forEach((it, i) => {
         if (it.kind !== lastKind) { html += `<div class="suggest-group">${GROUP_LABELS[it.kind]}</div>`; lastKind = it.kind; }
@@ -820,7 +820,7 @@
           const a = it.g.attributes;
           primary = escHtml(a.APO_ADDRESS || "(no address on file)");
           const juris = escHtml([a.JURISDICTION, a.COUNTY].filter(Boolean).join(" · "));
-          secondary = `APN <span class="s-apn">${escHtml(a.APN || "—")}</span>${juris ? " · " + juris : ""}`;
+          secondary = `APN <span class="s-apn">${escHtml(a.APN || "N/A")}</span>${juris ? " · " + juris : ""}`;
         } else if (it.kind === "project") {
           primary = escHtml(it.p.name);
           secondary = `EIP <span class="s-apn">${escHtml(it.p.num)}</span>${it.p.stage ? " · " + escHtml(it.p.stage) : ""}`;
@@ -892,11 +892,11 @@
       if (item.kind === "parcel") {
         const a = item.g.attributes, geom = item.g.geometry;
         if (!geom) return null;
-        const apn = a.APN || "—";
+        const apn = a.APN || "N/A";
         const loc = { key: apn, label: a.APO_ADDRESS || "(no address on file)",
           sub: [`APN ${apn}`, countyLabel({ county: a.COUNTY })].filter(Boolean).join("  ·  "),
           short: `APN ${apn}`, geometry: geom,
-          // centroid over extent.center — the extent center of an L-shaped
+          // centroid over extent.center, the extent center of an L-shaped
           // parcel can fall outside the parcel itself
           point: geom.centroid || (geom.extent ? geom.extent.center : geom), fitZoom: 17 };
         return loc;
@@ -929,7 +929,7 @@
         return;
       }
       if (locations.length >= MAX_LOCATIONS) {
-        toast(`Up to ${MAX_LOCATIONS} locations — remove one to add another.`); return;
+        toast(`Up to ${MAX_LOCATIONS} locations, remove one to add another.`); return;
       }
       locations.push(loc);
       // First add mirrors the old single-parcel behavior (label stays in the box);
@@ -950,7 +950,7 @@
     }
     function refreshLocations() { drawResult(); updateLocCard(); renderLocationChips(); }
 
-    // ?eip=a,b,c intake — the Projects Map's "Locator map" button opens us
+    // ?eip=a,b,c intake, the Projects Map's "Locator map" button opens us
     // with a comma-separated list of EIP project numbers. Matched against
     // the same nightly feed the project search uses; exact number first,
     // digit-only fallback (dot-insensitive). Runs once from view.when().
@@ -964,7 +964,7 @@
         return;
       }
       let added = 0, missing = 0, over = 0;
-      const matched = [];   // every resolved EIP # (incl. dup/over-cap) — for the back-link
+      const matched = [];   // every resolved EIP # (incl. dup/over-cap), for the back-link
       for (const id of ids) {
         const digits = id.replace(/\D/g, "");
         const p = projectsCache.find(x => x.num === id) ||
@@ -1074,12 +1074,12 @@
       else if (obj.type && obj.coordinates) features = [{ type: "Feature", geometry: obj, properties: {} }];
       else throw new Error("Not a FeatureCollection, Feature, or geometry.");
       if (!features.length) throw new Error("No features found.");
-      // Every position must be plausible WGS84 lon/lat — catches the common
+      // Every position must be plausible WGS84 lon/lat, catches the common
       // mistake of pasting projected data (web mercator / UTM meters).
       const coordsValid = (c) => typeof c[0] === "number"
         ? Number.isFinite(c[0]) && Number.isFinite(c[1]) && Math.abs(c[0]) <= 180 && Math.abs(c[1]) <= 90
         : Array.isArray(c) && c.length > 0 && c.every(coordsValid);
-      // Explode MultiPoint into numbered single-point locations — one pin per
+      // Explode MultiPoint into numbered single-point locations, one pin per
       // point instead of one pin at the group centroid.
       const expanded = [];
       for (const f of features) {
@@ -1092,7 +1092,7 @@
       const locs = []; let skipped = 0;
       expanded.forEach((f, i) => {
         if (f.geometry && f.geometry.coordinates && !coordsValid(f.geometry.coordinates))
-          throw new Error("Coordinates must be WGS84 longitude/latitude — found values out of range (projected data?).");
+          throw new Error("Coordinates must be WGS84 longitude/latitude, found values out of range (projected data?).");
         const geom = gjToGeometry(f.geometry);
         if (!geom) { skipped++; return; }
         let label = gjLabel(f.properties, i);
@@ -1120,7 +1120,7 @@
         const typeStr = Object.entries(types).map(([k, n]) => `${n} ${k}`).join(", ");
         if (room <= 0) {
           gjStatus.className = "gj-status err";
-          gjStatus.textContent = `Found ${locs.length} feature(s), but the map already has ${MAX_LOCATIONS} locations — remove some first.`;
+          gjStatus.textContent = `Found ${locs.length} feature(s), but the map already has ${MAX_LOCATIONS} locations, remove some first.`;
           return;
         }
         gjPending = locs.slice(0, room);
@@ -1149,10 +1149,10 @@
       clearBtn.style.display = input.value ? "block" : "none";
       clearTimeout(debounceT); debounceT = setTimeout(() => runSuggest(input.value), 220);
     });
-    // Re-render on focus (closeSuggest empties the list's HTML — re-adding
+    // Re-render on focus (closeSuggest empties the list's HTML, re-adding
     // the .open class alone would show an empty box)
     input.addEventListener("focus", () => { if (suggestItems.length && input.value.length >= 3) renderSuggest(input.value); });
-    // ✕ clears the search text only — locations are removed via their chips
+    // ✕ clears the search text only, locations are removed via their chips
     // or the trash button (wiping 9 pins on a text-clear surprised testers).
     clearBtn.addEventListener("click", () => {
       input.value = ""; clearBtn.style.display = "none"; closeSuggest();
@@ -1195,7 +1195,7 @@
       });
       syncDetailSec();
     });
-    // The Detail view section only affects the Detail + Basin layout —
+    // The Detail view section only affects the Detail + Basin layout -
     // dim it (still usable) and show its note under the other layouts.
     function syncDetailSec() { $("detailSec").classList.toggle("dimmed",
       exportLayout !== "split" && exportLayout !== "detail"); }
@@ -1252,7 +1252,7 @@
       const src = brand().logo;
       if (!LOGO_CACHE[src]) LOGO_CACHE[src] = (async () => {
         const img = await loadImage(src).catch(() => null);
-        // Don't cache a transient failure — retry on the next export
+        // Don't cache a transient failure, retry on the next export
         if (!img) { delete LOGO_CACHE[src]; return null; }
         const c = document.createElement("canvas");
         c.width = img.naturalWidth; c.height = img.naturalHeight;
@@ -1270,7 +1270,7 @@
         await Promise.race([window._reactiveUtils.whenOnce(() => !v.updating), new Promise(r => setTimeout(r, ms))]);
     }
     // A view.takeScreenshot() can stall indefinitely if the WebGL context is
-    // starved — cap it so a stuck export fails with a toast instead of freezing
+    // starved, cap it so a stuck export fails with a toast instead of freezing
     // the UI behind the `exporting` guard forever.
     function withTimeout(promise, ms, what) {
       return Promise.race([promise, new Promise((_, rej) =>
@@ -1296,7 +1296,7 @@
       ctx.restore();
     }
     // Normalized pin positions (tips) within a view's frame; off-frame locations are
-    // dropped with a warning (a fixed-scale detail view can crop a location out —
+    // dropped with a warning (a fixed-scale detail view can crop a location out -
     // better to warn than draw the pin at a garbage position).
     function inFrame(p) { return p && p.nx >= -0.02 && p.nx <= 1.02 && p.ny >= -0.02 && p.ny <= 1.02; }
     function offFrameWarn() { toast("Note: a location falls outside the exported map frame.", 4500); }
@@ -1314,16 +1314,16 @@
 
     // Resize the offscreen basin view to the target aspect, refit, and screenshot at 2×.
     // Waits are event-driven (reactiveUtils) with timeout caps, NOT stacked setTimeout
-    // polls — background tabs throttle timers to ~1/s, which turned polling into a crawl.
+    // polls, background tabs throttle timers to ~1/s, which turned polling into a crawl.
     async function shotBasin(wPx, hPx) {
       // Lazy-built here (not in runExport) so copyPng's clipboard.write still
-      // happens inside the click gesture — Safari's transient activation
+      // happens inside the click gesture, Safari's transient activation
       // would expire if we awaited the basin init before calling it.
       await ensureBasin();
       const d = $("basinDiv"); d.style.width = wPx + "px"; d.style.height = hPx + "px";
       await withTimeout(window._reactiveUtils.whenOnce(() => Math.abs(basinView.width - wPx) <= 2),
-        3000, "Basin resize").catch(() => {});   // background tabs may never fire ResizeObserver — proceed
-      // goTo on a render-starved view can neither resolve nor reject — cap it and
+        3000, "Basin resize").catch(() => {});   // background tabs may never fire ResizeObserver, proceed
+      // goTo on a render-starved view can neither resolve nor reject, cap it and
       // proceed (the extent is usually already correct from the previous export).
       await withTimeout(basinView.goTo(basinView._basinExtent, { animate: false }), 5000, "Basin re-fit")
         .catch(e => console.warn(e.message || e));
@@ -1380,7 +1380,7 @@
       while (t.length > 1 && ctx.measureText(t + "…").width > maxW) t = t.slice(0, -1);
       return t + "…";
     }
-    // LOCATION(S) card geometry — rows + measured box, shared by the canvas
+    // LOCATION(S) card geometry, rows + measured box, shared by the canvas
     // renderer (drawLocationCard) and the editable-PPTX builder so both
     // produce the same card.
     function locationCardLayout(s) {
@@ -1388,7 +1388,7 @@
       const fsL = 26*s, fsA = 44*s, fsM = 28*s, pad = 34*s, bar = 9*s;
       const single = locations.length === 1;
       const MAX_ROWS = 6;
-      // rows: [{bold, gray}] — single keeps the classic address + meta lines
+      // rows: [{bold, gray}], single keeps the classic address + meta lines
       const rows = single
         ? [{ bold: loc0().label },
            { gray: loc0().sub }]
@@ -1468,7 +1468,7 @@
       }
     }
 
-    // Slide — branded presentation slide: logo + title block | basin locator (16:9)
+    // Slide, branded presentation slide: logo + title block | basin locator (16:9)
     async function composeSlide(caption) {
       const { W, H, margin: M, pinH, arrow } = EXPORT.slide, b = brand();
       const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
@@ -1494,7 +1494,7 @@
         let ly = 640;
         locations.slice(0, MAX_LINES).forEach((l, i) => {
           ctx.fillStyle = b.dark; ctx.font = `600 40px ${baseFont()}`;
-          ctx.fillText(ellipsize(ctx, `${i+1}.  ${l.label}${l.short !== l.label ? " — " + l.short : ""}`, colW), 150, ly);
+          ctx.fillText(ellipsize(ctx, `${i+1}.  ${l.label}${l.short !== l.label ? ", " + l.short : ""}`, colW), 150, ly);
           ly += 58;
         });
         if (locations.length > MAX_LINES) {
@@ -1506,7 +1506,7 @@
       ctx.fillStyle = b.primary; ctx.fillRect(150, mp.y + mp.h - 6, (mp.x + mp.w) - 150, 6);
       return cv;
     }
-    // Locator — portrait 8.5×11 Tahoe basin, styled, with pin
+    // Locator, portrait 8.5×11 Tahoe basin, styled, with pin
     async function composeLocator(caption) {
       const { W, H, capFrac, pinH, arrow } = EXPORT.locator, b = brand();
       const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
@@ -1519,7 +1519,7 @@
       if (caption) await drawCaption(ctx, 0, mapH, W, capH);
       return cv;
     }
-    // Split — 2/3 zoomed parcel detail | 1/3 basin locator (16:9)
+    // Split, 2/3 zoomed parcel detail | 1/3 basin locator (16:9)
     async function composeSplit(caption) {
       const { W, H, capFrac, pinHZoom, pinHBasin, arrow } = EXPORT.split, b = brand();
       const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
@@ -1539,7 +1539,7 @@
       if (caption) await drawCaption(ctx, 0, mapH, W, capH, false);  // address is on the LOCATION card
       return cv;
     }
-    // Detail — full-frame close-up of the location(s), no basin panel (16:9)
+    // Detail, full-frame close-up of the location(s), no basin panel (16:9)
     async function composeDetail(caption) {
       const { W, H, capFrac, pinH, arrow } = EXPORT.detail, b = brand();
       const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
@@ -1556,7 +1556,7 @@
 
     // ── Export pipeline ──
     // composeCurrent(): fonts + layout dispatch → canvas. runExport(): guards,
-    // button spinner, control freeze, toast — shared by PNG / PPTX / clipboard.
+    // button spinner, control freeze, toast, shared by PNG / PPTX / clipboard.
     async function composeCurrent() {
       if (document.fonts) { const fam = brand().font.split(",")[0].replace(/'/g,"").trim();
         await Promise.all([400,600,700].map(w => document.fonts.load(`${w} 40px '${fam}'`))).catch(()=>{}); }
@@ -1580,7 +1580,7 @@
     async function runExport(btn, busyMsg, worker) {
       if (!view || exporting) return;
       if ((exportLayout === "split" || exportLayout === "detail") && !locations.length) {
-        toast("Add a location first — this layout needs one."); return;
+        toast("Add a location first, this layout needs one."); return;
       }
       exporting = true;
       btn.loading = true;
@@ -1589,7 +1589,7 @@
       try { await worker(); }
       catch (e) { console.error(e);
         toast(e && e.message && e.message.startsWith("Basin locator")
-          ? e.message : "Export failed — see console.", 5000); }
+          ? e.message : "Export failed, see console.", 5000); }
       finally {
         exporting = false; btn.loading = false;
         document.body.classList.remove("exporting");
@@ -1599,7 +1599,7 @@
     function exportPng() {
       return runExport($("exportBtn"), "Rendering PNG…", async () => {
         const cv = await composeCurrent();
-        // Blob + object URL — a base64 data URL doubles the multi-MB canvas in memory
+        // Blob + object URL, a base64 data URL doubles the multi-MB canvas in memory
         const blob = await new Promise(res => cv.toBlob(res, "image/png"));
         const url = URL.createObjectURL(blob);
         downloadUrl(url, `${brandKey}-${exportLayout}-${exportSlug()}.png`);
@@ -1608,13 +1608,13 @@
       });
     }
 
-    // ── SVG export — true vector composition ──
+    // ── SVG export, true vector composition ──
     // Pins, north arrow, text, and shapes are real SVG elements (fully
     // editable in Illustrator / Inkscape / Affinity; modern PowerPoint can
     // insert the file and convert it to shapes). The map panels embed as
-    // raster images — they're WebGL renders. Geometry mirrors the canvas
+    // raster images, they're WebGL renders. Geometry mirrors the canvas
     // compose* functions 1:1; text declares the brand font by name (no
-    // embedding — the editor substitutes when it isn't installed).
+    // embedding, the editor substitutes when it isn't installed).
     const PIN_PATH = "M13 1 C6 1 1 5.5 1 12 C1 21 13 35 13 35 C13 35 25 21 25 12 C25 5.5 20 1 13 1 Z";
 
     function svgPin(tipX, tipY, h, hex, num) {
@@ -1652,7 +1652,7 @@
         mctx.font = `${weight} ${size}px ${baseFont()}`;
         return ellipsize(mctx, text, maxW);
       };
-      // LOCATION(S) card (mirrors drawLocationCard) — shared by split + detail
+      // LOCATION(S) card (mirrors drawLocationCard), shared by split + detail
       const svgLocCard = (mapH) => {
         const L = locationCardLayout(1.15);
         if (!L) return "";
@@ -1709,7 +1709,7 @@
           const MAX_LINES = 8; let ly = 640;
           locations.slice(0, MAX_LINES).forEach((l, i) => {
             parts.push(svgText(150, ly,
-              ell(`${i+1}.  ${l.label}${l.short !== l.label ? " — " + l.short : ""}`, 600, 40, colW),
+              ell(`${i+1}.  ${l.label}${l.short !== l.label ? ", " + l.short : ""}`, 600, 40, colW),
               { size: 40, weight: 600, fill: b.dark }));
             ly += 58;
           });
@@ -1760,7 +1760,7 @@
         if (caption) parts.push(await svgCaption(0, mapH, W, capH, true));
       }
 
-      // Caption strip (mirrors drawCaption; hoisted — used above)
+      // Caption strip (mirrors drawCaption; hoisted, used above)
       async function svgCaption(x, y, w, h, showAddress) {
         const o = [
           svgRect(x, y, w, h, "#FFFFFF"),
@@ -1800,13 +1800,13 @@
         const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
         downloadUrl(url, `${brandKey}-${exportLayout}-${exportSlug()}.svg`);
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-        toast("SVG downloaded — vector text, pins, and shapes; maps embedded as images.", 4500);
+        toast("SVG downloaded, vector text, pins, and shapes; maps embedded as images.", 4500);
       });
     }
 
     // ── PPTX export (PptxGenJS, loaded on demand) ──
     // The UMD bundle registers with Dojo's AMD `define` if it's visible, which
-    // throws "multipleDefine" under the ArcGIS loader — mask `define` while the
+    // throws "multipleDefine" under the ArcGIS loader, mask `define` while the
     // script loads so it lands on window.PptxGenJS instead (same pattern as
     // projects-map.html's ensureShpWrite). Also sets window.JSZip (harmless).
     let pptxLoadPromise = null;
@@ -1834,8 +1834,8 @@
       return pptxLoadPromise;
     }
     // ── Editable PPTX composition ──
-    // Builds the slide from native PowerPoint parts — text boxes, images,
-    // shapes — instead of one flattened canvas, so staff can retitle, move,
+    // Builds the slide from native PowerPoint parts, text boxes, images,
+    // shapes, instead of one flattened canvas, so staff can retitle, move,
     // and restyle everything after export. The maps stay raster (they're
     // WebGL renders) with pins burned in so they can't drift; everything
     // else is a separate element. Geometry mirrors the canvas compose*
@@ -1915,7 +1915,7 @@
             align: "left", valign: "bottom" });
           const MAX_LINES = 8;
           const runs = locations.slice(0, MAX_LINES).map((l, i) => ({
-            text: `${i+1}.  ${l.label}${l.short !== l.label ? " — " + l.short : ""}`,
+            text: `${i+1}.  ${l.label}${l.short !== l.label ? ", " + l.short : ""}`,
             options: { breakLine: true, color: pptHex(b.dark), bold: true },
           }));
           if (locations.length > MAX_LINES)
@@ -1970,7 +1970,7 @@
         if (caption) await addEditableCaption(slide, pptx, IN, PT, 0, mapH, W, capH, b, font, true);
       }
 
-      // LOCATION(S) card as native parts (mirrors drawLocationCard) — same
+      // LOCATION(S) card as native parts (mirrors drawLocationCard), same
       // measured geometry as the canvas version; shared by split + detail
       function addLocationCard(slide, pptx, IN, PT, mapH, b, font) {
         const L = locationCardLayout(1.15);
@@ -2044,7 +2044,7 @@
         await ensurePptx();
         if ($("editableSwitch").checked) {
           await buildEditablePptx();
-          toast("PPTX downloaded — text, logo, and maps are separate editable elements.", 4000);
+          toast("PPTX downloaded, text, logo, and maps are separate editable elements.", 4000);
           return;
         }
         const cv = await composeCurrent();
@@ -2064,7 +2064,7 @@
 
     // ── Copy to clipboard ──
     // ClipboardItem gets a *promise* value and clipboard.write is called inside
-    // the click gesture, before the slow compose — required on Safari, where the
+    // the click gesture, before the slow compose, required on Safari, where the
     // gesture's transient activation would otherwise expire mid-render.
     const CLIPBOARD_OK = window.isSecureContext && !!(navigator.clipboard && navigator.clipboard.write) && !!window.ClipboardItem;
     function copyPng() {
@@ -2075,10 +2075,10 @@
         })();
         try {
           await navigator.clipboard.write([new ClipboardItem({ "image/png": blobPromise })]);
-          toast("Image copied — paste into PowerPoint.");
+          toast("Image copied, paste into PowerPoint.");
         } catch (e) {
           console.error(e);
-          toast("Copy failed — use Export PNG instead.");
+          toast("Copy failed, use Export PNG instead.");
         }
       });
     }
@@ -2088,7 +2088,7 @@
       : exportFormat === "svg" ? exportSvg()
       : exportPng());
     $("copyBtn").addEventListener("click", () => {
-      if (!CLIPBOARD_OK) { toast("Copy not supported here — use Export instead."); return; }
+      if (!CLIPBOARD_OK) { toast("Copy not supported here, use Export instead."); return; }
       copyPng();
     });
     if (!CLIPBOARD_OK) $("copyBtn").hidden = true;
@@ -2099,34 +2099,34 @@
       $("panelToggleIcon").icon = collapsed ? "chevron-right" : "chevron-left";
     });
 
-    // ── Step tooltips — resolve reference elements programmatically
+    // ── Step tooltips, resolve reference elements programmatically
     // (Calcite 5 doesn't reliably resolve the reference-element id attribute) ──
     document.querySelectorAll("calcite-tooltip[reference-element]").forEach(t => {
       const el = document.getElementById(t.getAttribute("reference-element"));
       if (el) t.referenceElement = el;
     });
 
-    // ── Beta-feedback chip (Survey123) — shown while FEEDBACK_URL is set ──
+    // ── Beta-feedback chip (Survey123), shown while FEEDBACK_URL is set ──
     const FEEDBACK_HIDE_KEY = "eip-beta-feedback-hidden-locator";  // per-page: dismiss here doesn't hide the other tools' chips
     try {
       if (FEEDBACK_URL && localStorage.getItem(FEEDBACK_HIDE_KEY) !== "1") {
         $("feedbackLink").href = FEEDBACK_URL;
         $("feedbackChip").hidden = false;
       }
-    } catch (e) { /* storage blocked — leave hidden */ }
+    } catch (e) { /* storage blocked, leave hidden */ }
     $("feedbackDismiss").addEventListener("click", () => {
       $("feedbackChip").hidden = true;
       try { localStorage.setItem(FEEDBACK_HIDE_KEY, "1"); } catch (e) { /* ignore */ }
     });
 
-    // ── Info dialog — on demand, plus auto-open on first visit ──
+    // ── Info dialog, on demand, plus auto-open on first visit ──
     $("infoBtn").addEventListener("click", () => { $("infoModal").open = true; });
     try {
       if (!localStorage.getItem("eip-locator-seen")) {
         localStorage.setItem("eip-locator-seen", "1");
         setTimeout(() => { $("infoModal").open = true; }, 600);
       }
-    } catch (e) { /* storage blocked (private mode) — skip auto-open */ }
+    } catch (e) { /* storage blocked (private mode), skip auto-open */ }
 
     // Brand the header immediately (view.when re-applies once the map is up).
     applyBrand();

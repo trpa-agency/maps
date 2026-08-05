@@ -28,7 +28,7 @@ jobs:
         run: |
           # -I ignores the generated-timestamp line: no PR when only the date moved
           if git diff -I '^{"generated' --quiet tools/data-inventory.json; then
-            echo "Inventory unchanged — nothing to do."
+            echo "Inventory unchanged, nothing to do."
             git checkout -- tools/data-inventory.json
             exit 0
           fi
@@ -42,4 +42,4 @@ jobs:
           # One PR per month; if this month's PR is already open, the push above updated it.
           gh pr create --title "Refresh data inventory ($(date -u '+%B %Y'))" \
             --body-file inventory_summary.md --base main --head "$BRANCH" \
-            || echo "PR already open — branch updated."
+            || echo "PR already open, branch updated."

@@ -6,7 +6,7 @@ Official production mapping apps of TRPA, served at **maps.trpa.gov** via GitHub
 
 ```
 maps/
-├── index.html          # Main gallery — all apps grouped by category
+├── index.html          # Main gallery, all apps grouped by category
 ├── apps.json           # Single source of truth for the app registry
 ├── 404.html            # Branded not-found page
 ├── assets/
@@ -23,7 +23,7 @@ Each category folder has an `index.html` landing page that lists only its apps. 
 
 ## Adding or updating an app
 
-Edit `apps.json` — every page reads from it, so no HTML changes are needed:
+Edit `apps.json`, every page reads from it, so no HTML changes are needed:
 
 ```json
 {
@@ -54,10 +54,10 @@ The Tahoe Data Inventory ([tools/data-inventory.html](tools/data-inventory.html)
 from `tools/data-inventory.json`, which is rebuilt by `scripts/build_inventory.py` (stdlib-only
 Python). The script crawls the Tahoe Open Data DCAT feed, the maps.trpa.org REST directory, and
 eight partner agency directories; the LT Info rows come from the static seed
-`scripts/inventory_seed.json` (no crawlable directory exists — edit that file to change them).
+`scripts/inventory_seed.json` (no crawlable directory exists, edit that file to change them).
 
 A GitHub Action (`.github/workflows/refresh-inventory.yml`) reruns the script on the first of
-each month and opens a PR when the data changed — review the diff and merge to publish. Run it
+each month and opens a PR when the data changed, review the diff and merge to publish. Run it
 on demand from the Actions tab ("Refresh data inventory" → Run workflow), or locally with
 `python scripts/build_inventory.py`. Failsafe: if an agency's crawl fails or shrinks by more
 than 30 percent, its previous rows are kept and the PR body flags it.
@@ -82,4 +82,4 @@ To cut over to the maps.trpa.gov custom domain later:
 2. Add a `CNAME` file at the repo root containing `maps.trpa.gov` (or set the custom domain in Settings → Pages, which commits the file).
 3. Enforce HTTPS in Settings → Pages once the certificate provisions.
 
-Do not commit the `CNAME` file before DNS is in place — GitHub Pages redirects the github.io URL to the custom domain, which breaks the site if the domain does not resolve.
+Do not commit the `CNAME` file before DNS is in place, GitHub Pages redirects the github.io URL to the custom domain, which breaks the site if the domain does not resolve.

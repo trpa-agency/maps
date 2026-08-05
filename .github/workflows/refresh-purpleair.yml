@@ -1,0 +1,52 @@
+name: Refresh PurpleAir sensors
+
+# PurpleAir bills a one-time grant of points, so this workflow is deliberately
+# conservative. The script gates on smoke first and on the live point balance
+# second, and only ever makes one API call per run. On a clear-air day the run
+# costs nothing and commits nothing.
+#
+# Requires a repository secret named PURPLEAIR_READ_KEY holding a PurpleAir
+# READ key. The key must never be committed to the repo.
+
+on:
+  schedule:
+    - cron: "7 * * * *"     # hourly, off the hour to avoid the busiest minute
+  workflow_dispatch:         # manual "Run workflow" button
+
+permissions:
+  contents: write
+
+concurrency:
+  # Never let two runs spend points at once, the balance check in one run
+  # cannot see a call the other has just made.
+  group: purpleair-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch sensors
+        env:
+          PURPLEAIR_READ_KEY: ${{ secrets.PURPLEAIR_READ_KEY }}
+        run: python scripts/fetch_purpleair.py
+
+      - name: Commit if the readings changed
+        run: |
+          if git diff --quiet tools/purpleair-tahoe.json; then
+            echo "No change, either the gates skipped the fetch or readings are identical."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/purpleair-tahoe.json
+          git commit -m "Refresh PurpleAir sensors ($(date -u '+%Y-%m-%d %H:%M') UTC)"
+          # Rebase rather than force: a concurrent commit to main must not be lost.
+          git pull --rebase --autostash origin main
+          git push
