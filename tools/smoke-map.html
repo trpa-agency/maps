@@ -110,7 +110,9 @@
     /* ── Time bar ── */
     #timeBar {
       flex: 0 0 auto; background: var(--white); border-top: 1px solid var(--gray-border);
-      padding: 0.5rem 0.9rem 0.35rem; display: flex; align-items: center; gap: 0.9rem;
+      padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.9rem;
+      /* Nothing inside may bleed upward over the map. */
+      overflow: hidden;
     }
     #timeLabelWrap { flex: 0 0 auto; min-width: 168px; }
     #timeLabel { font-size: 0.86rem; font-weight: 700; color: var(--trpa-navy); line-height: 1.2; }
@@ -128,13 +130,71 @@
       background: transparent; box-shadow: none; padding: 0;
       font-family: var(--brand-font);
     }
-    #timeSliderDiv .esri-time-slider__row { padding: 0; min-height: 0; height: 36px; }
+    #timeSliderDiv .esri-time-slider__row { padding: 0; min-height: 0; height: 38px; }
     #timeSliderDiv .esri-time-slider__row:nth-child(1) { display: none; }
     #timeSliderDiv .esri-time-slider__row:nth-child(2) { order: 2; flex: 1 1 auto; min-width: 0; }
     #timeSliderDiv .esri-time-slider__row:nth-child(3) { order: 1; flex: 0 0 auto; }
-    #timeSliderDiv .esri-time-slider__slider { height: 26px; padding: 0 14px; }
+    #timeSliderDiv .esri-time-slider__slider {
+      height: 38px; padding: 0 16px; background: transparent;
+      display: flex; align-items: center;
+    }
+    #timeSliderDiv .esri-slider { background: transparent; width: 100%; }
     #timeSliderDiv .esri-time-slider__min,
     #timeSliderDiv .esri-time-slider__max { display: none; }
+
+    /* ── Slider track ──
+       Esri's default is a 4px gray hairline with a plain white thumb, which
+       reads as inert next to the rest of the page. The track is thickened and
+       rounded, and the segment behind the thumb is filled with TRPA blue so the
+       bar doubles as a progress meter through the forecast. */
+    #timeSliderDiv .esri-slider__track {
+      height: 6px; border-radius: 3px; background: var(--gray-border);
+    }
+    #timeSliderDiv .esri-slider__segment { height: 6px; background: transparent; }
+    /* Segment 0 is everything left of the thumb: hours already played. */
+    #timeSliderDiv .esri-slider__segment-0 {
+      background: linear-gradient(90deg, var(--trpa-blue), #3E9BE0);
+      border-radius: 3px 0 0 3px;
+    }
+
+    /* ── Thumb ── */
+    #timeSliderDiv .esri-slider__thumb {
+      width: 18px; height: 18px; background: var(--white);
+      border: 4px solid var(--trpa-blue); box-shadow: 0 1px 4px rgba(0,59,113,0.35);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    #timeSliderDiv .esri-slider__thumb:hover,
+    #timeSliderDiv .esri-slider__anchor:focus .esri-slider__thumb {
+      transform: scale(1.18); box-shadow: 0 2px 7px rgba(0,59,113,0.45);
+    }
+
+    /* ── Hour ticks ──
+       Dropped. Esri lays the tick strip out inside a 2px content box, so any
+       tick taller than that overflows and shoves the track upward into the map.
+       The readout on the left already names the exact hour, so a tick grid on a
+       52-hour forecast was decoration paid for in map height. */
+    #timeSliderDiv .esri-slider__ticks { display: none; }
+
+    /* ── Transport controls ──
+       Play is the primary action, so it gets a filled brand circle; step
+       forward and back stay quiet beside it. */
+    #timeSliderDiv .esri-widget--button {
+      background: transparent; border-radius: 50%; color: var(--trpa-navy);
+      width: 30px; height: 30px; transition: background 0.12s ease, color 0.12s ease;
+    }
+    #timeSliderDiv .esri-widget--button:hover { background: var(--gray-bg); color: var(--trpa-blue); }
+    #timeSliderDiv .esri-time-slider__animation-button {
+      background: var(--trpa-blue); color: var(--white);
+      width: 34px; height: 34px; box-shadow: 0 1px 5px rgba(0,114,206,0.4);
+    }
+    #timeSliderDiv .esri-time-slider__animation-button:hover {
+      background: var(--trpa-navy); color: var(--white);
+    }
+    #timeSliderDiv .esri-time-slider__previous,
+    #timeSliderDiv .esri-time-slider__next,
+    #timeSliderDiv .esri-time-slider__animation {
+      display: flex; align-items: center; justify-content: center; width: 40px;
+    }
 
     /* ── Misc ── */
     .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
@@ -195,7 +255,7 @@
         <div class="stat-grid">
           <div class="stat">
             <div class="v" id="statAqi">&mdash;</div>
-            <div class="k" id="statAqiLabel">Highest AQI</div>
+            <div class="k" id="statAqiLabel">Highest monitor AQI</div>
           </div>
           <div class="stat">
             <div class="v" id="statSensors">&mdash;</div>
@@ -231,6 +291,20 @@
           <span class="cnt" id="cntIncidents"></span>
         </div>
         <div class="layer-row">
+          <calcite-switch id="tgHotspots" checked scale="s"></calcite-switch>
+          <span class="lbl">Satellite hot spots</span>
+          <span class="cnt" id="cntHotspots"></span>
+        </div>
+        <div class="layer-row">
+          <calcite-switch id="tgEvac" checked scale="s"></calcite-switch>
+          <span class="lbl">Evacuation zones</span>
+          <span class="cnt" id="cntEvac"></span>
+        </div>
+        <div class="layer-row">
+          <calcite-switch id="tgHms" scale="s"></calcite-switch>
+          <span class="lbl">Satellite smoke plumes</span>
+        </div>
+        <div class="layer-row">
           <calcite-switch id="tgContours" scale="s"></calcite-switch>
           <span class="lbl">Observed air quality now</span>
         </div>
@@ -259,6 +333,17 @@
         </p>
       </section>
 
+      <!-- Fire legend -->
+      <section class="panel-sec">
+        <h2 class="sec-title">Fire</h2>
+        <div class="legend" id="fireLegend"></div>
+        <div class="legend-cap">
+          Hot spots are satellite pixels that read hot in the last 48 hours, not
+          mapped fires. Evacuation zones are California only; the Nevada shore
+          is not covered by this feed.
+        </div>
+      </section>
+
       <!-- Smoke legend -->
       <section class="panel-sec">
         <h2 class="sec-title">Smoke concentration</h2>
@@ -270,11 +355,11 @@
       <section class="panel-sec">
         <h2 class="sec-title">Air quality index</h2>
         <div class="legend" id="aqiLegend"></div>
-        <div class="legend-cap" style="margin-top:0.35rem">Circle size shows the device</div>
+        <div class="legend-cap" style="margin-top:0.35rem">Dot size shows the device</div>
         <div class="legend" id="deviceLegend"></div>
         <div class="legend-cap">
-          Matches the AirNow Fire and Smoke Map, where all readings are circles
-          and size carries the device type. Readings use the 2024 EPA breakpoints.
+          Readings use the 2024 EPA breakpoints. Dots grow and show their AQI
+          value as you zoom in.
         </div>
       </section>
 
@@ -289,8 +374,10 @@
         <h2 class="sec-title">Sources</h2>
         <div class="src-list">
           Smoke forecast: <a href="https://www.weather.gov/" target="_blank" rel="noopener">National Weather Service</a> NDGD, hourly.<br />
-          Perimeters: <a href="https://www.fire.ca.gov/" target="_blank" rel="noopener">CAL FIRE</a> FIRIS and
+          Observed plumes: <a href="https://www.ospo.noaa.gov/products/land/hms.html" target="_blank" rel="noopener">NOAA</a> Hazard Mapping System.<br />
+          Perimeters and evacuations: <a href="https://www.fire.ca.gov/" target="_blank" rel="noopener">CAL FIRE</a> FIRIS and Zonehaven, plus
           <a href="https://data-nifc.opendata.arcgis.com/" target="_blank" rel="noopener">NIFC</a> WFIGS.<br />
+          Hot spots: <a href="https://firms.modaps.eosdis.nasa.gov/" target="_blank" rel="noopener">NASA FIRMS</a> MODIS and VIIRS.<br />
           Air quality: <a href="https://fire.airnow.gov/" target="_blank" rel="noopener">AirNow</a>
           monitors and hourly AQI surface, plus low-cost sensors via
           <a href="https://openaq.org/" target="_blank" rel="noopener">OpenAQ</a>.<br />
@@ -345,6 +432,22 @@ const SVC = {
   wfigs: "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters_Current/FeatureServer/0",
 
   incidents: "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/USA_Wildfires_v1/FeatureServer/0",
+
+  // Satellite thermal detections, last 48 hours. MODIS is the 1 km product and
+  // VIIRS the 375 m one; they fly different passes, so showing both fills gaps
+  // rather than duplicating. Neither is a fire perimeter — a detection is one
+  // pixel that read hot, and it can be a flare, a burn pile, or a false alarm.
+  modis: "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/MODIS_Thermal_v1/FeatureServer/0",
+  viirs: "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/Satellite_VIIRS_Thermal_Hotspots_and_Fire_Activity/FeatureServer/0",
+
+  // CAL FIRE's statewide evacuation aggregation, mostly fed by Zonehaven.
+  // California only — see the note in the panel about the Nevada shore.
+  evac: "https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/arcgis/rest/services/Combined_Statewide_Evacuation_Public_View/FeatureServer/0",
+
+  // NOAA Hazard Mapping System smoke plumes digitized from GOES imagery. This
+  // is observed smoke aloft, as distinct from the NDGD near-surface forecast.
+  hmsSmoke: "https://services2.arcgis.com/C8EMgrsFcRFL6LrL/arcgis/rest/services/NOAA_Satellite_Smoke_Detection_(v1)/FeatureServer/0",
+
   airnow:    "https://services.arcgis.com/cJ9YHowT8TU7DUyn/arcgis/rest/services/Air%20Now%20Current%20Monitor%20Data%20Public/FeatureServer/0",
 
   // The hourly interpolated AQI surface that fire.airnow.gov itself draws.
@@ -430,7 +533,33 @@ function pmToAqi(pm) {
    monitors medium, low-cost sensors smallest. Earlier versions of that map
    used circle, triangle, and square for the three types; version 4 dropped
    shapes in favor of size alone. */
-const MARKER_SIZE = { monitor: 18, temporary: 13, sensor: 10 };
+/* Readings are small flat circles, the way IQAir draws them at map scale: no
+   heavy outline, no number until you zoom in. An earlier pass used large
+   numbered squares and they buried the map — at regional zoom there are close
+   to a hundred of them, and the smoke forecast underneath is the point. Size
+   still separates the device types, just quietly. */
+const MARKER_SIZE = { monitor: 14, temporary: 11, sensor: 9 };
+
+/* Below this scale the badges grow and the AQI number appears inside them. */
+const LABEL_SCALE = 750000;
+
+/* Flame glyph for fire incidents. A triangle read as a generic hazard pin
+   rather than a fire, which is the wrong thing to say on a smoke map. */
+const FLAME_PATH =
+  "M12 22a7 7 0 0 0 7-7c0-5-4-7-5-11 0 0-1 4-3 6-1-1-1-3-1-3-2 2-5 5-5 8a7 7 0 0 0 7 7z";
+
+/* IQAir marks fires as a white flame inside a filled circle, which reads as
+   "fire here" at a glance instead of as another data point. Built as an inline
+   SVG data URI so it stays self-contained — a CIM symbol would need the flame
+   converted to Esri ring geometry. */
+function fireIconUrl(fill) {
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">` +
+    `<circle cx="16" cy="16" r="14.5" fill="${fill}" stroke="#ffffff" stroke-width="2.5"/>` +
+    `<path d="${FLAME_PATH}" transform="translate(8.5,9.2) scale(0.62)" fill="#ffffff"/>` +
+    `</svg>`;
+  return "data:image/svg+xml;base64," + btoa(svg);
+}
 
 /* Low-cost sensors go stale without going offline, and a stuck one skews the
    headline badly — a Clarity unit near Sacramento was still publishing 284
@@ -470,6 +599,15 @@ function toast(msg, ms = 3200) {
   if (ms) toast._t = setTimeout(() => t.classList.remove("show"), ms);
 }
 
+/* NOAA HMS stamps times as "YYYYDDD HHMM" — year, day of year, UTC clock. */
+function hmsTime(s) {
+  const m = String(s || "").match(/^(\d{4})(\d{3})\s+(\d{2})(\d{2})$/);
+  if (!m) return s ? String(s) : "—";
+  const d = new Date(Date.UTC(+m[1], 0, 1, +m[3], +m[4]));
+  d.setUTCDate(d.getUTCDate() + (+m[2] - 1));
+  return `${fmtStamp.format(d)} Pacific time`;
+}
+
 /* Pacific time — the forecast service publishes in UTC and basin users read local. */
 const TZ = "America/Los_Angeles";
 const fmtDay  = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: TZ });
@@ -478,6 +616,23 @@ const fmtStamp = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeri
 
 /* ── Static legends ───────────────────────────────────────────────────────── */
 (function buildLegends() {
+  $("fireLegend").innerHTML = [
+    ["box", "rgba(211,47,47,0.55)",  "#961414", "Evacuation order"],
+    ["box", "rgba(245,190,60,0.55)", "#BE8214", "Evacuation warning"],
+    ["box", "rgba(90,150,210,0.4)",  "#2864A5", "Evacuation advisory"],
+    ["box", "rgba(156,62,39,0.35)",  "#9C3E27", "Active fire perimeter"],
+    ["flame", "#D6342C",             "",        "Fire incident, sized by acres"],
+    ["dot", "#FF5000",               "#5A1400", "Satellite hot spot"]
+  ].map(([kind, fill, stroke, label]) => {
+    // The flame swatch is the exact icon the map draws, so key and symbol can
+    // never drift apart.
+    const swatch = kind === "flame"
+      ? `<span style="flex:0 0 20px;display:flex;justify-content:center">
+           <img src="${fireIconUrl(fill)}" width="15" height="15" alt="" /></span>`
+      : `<span class="${kind}" style="background:${fill};border-color:${stroke}"></span>`;
+    return `<div class="legend-item">${swatch}<span>${label}</span></div>`;
+  }).join("");
+
   $("smokeLegend").innerHTML = SMOKE_CLASSES.map(c =>
     `<div class="legend-item"><span class="box" style="background:${rgba(c.rgb, Math.min(1, c.a + 0.15))}"></span><span>${c.label}</span></div>`
   ).join("");
@@ -509,6 +664,7 @@ const fmtStamp = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeri
    ═══════════════════════════════════════════════════════════════════════════ */
 let view, smokeLayer, firisLayer, wfigsLayer, incidentLayer, airnowLayer;
 let contourLayer, sensorLayer, boundaryLayer;
+let modisLayer, viirsLayer, evacLayer, hmsLayer;
 let basinPolygon = null;          // TRPA boundary, used to filter sensors
 let airnowRows = [], sensorRows = [];
 let geometryEngine, GraphicCtor, PointCtor, PolygonCtor;
@@ -604,10 +760,22 @@ require([
     renderer: {
       type: "simple",
       symbol: {
-        type: "simple-marker", style: "triangle", size: 11,
-        color: [232, 119, 34, 0.95],
-        outline: { color: [255, 255, 255, 0.95], width: 1 }
-      }
+        type: "picture-marker",
+        url: fireIconUrl("#D6342C"),
+        width: 20, height: 20
+      },
+      // Size by fire size, so a 30,000-acre incident does not read the same as
+      // a quarter-acre spot. Square-root scaling because acreage spans orders
+      // of magnitude and a linear ramp would make everything small or huge.
+      visualVariables: [{
+        type: "size",
+        valueExpression: "Sqrt(Max(IIf(IsEmpty($feature.DailyAcres), 1, $feature.DailyAcres), 1))",
+        stops: [
+          { value: 1,   size: 15 },   // 1 acre
+          { value: 32,  size: 22 },   // ~1,000 acres
+          { value: 180, size: 32 }    // ~32,000 acres
+        ]
+      }]
     },
     labelingInfo: [{
       labelExpressionInfo: { expression: "$feature.IncidentName" },
@@ -646,21 +814,15 @@ require([
     refreshInterval: 15,
     renderer: {
       ...aqiRenderer("PM_AQI", MARKER_SIZE.monitor),
-      // Agencies wheel out temporary monitors during smoke events. AirNow draws
-      // those smaller than the permanent network, so the same size visual
-      // variable is applied here rather than splitting them onto a second layer.
-      visualVariables: [{
-        type: "size",
-        valueExpression: "IIf($feature.MonitorType == 'Permanent', 1, 0)",
-        stops: [
-          { value: 0, size: MARKER_SIZE.temporary },
-          { value: 1, size: MARKER_SIZE.monitor }
-        ]
-      }]
+      // Only one size visual variable is honored per renderer, so zoom wins
+      // over device type here: the permanent/temporary split is carried by the
+      // popup and the count instead of by a few pixels nobody can measure.
+      visualVariables: [SCALE_SIZE_VV(MARKER_SIZE.monitor)]
     },
     // The hosted service labels every site, including a boxed "ND" on sites
     // with no reading. Label the AQI value only where there is one.
-    labelingInfo: aqiLabels("PM_AQI", 9),
+    labelingInfo: aqiLabels("PM_AQI", 10),
+    featureReduction: { type: "selection" },
     popupTemplate: {
       title: "{SiteName}",
       content: (f) => {
@@ -674,6 +836,170 @@ require([
           ["Observed", a.ValidTime ? fmtStamp.format(new Date(a.ValidTime)) : "—"]
         ];
         return `<div style="margin-bottom:6px"><b>Regulatory monitor</b></div>`
+             + `<table class="esri-widget__table">${rows.map(
+                 ([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`;
+      }
+    }
+  });
+
+  /* ── Satellite thermal hot spots ───────────────────────────────────────── */
+  /* A detection is a pixel that read hot in the last 48 hours, not a mapped
+     fire. Older detections fade so the leading edge of activity stands out. */
+  const hotspotRenderer = (ageField) => ({
+    type: "simple",
+    symbol: {
+      type: "simple-marker", style: "circle", size: 5,
+      color: [255, 80, 0, 0.9], outline: { color: [90, 20, 0, 0.6], width: 0.4 }
+    },
+    visualVariables: [{
+      type: "opacity",
+      field: ageField,
+      stops: [{ value: 0, opacity: 1 }, { value: 24, opacity: 0.55 }, { value: 48, opacity: 0.25 }]
+    }]
+  });
+
+  modisLayer = new FeatureLayer({
+    url: SVC.modis,
+    title: "MODIS hot spots",
+    // Low-confidence detections are mostly sun glint, hot bare ground, and
+    // industrial heat. Dropping them is standard practice with FIRMS data and
+    // takes a very noisy layer down to something readable.
+    definitionExpression: "CONFIDENCE >= 50",
+    useViewTime: false,
+    outFields: ["BRIGHTNESS", "CONFIDENCE", "FRP", "ACQ_DATE", "HOURS_OLD", "DAYNIGHT", "SATELLITE"],
+    refreshInterval: 30,
+    renderer: hotspotRenderer("HOURS_OLD"),
+    popupTemplate: {
+      title: "MODIS thermal detection",
+      content: (f) => {
+        const a = f.graphic.attributes;
+        const rows = [
+          ["Detected", a.ACQ_DATE ? fmtStamp.format(new Date(a.ACQ_DATE)) : "—"],
+          ["Age", a.HOURS_OLD == null ? "—" : `${Math.round(a.HOURS_OLD)} hours`],
+          ["Confidence", a.CONFIDENCE == null ? "—" : `${a.CONFIDENCE} percent`],
+          ["Radiative power", a.FRP == null ? "—" : `${Math.round(a.FRP)} MW`],
+          ["Satellite", `${a.SATELLITE || "—"} · ${a.DAYNIGHT === "N" ? "night" : "day"} pass`]
+        ];
+        return `<div style="margin-bottom:6px">1 km pixel that read hot. Not a fire perimeter.</div>`
+             + `<table class="esri-widget__table">${rows.map(
+                 ([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`;
+      }
+    }
+  });
+
+  viirsLayer = new FeatureLayer({
+    url: SVC.viirs,
+    title: "VIIRS hot spots",
+    // Same quality cut as MODIS. VIIRS grades confidence as words, not a
+    // percentage, so this is a string comparison rather than a threshold.
+    definitionExpression: "confidence <> 'low'",
+    useViewTime: false,
+    outFields: ["bright_ti4", "confidence", "frp", "acq_date", "hours_old", "daynight", "satellite"],
+    refreshInterval: 30,
+    renderer: hotspotRenderer("hours_old"),
+    popupTemplate: {
+      title: "VIIRS thermal detection",
+      content: (f) => {
+        const a = f.graphic.attributes;
+        const rows = [
+          ["Detected", a.acq_date ? fmtStamp.format(new Date(a.acq_date)) : "—"],
+          ["Age", a.hours_old == null ? "—" : `${Math.round(a.hours_old)} hours`],
+          ["Confidence", a.confidence || "—"],
+          ["Radiative power", a.frp == null ? "—" : `${Math.round(a.frp)} MW`],
+          ["Satellite", `${a.satellite || "—"} · ${a.daynight === "N" ? "night" : "day"} pass`]
+        ];
+        return `<div style="margin-bottom:6px">375 m pixel that read hot. Not a fire perimeter.</div>`
+             + `<table class="esri-widget__table">${rows.map(
+                 ([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`;
+      }
+    }
+  });
+
+  /* ── Evacuation zones ──────────────────────────────────────────────────── */
+  evacLayer = new FeatureLayer({
+    url: SVC.evac,
+    title: "Evacuation zones",
+    useViewTime: false,
+    outFields: ["zone_id", "zone_status", "known_as", "county_name", "est_population",
+                "acreage", "last_updated", "data_source_name", "url"],
+    refreshInterval: 5,
+    renderer: {
+      type: "unique-value",
+      field: "zone_status",
+      defaultSymbol: null,
+      uniqueValueInfos: [
+        { value: "Evacuation Order",   label: "Evacuation order",
+          symbol: { type: "simple-fill", color: [211, 47, 47, 0.45],
+                    outline: { color: [150, 20, 20, 1], width: 2 } } },
+        { value: "Evacuation Warning", label: "Evacuation warning",
+          symbol: { type: "simple-fill", color: [245, 190, 60, 0.42],
+                    outline: { color: [190, 130, 20, 1], width: 1.8 } } },
+        { value: "Advisory",           label: "Advisory",
+          symbol: { type: "simple-fill", color: [90, 150, 210, 0.3],
+                    outline: { color: [40, 100, 165, 1], width: 1.4 } } }
+      ]
+    },
+    popupTemplate: {
+      title: "{known_as}",
+      content: (f) => {
+        const a = f.graphic.attributes;
+        const rows = [
+          ["Status", a.zone_status || "—"],
+          ["Zone", a.zone_id || "—"],
+          ["County", a.county_name || "—"],
+          ["Est. population", fmtInt(a.est_population)],
+          ["Acres", fmtInt(a.acreage)],
+          ["Source", a.data_source_name || "—"],
+          ["Updated", a.last_updated ? fmtStamp.format(new Date(a.last_updated)) : "—"]
+        ];
+        return `<table class="esri-widget__table">${rows.map(
+                 ([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`
+             + (a.url ? `<p style="margin-top:6px"><a href="${a.url}" target="_blank" rel="noopener">County evacuation page</a></p>` : "")
+             + `<p style="margin-top:6px;font-size:0.8em;color:#5A6577">Always confirm with your county emergency office.</p>`;
+      }
+    }
+  });
+
+  /* ── Observed smoke plumes ─────────────────────────────────────────────── */
+  /* NOAA analysts digitize these from GOES imagery. It is smoke seen from
+     above, including plumes aloft that never reach the ground — which is why
+     it can disagree with the near-surface forecast and with the monitors. */
+  hmsLayer = new FeatureLayer({
+    url: SVC.hmsSmoke,
+    title: "Satellite smoke plumes",
+    useViewTime: false,
+    visible: false,
+    outFields: ["Density", "Satellite", "Start", "End_"],
+    refreshInterval: 30,
+    renderer: {
+      type: "unique-value",
+      field: "Density",
+      defaultSymbol: { type: "simple-fill", color: [120, 120, 120, 0.16],
+                       outline: { color: [90, 90, 90, 0.5], width: 0.5 } },
+      defaultLabel: "Smoke",
+      uniqueValueInfos: [
+        { value: "Light",  label: "Light",
+          symbol: { type: "simple-fill", color: [140, 140, 150, 0.16],
+                    outline: { color: [110, 110, 120, 0.55], width: 0.5 } } },
+        { value: "Medium", label: "Medium",
+          symbol: { type: "simple-fill", color: [110, 105, 110, 0.3],
+                    outline: { color: [85, 80, 85, 0.65], width: 0.7 } } },
+        { value: "Heavy",  label: "Heavy",
+          symbol: { type: "simple-fill", color: [70, 62, 65, 0.45],
+                    outline: { color: [50, 44, 46, 0.8], width: 1 } } }
+      ]
+    },
+    popupTemplate: {
+      title: "Satellite smoke plume",
+      content: (f) => {
+        const a = f.graphic.attributes;
+        const rows = [
+          ["Density", a.Density || "—"],
+          ["Satellite", a.Satellite || "—"],
+          ["Observed", hmsTime(a.Start)],
+          ["Through", hmsTime(a.End_)]
+        ];
+        return `<div style="margin-bottom:6px">Smoke seen from above, which may be aloft rather than at ground level.</div>`
              + `<table class="esri-widget__table">${rows.map(
                  ([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`;
       }
@@ -730,7 +1056,7 @@ require([
       field: "value",
       defaultSymbol: {
         type: "simple-marker", style: "circle", size: MARKER_SIZE.sensor - 2,
-        color: [217, 217, 217, 0.95], outline: { color: [0, 0, 0, 0.85], width: 1 }
+        color: [217, 217, 217, 0.95], outline: { color: [255, 255, 255, 0.9], width: 1 }
       },
       defaultLabel: "No data",
       // Breaks are on PM2.5 because that is what OpenAQ publishes; the values
@@ -741,10 +1067,21 @@ require([
         label: AQI_CATS[i].label,
         symbol: {
           type: "simple-marker", style: "circle", size: MARKER_SIZE.sensor,
-          color: AQI_CATS[i].color, outline: { color: [0, 0, 0, 0.85], width: 1 }
+          color: AQI_CATS[i].color, outline: { color: [255, 255, 255, 0.9], width: 1 }
         }
-      }))
+      })),
+      visualVariables: [SCALE_SIZE_VV(MARKER_SIZE.sensor)]
     },
+    // Badges carry numbers, so overlap makes them unreadable. Esri hides the
+    // lower-priority point instead of stacking, the way IQAir thins its map.
+    featureReduction: { type: "selection" },
+    // Sensors are the smallest dot, so their numbers only appear once the map
+    // is zoomed past the regional view.
+    labelingInfo: labelPair(
+      SENSOR_AQI_ARCADE,
+      { dark: "value <= 55.4", light: "value > 55.4" },
+      9, LABEL_SCALE
+    ),
     popupTemplate: {
       title: "{location}",
       content: (f) => {
@@ -777,11 +1114,18 @@ require([
     }
   });
 
-  /* Draw order: the two surfaces at the bottom, points on top. The smoke layer
-     is inserted above the observed surface once its data arrives. */
+  /* Draw order, bottom to top: the observed and satellite surfaces, then the
+     smoke forecast (inserted below evacuations once its data arrives), then
+     evacuation zones, fire geometry, and finally the reading badges. */
   const map = new Map({
     basemap: "gray-vector",
-    layers: [contourLayer, boundaryLayer, wfigsLayer, firisLayer, incidentLayer, airnowLayer, sensorLayer]
+    layers: [
+      contourLayer, hmsLayer,
+      evacLayer, boundaryLayer,
+      wfigsLayer, firisLayer,
+      modisLayer, viirsLayer, incidentLayer,
+      airnowLayer, sensorLayer
+    ]
   });
 
   view = new MapView({
@@ -810,7 +1154,8 @@ require([
 
   /* Layer failures should degrade the page, not break it. The TRPA service in
      particular has been unreachable from some networks. */
-  [firisLayer, wfigsLayer, incidentLayer, airnowLayer, contourLayer, sensorLayer, boundaryLayer].forEach(l => {
+  [firisLayer, wfigsLayer, incidentLayer, airnowLayer, contourLayer, sensorLayer,
+   boundaryLayer, modisLayer, viirsLayer, evacLayer, hmsLayer].forEach(l => {
     l.when().catch(err => {
       console.error(`Layer "${l.title}" failed to load:`, err);
       toast(`${l.title} is unavailable right now.`);
@@ -819,9 +1164,12 @@ require([
 });
 
 function aqiRenderer(field, size) {
+  // A thin white edge is all the separation these need — it keeps a reading
+  // legible against a dark smoke polygon or a neighbouring dot without turning
+  // the map into a field of outlined blobs.
   const ring = (color, sz) => ({
     type: "simple-marker", style: "circle", size: sz, color,
-    outline: { color: [0, 0, 0, 0.85], width: 1 }
+    outline: { color: [255, 255, 255, 0.9], width: 1 }
   });
   return {
     type: "class-breaks",
@@ -839,22 +1187,56 @@ function aqiRenderer(field, size) {
   };
 }
 
-/* AQI value drawn inside the circle, the way AirNow labels its monitors. Two
-   classes so the text flips to white once the fill goes dark at Unhealthy. */
-function aqiLabels(field, sizePt) {
-  const cls = (where, color, haloColor) => ({
-    labelExpressionInfo: { expression: `IIf($feature.${field} >= 0, Text($feature.${field}), '')` },
+/* AQI value drawn inside the badge, the way both AirNow and IQAir label a
+   reading. Two classes so the text flips to white once the fill goes dark at
+   Unhealthy — black on the purple and maroon bands is unreadable. */
+function labelPair(expression, where150, sizePt, minScale) {
+  const cls = (where, color) => ({
+    labelExpressionInfo: { expression },
     where,
-    symbol: { type: "text", color, haloColor, haloSize: 1,
+    symbol: { type: "text", color, haloColor: color[0] ? [0, 0, 0] : [255, 255, 255],
+              haloSize: 0.8,
               font: { size: sizePt, family: "sans-serif", weight: "bold" } },
     labelPlacement: "center-center",
-    minScale: 2500000
+    minScale
   });
-  return [
-    cls(`${field} <= 150`, [0, 0, 0], [255, 255, 255]),
-    cls(`${field} > 150`,  [255, 255, 255], [0, 0, 0])
-  ];
+  return [cls(where150.dark, [0, 0, 0]), cls(where150.light, [255, 255, 255])];
 }
+
+function aqiLabels(field, sizePt) {
+  return labelPair(
+    `IIf($feature.${field} >= 0, Text($feature.${field}), '')`,
+    { dark: `${field} <= 150`, light: `${field} > 150` },
+    sizePt, LABEL_SCALE
+  );
+}
+
+/* Dots stay small across the region and grow into readable badges as you zoom
+   in, which is the point where the AQI numbers switch on. */
+const SCALE_SIZE_VV = (base) => ({
+  type: "size",
+  valueExpression: "$view.scale",
+  stops: [
+    { value: 2000000, size: base },
+    { value: LABEL_SCALE, size: base * 1.5 },
+    { value: 150000, size: base * 2 }
+  ]
+});
+
+/* The sensor service publishes PM2.5, not AQI, so the badge number is computed
+   in Arcade from the same 2024 breakpoints the renderer uses. */
+const SENSOR_AQI_ARCADE = `
+var v = $feature.value;
+if (IsEmpty(v) || v < 0) { return ''; }
+var c = Round(v, 1);
+var bp = [[0,9,0,50],[9.1,35.4,51,100],[35.5,55.4,101,150],
+          [55.5,125.4,151,200],[125.5,225.4,201,300],[225.5,325.4,301,500]];
+for (var i in bp) {
+  if (c <= bp[i][1]) {
+    return Text(Round((bp[i][3]-bp[i][2])/(bp[i][1]-bp[i][0])*(c-bp[i][0])+bp[i][2]));
+  }
+}
+return '500';`;
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Smoke forecast and the animation
@@ -949,7 +1331,8 @@ async function loadSmokeForecast() {
     }
   });
 
-  view.map.add(smokeLayer, 1);   // above the observed surface, below the points
+  // Just under the evacuation zones, so smoke never obscures an evacuation.
+  view.map.add(smokeLayer, view.map.layers.indexOf(evacLayer));
   smokeLayer.visible = $("tgSmoke").checked;
 
   try {
@@ -981,12 +1364,7 @@ function buildTimeSlider(dates) {
     stops: { dates },
     playRate: 650,
     loop: true,
-    labelFormatFunction: () => "",          // the panel to the left carries the label
-    tickConfigs: [{
-      mode: "position",
-      values: dates.filter((d, i) => i % 6 === 0).map(d => d.getTime()),
-      labelsVisible: false
-    }]
+    labelFormatFunction: () => ""           // the panel to the left carries the label
   });
 
   timeSlider.watch("timeExtent", (te) => {
@@ -1115,14 +1493,42 @@ async function refreshCounts() {
     $("cntPerims").textContent = "—";
   }
 
+  const regional = { type: "extent", ...FIRE_BBOX, spatialReference: { wkid: 4326 } };
+
   try {
     const iq = incidentLayer.createQuery();
-    iq.geometry = { type: "extent", ...FIRE_BBOX, spatialReference: { wkid: 4326 } };
+    iq.geometry = regional;
     iq.returnGeometry = false;
     $("cntIncidents").textContent = String(await incidentLayer.queryFeatureCount(iq));
   } catch (err) {
     console.error("Incident query failed:", err);
     $("cntIncidents").textContent = "—";
+  }
+
+  // Hot spots are two independent satellite products, so the badge is a sum.
+  try {
+    const counts = await Promise.all([modisLayer, viirsLayer].map(l => {
+      const q = l.createQuery();
+      q.geometry = regional;
+      q.returnGeometry = false;
+      return l.queryFeatureCount(q);
+    }));
+    $("cntHotspots").textContent = String(counts.reduce((a, b) => a + b, 0));
+  } catch (err) {
+    console.error("Hot spot query failed:", err);
+    $("cntHotspots").textContent = "—";
+  }
+
+  try {
+    const eq = evacLayer.createQuery();
+    eq.geometry = regional;
+    eq.returnGeometry = false;
+    const n = await evacLayer.queryFeatureCount(eq);
+    // Zero is the normal state, and reads better than a bare "0" badge.
+    $("cntEvac").textContent = n ? String(n) : "none";
+  } catch (err) {
+    console.error("Evacuation query failed:", err);
+    $("cntEvac").textContent = "—";
   }
 
   updateSummary();
@@ -1143,13 +1549,28 @@ function updateSummary() {
     return;
   }
 
-  const worst = all.reduce((a, b) => (b.aqi > a.aqi ? b : a));
+  /* The headline comes from regulatory monitors whenever any are reporting.
+     Low-cost sensors drift and fail without going offline — a Clarity unit near
+     Sacramento sat at 407 µg/m³, an AQI of 500, while its neighbours read under
+     30 and the next-highest reading in the region was 148. That is a broken
+     sensor, not a smoke event, and it should not be the number this page leads
+     with. Sensors still draw on the map and appear in the chart below. */
+  const usingMonitors = airnowRows.length > 0;
+  const pool = usingMonitors ? airnowRows : sensorRows;
+  const worst = pool.reduce((a, b) => (b.aqi > a.aqi ? b : a));
   const cat = aqiCat(worst.aqi);
+
   $("statAqi").textContent = String(worst.aqi);
   $("statAqi").style.color = worst.aqi > 100 ? "#9C3E27" : "#003B71";
   $("statAqiLabel").textContent = `Highest AQI · ${cat.label}`;
-  $("conditionsNote").textContent =
-    `Worst reading is ${worst.aqi} at ${worst.name}. Updated ${fmtStamp.format(new Date())} Pacific time.`;
+
+  let note = `Worst ${usingMonitors ? "monitor" : "sensor"} reading is ${worst.aqi} at ${worst.name}.`;
+  const sensorMax = sensorRows.reduce((m, r) => Math.max(m, r.aqi), 0);
+  if (usingMonitors && sensorMax > worst.aqi) {
+    note += ` A low-cost sensor reads ${sensorMax}, which is not regulatory grade.`;
+  }
+  note += ` Updated ${fmtStamp.format(new Date())} Pacific time.`;
+  $("conditionsNote").textContent = note;
 
   drawChart(all);
 }
@@ -1193,6 +1614,9 @@ function wireLayerToggles() {
   bind("tgSmoke",     () => [smokeLayer]);
   bind("tgPerims",    () => [firisLayer, wfigsLayer]);
   bind("tgIncidents", () => [incidentLayer]);
+  bind("tgHotspots",  () => [modisLayer, viirsLayer]);
+  bind("tgEvac",      () => [evacLayer]);
+  bind("tgHms",       () => [hmsLayer]);
   bind("tgContours",  () => [contourLayer]);
   bind("tgAirNow",    () => [airnowLayer]);
   bind("tgSensors",   () => [sensorLayer]);
@@ -1208,7 +1632,9 @@ $("panelToggle").addEventListener("click", () => {
   $("panelToggle").title = collapsed ? "Show panel" : "Collapse panel";
 });
 
-const LIVE_LAYERS = () => [firisLayer, wfigsLayer, incidentLayer, airnowLayer, contourLayer, sensorLayer];
+const LIVE_LAYERS = () => [firisLayer, wfigsLayer, incidentLayer, airnowLayer,
+                           contourLayer, sensorLayer, modisLayer, viirsLayer,
+                           evacLayer, hmsLayer];
 
 function refreshLive() {
   // The staleness cutoff is relative to now, so it has to be recomputed or a

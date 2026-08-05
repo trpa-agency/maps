@@ -151,16 +151,30 @@
     },
     {
       "id": "smokemap",
+      "title": "48-Hour Smoke Forecast",
+      "category": "eip",
+      "url": "https://gis.trpa.org/smokemap",
+      "thumbnail": "assets/thumbs/smokemap.png",
+      "description": "Smoke forecast for the Tahoe Basin and surrounding region, updated every 24 hours by the National Weather Service. Concentrations reported in micrograms per cubic meter.",
+      "tags": [
+        "Forest Health",
+        "Fire"
+      ]
+    },
+    {
+      "id": "smokemap-next",
       "title": "Smoke Forecast and Air Quality",
       "category": "eip",
       "url": "tools/smoke-map.html",
-      "thumbnail": "assets/thumbs/smokemap.png",
-      "description": "Animated 48-hour National Weather Service smoke forecast for the Tahoe Region, with active fire perimeters from CAL FIRE and the National Interagency Fire Center, and observed air quality from AirNow monitors and low-cost sensors. Concentrations reported in micrograms per cubic meter.",
+      "thumbnail": "assets/thumbs/smokemap-beta.svg",
+      "description": "Prototype replacement for the 48-hour smoke forecast, rebuilt on the current ArcGIS Maps SDK with live standalone layers in place of a stored web map. Adds evacuation zones, satellite hot spots and smoke plumes, and the hourly AirNow air quality surface alongside monitors and low-cost sensors.",
       "tags": [
         "Forest Health",
         "Fire",
-        "Air Quality"
-      ]
+        "Air Quality",
+        "Evacuation"
+      ],
+      "beta": true
     },
     {
       "id": "mapmaker",
