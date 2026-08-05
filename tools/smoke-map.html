@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smoke Forecast and Air Quality — TRPA Maps</title>
+  <meta name="description" content="Animated 48-hour National Weather Service smoke forecast for the Tahoe Region, with active fire perimeters and live air quality sensors." />
+  <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
+
+  <!-- Calcite Design System -->
+  <script type="module" src="https://js.arcgis.com/calcite-components/5.0"></script>
+
+  <!-- Plotly must load BEFORE the ArcGIS SDK. Plotly is UMD: if Dojo's AMD
+       loader already exists it registers an anonymous define(), which Dojo
+       misattributes to whichever esri module it is fetching. That throws
+       multipleDefine and leaves the loader unable to resolve esri/Map. -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+  <!-- ArcGIS Maps SDK -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.31/"></script>
+
+  <!-- Brand fonts: self-hosted, matching the other tools in this repo. -->
+  <link href="assets/fonts/fonts.css" rel="stylesheet" />
+
+  <style>
+    :root {
+      --trpa-blue:   #0072CE;
+      --trpa-navy:   #003B71;
+      --trpa-orange: #E87722;
+      --trpa-brick:  #9C3E27;
+      --brand-font:  'Open Sans', system-ui, sans-serif;
+      --white: #FFFFFF; --gray-bg: #F5F7FA; --gray-border: #E2E6EC; --gray-text: #5A6577;
+      --shadow: 0 2px 10px rgba(0,59,113,0.18);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+
+    html, body {
+      height: 100%; font-family: var(--brand-font); color: var(--trpa-navy);
+      overflow: hidden; background: var(--gray-bg);
+    }
+    body { display: flex; flex-direction: column; height: 100vh; }
+
+    /* ── Header ── */
+    #appHeader {
+      flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; padding: 0.5rem 1rem; background: var(--white);
+      border-bottom: 1px solid var(--gray-border);
+      box-shadow: 0 1px 4px rgba(0,59,113,0.06); z-index: 20;
+    }
+    .hdr-brand { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+    .hdr-brand img { height: 34px; width: auto; object-fit: contain; }
+    .hdr-brand .htitle { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+    .hdr-brand .hagency {
+      font-size: 0.58rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--trpa-blue);
+    }
+    .hdr-brand .hname { font-size: 0.95rem; font-weight: 700; color: var(--trpa-navy); }
+    .hdr-back {
+      font-size: 0.72rem; font-weight: 600; color: #8A93A3; text-decoration: none;
+      border-left: 1px solid var(--gray-border); padding-left: 0.7rem; white-space: nowrap;
+    }
+    .hdr-back:hover { color: var(--trpa-blue); }
+    .hdr-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+
+    /* ── Body ── */
+    #appBody { flex: 1 1 auto; display: flex; min-height: 0; }
+    #sidePanel {
+      flex: 0 0 306px; overflow-y: auto; background: var(--white);
+      border-right: 1px solid var(--gray-border); padding: 0.9rem 1rem 1.4rem;
+      display: flex; flex-direction: column; gap: 1.05rem;
+    }
+    body.panel-collapsed #sidePanel { display: none; }
+    #panelToggle {
+      flex: 0 0 18px; border: none; border-right: 1px solid var(--gray-border);
+      background: var(--white); cursor: pointer; color: #8A93A3; padding: 0;
+    }
+    #panelToggle:hover { background: var(--gray-bg); color: var(--trpa-blue); }
+
+    #mapWrap { flex: 1 1 auto; position: relative; min-width: 0; display: flex; flex-direction: column; }
+    #viewDiv { flex: 1 1 auto; min-height: 0; }
+
+    /* ── Panel sections ── */
+    .panel-sec { display: flex; flex-direction: column; gap: 0.5rem; }
+    .sec-title {
+      display: flex; align-items: center; gap: 0.45rem; margin: 0;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+      color: var(--trpa-blue);
+    }
+    .sec-title::after { content: ""; flex: 1; height: 1px; background: var(--gray-border); }
+    .sec-note { font-size: 0.7rem; line-height: 1.45; color: #8A93A3; }
+
+    .layer-row {
+      display: flex; align-items: center; gap: 0.55rem; font-size: 0.8rem; line-height: 1.25;
+    }
+    .layer-row .swatch {
+      flex: 0 0 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0,59,113,0.25);
+    }
+    .layer-row .lbl { flex: 1 1 auto; min-width: 0; }
+    .layer-row .cnt { font-size: 0.7rem; color: #8A93A3; font-variant-numeric: tabular-nums; }
+
+    /* ── Legends ── */
+    .legend { display: flex; flex-direction: column; gap: 0.28rem; }
+    .legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.74rem; }
+    .legend-item .box { flex: 0 0 20px; height: 12px; border-radius: 2px; border: 1px solid rgba(0,0,0,0.12); }
+    .legend-item .dot { flex: 0 0 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.35); }
+    .legend-cap { font-size: 0.68rem; color: #8A93A3; margin-top: 0.15rem; }
+
+    /* ── Time bar ── */
+    #timeBar {
+      flex: 0 0 auto; background: var(--white); border-top: 1px solid var(--gray-border);
+      padding: 0.5rem 0.9rem 0.35rem; display: flex; align-items: center; gap: 0.9rem;
+    }
+    #timeLabelWrap { flex: 0 0 auto; min-width: 168px; }
+    #timeLabel { font-size: 0.86rem; font-weight: 700; color: var(--trpa-navy); line-height: 1.2; }
+    #timeSubLabel { font-size: 0.68rem; color: #8A93A3; }
+    /* The widget's root element is #timeSliderDiv itself, so these rules go on
+       the id, not on a descendant .esri-time-slider.
+
+       It renders three stacked rows — date readout, track, play controls —
+       which costs about 175px of map height. Flatten them into one horizontal
+       row: controls first, then the track. The date readout is dropped because
+       #timeLabelWrap to the left already carries it. */
+    #timeSliderDiv {
+      flex: 1 1 auto; min-width: 0;
+      display: flex; flex-direction: row; align-items: center; gap: 0.4rem;
+      background: transparent; box-shadow: none; padding: 0;
+      font-family: var(--brand-font);
+    }
+    #timeSliderDiv .esri-time-slider__row { padding: 0; min-height: 0; height: 36px; }
+    #timeSliderDiv .esri-time-slider__row:nth-child(1) { display: none; }
+    #timeSliderDiv .esri-time-slider__row:nth-child(2) { order: 2; flex: 1 1 auto; min-width: 0; }
+    #timeSliderDiv .esri-time-slider__row:nth-child(3) { order: 1; flex: 0 0 auto; }
+    #timeSliderDiv .esri-time-slider__slider { height: 26px; padding: 0 14px; }
+    #timeSliderDiv .esri-time-slider__min,
+    #timeSliderDiv .esri-time-slider__max { display: none; }
+
+    /* ── Misc ── */
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .stat {
+      background: var(--gray-bg); border-radius: 6px; padding: 0.5rem 0.6rem;
+      border-left: 3px solid var(--trpa-blue);
+    }
+    .stat .v { font-size: 1.15rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .stat .k { font-size: 0.63rem; color: var(--gray-text); margin-top: 0.1rem; }
+
+    #aqiChart { width: 100%; height: 190px; }
+
+    .src-list { font-size: 0.68rem; line-height: 1.5; color: #8A93A3; }
+    .src-list a { color: var(--trpa-blue); text-decoration: none; }
+    .src-list a:hover { text-decoration: underline; }
+
+    #toast {
+      position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+      background: var(--trpa-navy); color: #fff; font-size: 0.78rem;
+      padding: 0.5rem 0.9rem; border-radius: 6px; box-shadow: var(--shadow);
+      opacity: 0; pointer-events: none; transition: opacity 0.18s; z-index: 30; max-width: 80%;
+    }
+    #toast.show { opacity: 1; }
+
+    @media (max-width: 760px) {
+      #sidePanel { flex-basis: 260px; }
+      #timeLabelWrap { min-width: 128px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ HEADER ══ -->
+  <header id="appHeader">
+    <div class="hdr-brand">
+      <a href="https://www.trpa.gov" title="Tahoe Regional Planning Agency">
+        <img src="../assets/TRPALogo_COLOR.png" alt="Tahoe Regional Planning Agency logo" />
+      </a>
+      <div class="htitle">
+        <span class="hagency">Tahoe Regional Planning Agency</span>
+        <span class="hname">Smoke Forecast and Air Quality</span>
+      </div>
+      <a class="hdr-back" href="./">&larr; Data and Tools</a>
+    </div>
+    <div class="hdr-right">
+      <calcite-button id="refreshBtn" icon-start="refresh" appearance="outline" scale="s">Refresh</calcite-button>
+    </div>
+  </header>
+
+  <!-- ══ BODY ══ -->
+  <div id="appBody">
+
+    <aside id="sidePanel">
+
+      <!-- Conditions summary -->
+      <section class="panel-sec">
+        <h2 class="sec-title">Current conditions</h2>
+        <div class="stat-grid">
+          <div class="stat">
+            <div class="v" id="statAqi">&mdash;</div>
+            <div class="k" id="statAqiLabel">Highest AQI</div>
+          </div>
+          <div class="stat">
+            <div class="v" id="statSensors">&mdash;</div>
+            <div class="k">Monitors reporting</div>
+          </div>
+          <div class="stat">
+            <div class="v" id="statFires">&mdash;</div>
+            <div class="k">Active perimeters</div>
+          </div>
+          <div class="stat">
+            <div class="v" id="statAcres">&mdash;</div>
+            <div class="k">Acres burning nearby</div>
+          </div>
+        </div>
+        <p class="sec-note" id="conditionsNote">Loading live data&hellip;</p>
+      </section>
+
+      <!-- Layers -->
+      <section class="panel-sec">
+        <h2 class="sec-title">Map layers</h2>
+        <div class="layer-row">
+          <calcite-switch id="tgSmoke" checked scale="s"></calcite-switch>
+          <span class="lbl">Smoke forecast</span>
+        </div>
+        <div class="layer-row">
+          <calcite-switch id="tgPerims" checked scale="s"></calcite-switch>
+          <span class="lbl">Active fire perimeters</span>
+          <span class="cnt" id="cntPerims"></span>
+        </div>
+        <div class="layer-row">
+          <calcite-switch id="tgIncidents" checked scale="s"></calcite-switch>
+          <span class="lbl">Fire incidents</span>
+          <span class="cnt" id="cntIncidents"></span>
+        </div>
+        <div class="layer-row">
+          <calcite-switch id="tgContours" scale="s"></calcite-switch>
+          <span class="lbl">Observed air quality now</span>
+        </div>
+        <div class="layer-row">
+          <calcite-switch id="tgAirNow" checked scale="s"></calcite-switch>
+          <span class="lbl">AirNow monitors</span>
+          <span class="cnt" id="cntAirNow"></span>
+        </div>
+        <div class="layer-row">
+          <calcite-switch id="tgSensors" checked scale="s"></calcite-switch>
+          <span class="lbl">Low-cost sensors</span>
+          <span class="cnt" id="cntSensors"></span>
+        </div>
+        <div class="layer-row">
+          <calcite-switch id="tgBoundary" checked scale="s"></calcite-switch>
+          <span class="lbl">TRPA boundary</span>
+        </div>
+        <div class="layer-row" style="margin-top:0.15rem">
+          <calcite-switch id="tgBasinOnly" scale="s"></calcite-switch>
+          <span class="lbl">Basin monitors only</span>
+        </div>
+        <p class="sec-note">
+          Only about six AirNow sites sit inside the basin. The default regional
+          view adds Truckee, Portola, Carson, Reno, and the Sacramento Valley,
+          which is where smoke usually arrives from.
+        </p>
+      </section>
+
+      <!-- Smoke legend -->
+      <section class="panel-sec">
+        <h2 class="sec-title">Smoke concentration</h2>
+        <div class="legend" id="smokeLegend"></div>
+        <div class="legend-cap">Near-surface smoke, micrograms per cubic meter.</div>
+      </section>
+
+      <!-- AQI legend -->
+      <section class="panel-sec">
+        <h2 class="sec-title">Air quality index</h2>
+        <div class="legend" id="aqiLegend"></div>
+        <div class="legend-cap" style="margin-top:0.35rem">Circle size shows the device</div>
+        <div class="legend" id="deviceLegend"></div>
+        <div class="legend-cap">
+          Matches the AirNow Fire and Smoke Map, where all readings are circles
+          and size carries the device type. Readings use the 2024 EPA breakpoints.
+        </div>
+      </section>
+
+      <!-- Sensor chart -->
+      <section class="panel-sec" id="chartSec" hidden>
+        <h2 class="sec-title">Sensor readings</h2>
+        <div id="aqiChart"></div>
+      </section>
+
+      <!-- Sources -->
+      <section class="panel-sec">
+        <h2 class="sec-title">Sources</h2>
+        <div class="src-list">
+          Smoke forecast: <a href="https://www.weather.gov/" target="_blank" rel="noopener">National Weather Service</a> NDGD, hourly.<br />
+          Perimeters: <a href="https://www.fire.ca.gov/" target="_blank" rel="noopener">CAL FIRE</a> FIRIS and
+          <a href="https://data-nifc.opendata.arcgis.com/" target="_blank" rel="noopener">NIFC</a> WFIGS.<br />
+          Air quality: <a href="https://fire.airnow.gov/" target="_blank" rel="noopener">AirNow</a>
+          monitors and hourly AQI surface, plus low-cost sensors via
+          <a href="https://openaq.org/" target="_blank" rel="noopener">OpenAQ</a>.<br />
+          Boundary: TRPA.
+        </div>
+      </section>
+
+    </aside>
+
+    <button id="panelToggle" title="Collapse panel" aria-label="Collapse panel">&#9664;</button>
+
+    <div id="mapWrap">
+      <div id="viewDiv"></div>
+      <div id="toast"></div>
+    </div>
+  </div>
+
+  <!-- ══ TIME BAR ══ -->
+  <div id="timeBar">
+    <div id="timeLabelWrap">
+      <div id="timeLabel">Loading forecast&hellip;</div>
+      <div id="timeSubLabel"></div>
+    </div>
+    <div id="timeSliderDiv"></div>
+  </div>
+
+<script>
+"use strict";
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Smoke Forecast and Air Quality — Tahoe Region
+
+   Standalone layers, no webmap. Everything on this page is fetched live at
+   run time so the map reflects whatever the upstream services publish.
+
+   Replaces the ArcGIS JS 3.22 "Time Aware" template app at gis.trpa.org/smokemap.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Service endpoints ────────────────────────────────────────────────────── */
+const SVC = {
+  // NWS National Digital Guidance Database smoke forecast — hourly polygons,
+  // ~52 steps covering roughly the next 48 hours. This is the layer the old
+  // app animated, and it is the only time-aware layer on the page.
+  smoke: "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/NDGD_SmokeForecast_v1/FeatureServer/0",
+
+  // CAL FIRE's public incident-map layer: FIRIS heat perimeters merged with
+  // NIFC WFIGS interagency perimeters. displayStatus flags the live ones.
+  firis: "https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/arcgis/rest/services/CA_Perimeters_NIFC_FIRIS_public_view/FeatureServer/0",
+
+  // WFIGS current perimeters, kept alongside FIRIS because FIRIS is
+  // California-focused and the basin straddles the Nevada line.
+  wfigs: "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters_Current/FeatureServer/0",
+
+  incidents: "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/USA_Wildfires_v1/FeatureServer/0",
+  airnow:    "https://services.arcgis.com/cJ9YHowT8TU7DUyn/arcgis/rest/services/Air%20Now%20Current%20Monitor%20Data%20Public/FeatureServer/0",
+
+  // The hourly interpolated AQI surface that fire.airnow.gov itself draws.
+  // Public, no key. gridcode 1 through 6 are the AQI categories.
+  contours:  "https://services.arcgis.com/cJ9YHowT8TU7DUyn/arcgis/rest/services/AirNowLatestContoursPM25/FeatureServer/0",
+
+  // OpenAQ's latest PM2.5 results, via Esri Living Atlas. This stands in for
+  // PurpleAir, which retired its free endpoints in 2022 and now requires a key
+  // on every request. OpenAQ carries no PurpleAir data, so the low-cost
+  // coverage here is thinner — mostly AirGradient units around the basin rim.
+  openaq:    "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/Air_Quality_PM25_Latest_Results/FeatureServer/0",
+
+  boundary:  "https://maps.trpa.org/server/rest/services/Datadownloader_PlanningandJurisdictions/MapServer/0"
+};
+
+/* Lake Tahoe. The map opens wider than the basin so approaching smoke is visible. */
+const BASIN = { center: [-120.02, 39.07], zoom: 8 };
+
+/* The smoke forecast is fetched once for this window and animated client side.
+   Querying the service per frame instead took over ten seconds a step, because
+   every step re-cuts national contour polygons against the current view.
+
+   maxAllowableOffset generalizes to roughly 3 km, which is at the resolution of
+   the underlying NDGD grid, so nothing real is lost and the payload drops from
+   about 13 MB to under 3 MB. */
+const SMOKE_REGION = { xmin: -122.6, ymin: 37.8, xmax: -118.2, ymax: 40.6 };
+const SMOKE_OFFSET = 0.03;
+/* Monitor and sensor search area. This is deliberately regional rather than
+   basin-sized: smoke arrives from outside the basin, so the upwind monitors in
+   Truckee, Portola, Carson, Reno, and the Sacramento Valley are the ones that
+   tell you what is coming. Only about six AirNow sites sit inside the TRPA
+   boundary, which is why the basin-only view looks so sparse next to AirNow. */
+const SENSOR_EXTENT = { xmin: -121.6, ymin: 38.3, xmax: -119.0, ymax: 39.9 };
+/* Perimeters and incidents are limited to this window around the region. */
+const FIRE_BBOX = { xmin: -124.0, ymin: 35.5, xmax: -116.0, ymax: 42.5 };
+
+/* ── Smoke classes ────────────────────────────────────────────────────────── */
+/* Colors follow the NWS service's own renderer. Alpha ramps with concentration
+   so light smoke does not bury the basemap. */
+const SMOKE_CLASSES = [
+  { value: "0 - 3",       label: "0 to 3",        rgb: [255, 255, 163], a: 0.35 },
+  { value: "3 - 25",      label: "3 to 25",       rgb: [250, 209,  87], a: 0.50 },
+  { value: "25 - 63",     label: "25 to 63",      rgb: [242, 166,  44], a: 0.62 },
+  { value: "63 - 158",    label: "63 to 158",     rgb: [171,  82,  19], a: 0.72 },
+  { value: "158 - 1000",  label: "More than 158", rgb: [105,   0,   0], a: 0.80 }
+];
+
+/* ── Air quality index ────────────────────────────────────────────────────── */
+/* EPA's official AQI category colors. These are a public-health convention and
+   deliberately override the TRPA palette — people read them by color alone. */
+const AQI_CATS = [
+  { max:  50, label: "Good",                           color: "#00E400" },
+  { max: 100, label: "Moderate",                       color: "#FFFF00" },
+  { max: 150, label: "Unhealthy for sensitive groups", color: "#FF7E00" },
+  { max: 200, label: "Unhealthy",                      color: "#FF0000" },
+  { max: 300, label: "Very unhealthy",                 color: "#8F3F97" },
+  { max: 500, label: "Hazardous",                      color: "#7E0023" }
+];
+
+/* PM2.5 to AQI breakpoints, as revised by EPA in May 2024. The "good" ceiling
+   dropped from 12.0 to 9.0 and the upper categories were pulled down as well. */
+const AQI_BREAKS = [
+  [  0.0,   9.0,   0,  50],
+  [  9.1,  35.4,  51, 100],
+  [ 35.5,  55.4, 101, 150],
+  [ 55.5, 125.4, 151, 200],
+  [125.5, 225.4, 201, 300],
+  [225.5, 325.4, 301, 500]
+];
+
+function pmToAqi(pm) {
+  if (pm == null || !isFinite(pm)) return null;
+  const c = Math.max(0, Math.round(pm * 10) / 10);   // EPA truncates to 0.1
+  for (const [cLo, cHi, iLo, iHi] of AQI_BREAKS) {
+    if (c <= cHi) return Math.round(((iHi - iLo) / (cHi - cLo)) * (c - cLo) + iLo);
+  }
+  return 500;
+}
+
+/* Point symbology follows the Fire and Smoke Map version 4 convention: every
+   reading is a circle in its AQI color with a thin black outline, and the
+   circle SIZE carries the device type — official monitors largest, temporary
+   monitors medium, low-cost sensors smallest. Earlier versions of that map
+   used circle, triangle, and square for the three types; version 4 dropped
+   shapes in favor of size alone. */
+const MARKER_SIZE = { monitor: 18, temporary: 13, sensor: 10 };
+
+/* Low-cost sensors go stale without going offline, and a stuck one skews the
+   headline badly — a Clarity unit near Sacramento was still publishing 284
+   µg/m³ from sixteen hours earlier while the regional median sat near 7.
+
+   The window is wide because the OpenAQ snapshot itself lags: readings in this
+   layer run from about one hour to six hours old, so a tight cutoff empties the
+   layer entirely. Twelve hours keeps the reporting sensors and drops the ones
+   that have genuinely stopped, including a few stuck for weeks. Sensor popups
+   carry their own timestamp so the age is always visible.
+
+   lastUpdated is a string field, but ISO 8601 sorts lexicographically, so a
+   plain string comparison is a valid time filter here. */
+const SENSOR_MAX_AGE_HOURS = 12;
+
+function sensorWhere() {
+  const cutoff = new Date(Date.now() - SENSOR_MAX_AGE_HOURS * 3600 * 1000)
+    .toISOString().replace(/\.\d{3}Z$/, "Z");
+  return `provider_name <> 'AirNow' AND lastUpdated >= '${cutoff}'`;
+}
+
+function aqiCat(aqi) {
+  if (aqi == null) return { label: "No data", color: "#B0B7C3" };
+  return AQI_CATS.find(c => aqi <= c.max) || AQI_CATS[AQI_CATS.length - 1];
+}
+
+/* ── Small helpers ────────────────────────────────────────────────────────── */
+const $ = (id) => document.getElementById(id);
+const rgba = (rgb, a) => `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
+const fmtInt = (n) => (n == null || !isFinite(n)) ? "—" : Math.round(n).toLocaleString();
+
+function toast(msg, ms = 3200) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._t);
+  if (ms) toast._t = setTimeout(() => t.classList.remove("show"), ms);
+}
+
+/* Pacific time — the forecast service publishes in UTC and basin users read local. */
+const TZ = "America/Los_Angeles";
+const fmtDay  = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: TZ });
+const fmtHour = new Intl.DateTimeFormat("en-US", { hour: "numeric", timeZone: TZ });
+const fmtStamp = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: TZ });
+
+/* ── Static legends ───────────────────────────────────────────────────────── */
+(function buildLegends() {
+  $("smokeLegend").innerHTML = SMOKE_CLASSES.map(c =>
+    `<div class="legend-item"><span class="box" style="background:${rgba(c.rgb, Math.min(1, c.a + 0.15))}"></span><span>${c.label}</span></div>`
+  ).join("");
+
+  const ranges = ["0 to 50", "51 to 100", "101 to 150", "151 to 200", "201 to 300", "301 and above"];
+  $("aqiLegend").innerHTML = AQI_CATS.map((c, i) =>
+    `<div class="legend-item"><span class="dot" style="background:${c.color}"></span><span>${ranges[i]} &middot; ${c.label}</span></div>`
+  ).join("");
+
+  // Device key — same three circle sizes the map draws, in neutral gray so the
+  // reading colors above stay the only thing carrying air quality meaning.
+  $("deviceLegend").innerHTML = [
+    [MARKER_SIZE.monitor,   "Official monitor"],
+    [MARKER_SIZE.temporary, "Temporary monitor"],
+    [MARKER_SIZE.sensor,    "Low-cost sensor"]
+  ].map(([px, label]) =>
+    `<div class="legend-item">
+       <span style="flex:0 0 20px; display:flex; justify-content:center;">
+         <span style="width:${px}px; height:${px}px; border-radius:50%;
+                      background:#C9CFD8; border:1px solid rgba(0,0,0,0.85);"></span>
+       </span>
+       <span>${label}</span>
+     </div>`
+  ).join("");
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Map
+   ═══════════════════════════════════════════════════════════════════════════ */
+let view, smokeLayer, firisLayer, wfigsLayer, incidentLayer, airnowLayer;
+let contourLayer, sensorLayer, boundaryLayer;
+let basinPolygon = null;          // TRPA boundary, used to filter sensors
+let airnowRows = [], sensorRows = [];
+let geometryEngine, GraphicCtor, PointCtor, PolygonCtor;
+let ctors = {};                   // modules needed after the require callback
+
+require([
+  "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer",
+  "esri/layers/GeoJSONLayer", "esri/Graphic",
+  "esri/widgets/TimeSlider", "esri/widgets/Home", "esri/widgets/ScaleBar",
+  "esri/widgets/BasemapToggle", "esri/geometry/Point", "esri/geometry/Polygon",
+  "esri/geometry/geometryEngine", "esri/time/TimeExtent"
+], (Map, MapView, FeatureLayer, GeoJSONLayer, Graphic, TimeSlider, Home, ScaleBar,
+    BasemapToggle, Point, Polygon, geomEngine, TimeExtent) => {
+
+  geometryEngine = geomEngine;
+  GraphicCtor = Graphic; PointCtor = Point; PolygonCtor = Polygon;
+  ctors = { GeoJSONLayer, TimeSlider, TimeExtent };
+
+  /* ── Fire perimeters ───────────────────────────────────────────────────── */
+  /* FIRIS carries CAL FIRE's near-real-time heat perimeters. Restricting to
+     displayStatus 'Active' is what keeps this to fires actually burning now —
+     the service also holds this season's inactive footprints. */
+  firisLayer = new FeatureLayer({
+    url: SVC.firis,
+    title: "Active fire perimeters (CAL FIRE)",
+    definitionExpression: "displayStatus = 'Active'",
+    useViewTime: false,
+    outFields: ["incident_name", "area_acres", "source", "type", "poly_DateCurrent", "FireDiscoveryDate"],
+    refreshInterval: 10,
+    renderer: {
+      type: "simple",
+      symbol: {
+        type: "simple-fill",
+        color: [156, 62, 39, 0.35],
+        outline: { color: [156, 62, 39, 1], width: 1.6 }
+      }
+    },
+    popupTemplate: {
+      title: "{incident_name}",
+      content: (f) => {
+        const a = f.graphic.attributes;
+        const rows = [
+          ["Name",     a.incident_name || "Not reported"],
+          ["Acres",    fmtInt(a.area_acres)],
+          ["Type",     a.type || "—"],
+          ["Source",   a.source || "—"],
+          ["Detected", a.FireDiscoveryDate ? fmtStamp.format(new Date(a.FireDiscoveryDate)) : "—"],
+          ["Perimeter updated", a.poly_DateCurrent ? fmtStamp.format(new Date(a.poly_DateCurrent)) : "—"]
+        ];
+        return `<table class="esri-widget__table">${rows.map(
+          ([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`;
+      }
+    }
+  });
+
+  wfigsLayer = new FeatureLayer({
+    url: SVC.wfigs,
+    title: "Active fire perimeters (NIFC)",
+    useViewTime: false,
+    outFields: ["poly_IncidentName", "poly_GISAcres", "poly_DateCurrent", "attr_PercentContained"],
+    refreshInterval: 10,
+    renderer: {
+      type: "simple",
+      symbol: {
+        type: "simple-fill",
+        color: [156, 62, 39, 0.22],
+        outline: { color: [156, 62, 39, 0.85], width: 1.2, style: "dash" }
+      }
+    },
+    popupTemplate: {
+      title: "{poly_IncidentName}",
+      content: (f) => {
+        const a = f.graphic.attributes;
+        const rows = [
+          ["Acres", fmtInt(a.poly_GISAcres)],
+          ["Contained", a.attr_PercentContained == null ? "—" : a.attr_PercentContained + " percent"],
+          ["Perimeter updated", a.poly_DateCurrent ? fmtStamp.format(new Date(a.poly_DateCurrent)) : "—"]
+        ];
+        return `<table class="esri-widget__table">${rows.map(
+          ([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`;
+      }
+    }
+  });
+
+  /* Incident points cover new and small fires that have no mapped perimeter yet. */
+  incidentLayer = new FeatureLayer({
+    url: SVC.incidents,
+    title: "Fire incidents",
+    definitionExpression: "IncidentTypeCategory = 'WF' AND FireOutDateTime IS NULL",
+    useViewTime: false,
+    outFields: ["IncidentName", "DailyAcres", "PercentContained", "FireDiscoveryDateTime", "FireCause", "POOState"],
+    refreshInterval: 10,
+    renderer: {
+      type: "simple",
+      symbol: {
+        type: "simple-marker", style: "triangle", size: 11,
+        color: [232, 119, 34, 0.95],
+        outline: { color: [255, 255, 255, 0.95], width: 1 }
+      }
+    },
+    labelingInfo: [{
+      labelExpressionInfo: { expression: "$feature.IncidentName" },
+      symbol: { type: "text", color: [0, 59, 113], haloColor: [255, 255, 255], haloSize: 1.4,
+                font: { size: 9, family: "sans-serif", weight: "bold" } },
+      labelPlacement: "above-center",
+      minScale: 2000000
+    }],
+    popupTemplate: {
+      title: "{IncidentName}",
+      content: (f) => {
+        const a = f.graphic.attributes;
+        const rows = [
+          ["Acres", fmtInt(a.DailyAcres)],
+          ["Contained", a.PercentContained == null ? "—" : a.PercentContained + " percent"],
+          ["Cause", a.FireCause || "Undetermined"],
+          ["Discovered", a.FireDiscoveryDateTime ? fmtStamp.format(new Date(a.FireDiscoveryDateTime)) : "—"]
+        ];
+        return `<table class="esri-widget__table">${rows.map(
+          ([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`;
+      }
+    }
+  });
+
+  /* ── AirNow regulatory monitors ────────────────────────────────────────── */
+  /* PM_AQI is the site's combined particulate AQI; -999 marks no data. */
+  airnowLayer = new FeatureLayer({
+    url: SVC.airnow,
+    title: "AirNow monitors",
+    // Inactive sites are decommissioned or offline, not merely between
+    // readings. AirNow does not draw them, and including them here made the
+    // panel count disagree with what was on the map.
+    definitionExpression: "Status = 'Active'",
+    useViewTime: false,
+    outFields: ["SiteName", "PM25", "PM25_AQI", "PM_AQI", "DataSource", "StateName", "ValidTime", "ReportingArea_PipeDelimited"],
+    refreshInterval: 15,
+    renderer: {
+      ...aqiRenderer("PM_AQI", MARKER_SIZE.monitor),
+      // Agencies wheel out temporary monitors during smoke events. AirNow draws
+      // those smaller than the permanent network, so the same size visual
+      // variable is applied here rather than splitting them onto a second layer.
+      visualVariables: [{
+        type: "size",
+        valueExpression: "IIf($feature.MonitorType == 'Permanent', 1, 0)",
+        stops: [
+          { value: 0, size: MARKER_SIZE.temporary },
+          { value: 1, size: MARKER_SIZE.monitor }
+        ]
+      }]
+    },
+    // The hosted service labels every site, including a boxed "ND" on sites
+    // with no reading. Label the AQI value only where there is one.
+    labelingInfo: aqiLabels("PM_AQI", 9),
+    popupTemplate: {
+      title: "{SiteName}",
+      content: (f) => {
+        const a = f.graphic.attributes;
+        const aqi = (a.PM_AQI != null && a.PM_AQI >= 0) ? a.PM_AQI : null;
+        const rows = [
+          ["Air quality index", aqi == null ? "No data" : `${aqi} · ${aqiCat(aqi).label}`],
+          ["PM2.5", a.PM25 == null ? "—" : `${a.PM25} µg/m³`],
+          ["Operator", a.DataSource || "—"],
+          ["Reporting area", (a.ReportingArea_PipeDelimited || "—").replace(/\|/g, ", ")],
+          ["Observed", a.ValidTime ? fmtStamp.format(new Date(a.ValidTime)) : "—"]
+        ];
+        return `<div style="margin-bottom:6px"><b>Regulatory monitor</b></div>`
+             + `<table class="esri-widget__table">${rows.map(
+                 ([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`;
+      }
+    }
+  });
+
+  /* ── Observed air quality surface ──────────────────────────────────────── */
+  /* Hourly interpolated AQI from the whole AirNow network. Off by default: it
+     is a second polygon surface and would compete with the forecast. Turning it
+     on is how you compare what is forecast against what is being measured. */
+  contourLayer = new FeatureLayer({
+    url: SVC.contours,
+    title: "Observed air quality",
+    useViewTime: false,
+    visible: false,
+    outFields: ["gridcode", "Timestamp"],
+    opacity: 0.45,
+    refreshInterval: 15,
+    renderer: {
+      type: "unique-value",
+      field: "gridcode",
+      defaultSymbol: null,
+      uniqueValueInfos: AQI_CATS.map((c, i) => ({
+        value: i + 1,
+        label: c.label,
+        symbol: { type: "simple-fill", color: c.color, outline: { width: 0 } }
+      }))
+    },
+    popupTemplate: {
+      title: "Observed air quality",
+      content: (f) => {
+        const a = f.graphic.attributes;
+        const cat = AQI_CATS[a.gridcode - 1];
+        return `<b>${cat ? cat.label : "Unknown"}</b><br/>`
+             + `Hourly AirNow surface, valid ${a.Timestamp ? fmtStamp.format(new Date(a.Timestamp)) : "—"} Pacific time`;
+      }
+    }
+  });
+
+  /* ── Low-cost sensors (OpenAQ) ─────────────────────────────────────────── */
+  /* AirNow-sourced rows are excluded because the monitor layer above already
+     carries them. OpenAQ reports PM2.5, not AQI, so the breaks below are the
+     2024 EPA PM2.5 breakpoints — the category boundaries, expressed in the
+     units the service actually publishes. */
+  sensorLayer = new FeatureLayer({
+    url: SVC.openaq,
+    title: "Low-cost sensors",
+    definitionExpression: sensorWhere(),
+    useViewTime: false,
+    outFields: ["location", "city", "value", "unit", "provider_name", "owner_name", "instrument_name", "lastUpdated", "url"],
+    refreshInterval: 15,
+    renderer: {
+      type: "class-breaks",
+      field: "value",
+      defaultSymbol: {
+        type: "simple-marker", style: "circle", size: MARKER_SIZE.sensor - 2,
+        color: [217, 217, 217, 0.95], outline: { color: [0, 0, 0, 0.85], width: 1 }
+      },
+      defaultLabel: "No data",
+      // Breaks are on PM2.5 because that is what OpenAQ publishes; the values
+      // are the 2024 EPA breakpoints, so the bands land on the AQI categories.
+      classBreakInfos: AQI_BREAKS.map(([cLo, cHi], i) => ({
+        minValue: i === 0 ? -1 : cLo,
+        maxValue: cHi,
+        label: AQI_CATS[i].label,
+        symbol: {
+          type: "simple-marker", style: "circle", size: MARKER_SIZE.sensor,
+          color: AQI_CATS[i].color, outline: { color: [0, 0, 0, 0.85], width: 1 }
+        }
+      }))
+    },
+    popupTemplate: {
+      title: "{location}",
+      content: (f) => {
+        const a = f.graphic.attributes;
+        const aqi = pmToAqi(a.value);
+        const rows = [
+          ["Air quality index", aqi == null ? "No data" : `${aqi} · ${aqiCat(aqi).label}`],
+          ["PM2.5", a.value == null ? "—" : `${a.value} ${a.unit || "µg/m³"}`],
+          ["Network", a.provider_name || "—"],
+          ["Instrument", a.instrument_name || "—"],
+          ["Last reading", a.lastUpdated ? fmtStamp.format(new Date(a.lastUpdated)) : "—"]
+        ];
+        return `<div style="margin-bottom:6px"><b>Low-cost sensor</b> · not a regulatory monitor</div>`
+             + `<table class="esri-widget__table">${rows.map(
+                 ([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`;
+      }
+    }
+  });
+
+  boundaryLayer = new FeatureLayer({
+    url: SVC.boundary,
+    title: "TRPA boundary",
+    useViewTime: false,
+    legendEnabled: false,
+    popupEnabled: false,
+    renderer: {
+      type: "simple",
+      symbol: { type: "simple-fill", color: [0, 0, 0, 0],
+                outline: { color: [0, 59, 113, 0.9], width: 2 } }
+    }
+  });
+
+  /* Draw order: the two surfaces at the bottom, points on top. The smoke layer
+     is inserted above the observed surface once its data arrives. */
+  const map = new Map({
+    basemap: "gray-vector",
+    layers: [contourLayer, boundaryLayer, wfigsLayer, firisLayer, incidentLayer, airnowLayer, sensorLayer]
+  });
+
+  view = new MapView({
+    container: "viewDiv",
+    map,
+    center: BASIN.center,
+    zoom: BASIN.zoom,
+    timeZone: TZ,
+    constraints: { minZoom: 5, maxZoom: 16, snapToZoom: false },
+    ui: { components: ["zoom", "attribution"] },
+    popup: { dockEnabled: false, collapseEnabled: false }
+  });
+
+  view.when(() => {
+    view.ui.add(new Home({ view }), "top-left");
+    view.ui.add(new ScaleBar({ view, unit: "dual" }), "bottom-left");
+    view.ui.add(new BasemapToggle({ view, nextBasemap: "hybrid" }), "bottom-right");
+
+    loadSmokeForecast();
+    loadBoundary();
+    wireLayerToggles();
+    // Bound both sensor services immediately. They are national (AirNow) and
+    // global (OpenAQ), so without a filter they would draw every site on earth.
+    applyBasinFilter();
+  });
+
+  /* Layer failures should degrade the page, not break it. The TRPA service in
+     particular has been unreachable from some networks. */
+  [firisLayer, wfigsLayer, incidentLayer, airnowLayer, contourLayer, sensorLayer, boundaryLayer].forEach(l => {
+    l.when().catch(err => {
+      console.error(`Layer "${l.title}" failed to load:`, err);
+      toast(`${l.title} is unavailable right now.`);
+    });
+  });
+});
+
+function aqiRenderer(field, size) {
+  const ring = (color, sz) => ({
+    type: "simple-marker", style: "circle", size: sz, color,
+    outline: { color: [0, 0, 0, 0.85], width: 1 }
+  });
+  return {
+    type: "class-breaks",
+    field,
+    // AirNow draws sites with no current reading in gray rather than hiding
+    // them, so an absent monitor stays visibly absent.
+    defaultSymbol: ring([217, 217, 217, 0.95], size - 3),
+    defaultLabel: "No data",
+    classBreakInfos: AQI_CATS.map((c, i) => ({
+      minValue: i === 0 ? 0 : AQI_CATS[i - 1].max + 0.001,
+      maxValue: c.max,
+      label: c.label,
+      symbol: ring(c.color, size)
+    }))
+  };
+}
+
+/* AQI value drawn inside the circle, the way AirNow labels its monitors. Two
+   classes so the text flips to white once the fill goes dark at Unhealthy. */
+function aqiLabels(field, sizePt) {
+  const cls = (where, color, haloColor) => ({
+    labelExpressionInfo: { expression: `IIf($feature.${field} >= 0, Text($feature.${field}), '')` },
+    where,
+    symbol: { type: "text", color, haloColor, haloSize: 1,
+              font: { size: sizePt, family: "sans-serif", weight: "bold" } },
+    labelPlacement: "center-center",
+    minScale: 2500000
+  });
+  return [
+    cls(`${field} <= 150`, [0, 0, 0], [255, 255, 255]),
+    cls(`${field} > 150`,  [255, 255, 255], [0, 0, 0])
+  ];
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Smoke forecast and the animation
+
+   One fetch pulls every forecast hour for the region. Each feature is stamped
+   with its hour index, and playback swaps a client-side filter, so stepping is
+   instant rather than a round trip per frame.
+   ═══════════════════════════════════════════════════════════════════════════ */
+let timeSlider = null, smokeLayerView = null, smokeHours = [];
+
+async function loadSmokeForecast() {
+  $("timeLabel").textContent = "Loading forecast…";
+  $("timeSubLabel").textContent = "Fetching the National Weather Service hours.";
+
+  let fc;
+  try {
+    const params = new URLSearchParams({
+      geometry: `${SMOKE_REGION.xmin},${SMOKE_REGION.ymin},${SMOKE_REGION.xmax},${SMOKE_REGION.ymax}`,
+      geometryType: "esriGeometryEnvelope",
+      inSR: "4326", outSR: "4326",
+      spatialRel: "esriSpatialRelIntersects",
+      where: "1=1",
+      outFields: "todate,smoke_classdesc",
+      returnGeometry: "true",
+      maxAllowableOffset: String(SMOKE_OFFSET),
+      geometryPrecision: "3",
+      resultRecordCount: "8000",
+      f: "geojson"
+    });
+    const resp = await fetch(`${SVC.smoke}/query?${params}`);
+    fc = await resp.json();
+    if (fc.error) throw new Error(fc.error.message);
+  } catch (err) {
+    console.error("Smoke forecast unavailable:", err);
+    $("timeLabel").textContent = "Forecast unavailable";
+    $("timeSubLabel").textContent = "The National Weather Service feed did not respond.";
+    toast("The smoke forecast did not load. Fires and sensors are unaffected.");
+    return;
+  }
+
+  const feats = (fc.features || []).filter(f => f.geometry);
+  if (!feats.length) {
+    $("timeLabel").textContent = "No smoke forecast";
+    $("timeSubLabel").textContent = "No smoke is forecast for the region.";
+    return;
+  }
+
+  // Stamp each polygon with the index of the hour it belongs to.
+  const stamps = [...new Set(feats.map(f => f.properties.todate))].sort((a, b) => a - b);
+  const hourOf = new Map(stamps.map((t, i) => [t, i]));
+  smokeHours = stamps.map(t => new Date(t));
+
+  feats.forEach((f, i) => {
+    f.properties.oid = i + 1;
+    f.properties.hourIndex = hourOf.get(f.properties.todate);
+  });
+
+  // GeoJSONLayer reads from a URL, so the fetched collection is handed over as
+  // a blob. That also lets the SDK do the GeoJSON to Esri ring conversion,
+  // including hole winding, rather than hand-rolling it.
+  const blobUrl = URL.createObjectURL(
+    new Blob([JSON.stringify({ type: "FeatureCollection", features: feats })], { type: "application/json" })
+  );
+
+  smokeLayer = new ctors.GeoJSONLayer({
+    url: blobUrl,
+    title: "Smoke forecast",
+    objectIdField: "oid",
+    fields: [
+      { name: "oid",             type: "oid" },
+      { name: "hourIndex",       type: "integer" },
+      { name: "todate",          type: "date" },
+      { name: "smoke_classdesc", type: "string" }
+    ],
+    renderer: {
+      type: "unique-value",
+      field: "smoke_classdesc",
+      defaultSymbol: null,
+      uniqueValueInfos: SMOKE_CLASSES.map(c => ({
+        value: c.value,
+        label: c.label,
+        symbol: { type: "simple-fill", color: rgba(c.rgb, c.a), outline: { width: 0 } }
+      }))
+    },
+    popupTemplate: {
+      title: "Smoke forecast",
+      content: (f) => {
+        const a = f.graphic.attributes;
+        return `<b>${a.smoke_classdesc} µg/m³</b> near the surface<br/>`
+             + `Valid ${fmtStamp.format(new Date(a.todate))} Pacific time`;
+      }
+    }
+  });
+
+  view.map.add(smokeLayer, 1);   // above the observed surface, below the points
+  smokeLayer.visible = $("tgSmoke").checked;
+
+  try {
+    smokeLayerView = await view.whenLayerView(smokeLayer);
+  } catch (err) {
+    console.error("Smoke layer view failed:", err);
+  }
+  showHour(0);
+
+  buildTimeSlider(smokeHours);
+}
+
+/* Swapping the filter is the whole animation — no network per frame. */
+function showHour(i) {
+  if (smokeLayerView) smokeLayerView.filter = { where: `hourIndex = ${i}` };
+}
+
+function buildTimeSlider(dates) {
+  const TimeSlider = ctors.TimeSlider, TimeExtent = ctors.TimeExtent;
+
+  timeSlider = new TimeSlider({
+    container: "timeSliderDiv",
+    // No view is passed: binding the slider to the view would set
+    // view.timeExtent, and the fire and sensor layers are not time aware.
+    mode: "instant",
+    layout: "compact",                      // play controls inline, one row tall
+    timeZone: TZ,
+    fullTimeExtent: new TimeExtent({ start: dates[0], end: dates[dates.length - 1] }),
+    stops: { dates },
+    playRate: 650,
+    loop: true,
+    labelFormatFunction: () => "",          // the panel to the left carries the label
+    tickConfigs: [{
+      mode: "position",
+      values: dates.filter((d, i) => i % 6 === 0).map(d => d.getTime()),
+      labelsVisible: false
+    }]
+  });
+
+  timeSlider.watch("timeExtent", (te) => {
+    if (!te || !te.start) return;
+    const t = te.start.getTime();
+    let i = dates.findIndex(d => d.getTime() === t);
+    if (i < 0) {
+      // Guard against a thumb landing between stops.
+      i = dates.reduce((best, d, k) =>
+        Math.abs(d.getTime() - t) < Math.abs(dates[best].getTime() - t) ? k : best, 0);
+    }
+    showHour(i);
+    updateTimeLabel(dates[i], dates);
+  });
+
+  updateTimeLabel(dates[0], dates);
+}
+
+function updateTimeLabel(d, dates) {
+  $("timeLabel").textContent = `${fmtDay.format(d)}, ${fmtHour.format(d)}`;
+  if (!dates) return;
+  const i = dates.findIndex(x => x.getTime() === d.getTime());
+  if (i >= 0) $("timeSubLabel").textContent = `Hour ${i + 1} of ${dates.length} · Pacific time`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRPA boundary — also the basin filter for sensors
+   ═══════════════════════════════════════════════════════════════════════════ */
+async function loadBoundary() {
+  try {
+    const params = new URLSearchParams({
+      where: "1=1", returnGeometry: "true", outSR: "4326", outFields: "OBJECTID", f: "json"
+    });
+    const resp = await fetch(`${SVC.boundary}/query?${params}`);
+    const json = await resp.json();
+    if (json.error) throw new Error(json.error.message);
+    const rings = (json.features || []).flatMap(f => f.geometry.rings || []);
+    if (rings.length) {
+      basinPolygon = new PolygonCtor({ rings, spatialReference: { wkid: 4326 } });
+      applyBasinFilter();
+    }
+  } catch (err) {
+    // Without the polygon the sensor list falls back to the bounding box, which
+    // is a slightly wider area but still the Tahoe Region.
+    console.error("TRPA boundary unavailable, sensors fall back to the search box:", err);
+    $("tgBasinOnly").disabled = true;
+    toast("The TRPA boundary did not load. Sensors show for the wider search area.");
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sensor extent filtering
+
+   Both sensor services are hosted and cover far more than the region, so each
+   one always carries a spatial filter. The basin switch chooses between the
+   TRPA boundary and the wider search box.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function applyBasinFilter() {
+  const basinOnly = $("tgBasinOnly").checked && basinPolygon;
+  const geometry = basinOnly ? basinPolygon : sensorSearchExtent();
+  const filter = { geometry, spatialRelationship: "intersects" };
+
+  Promise.all([
+    view.whenLayerView(airnowLayer).then(lv => { lv.filter = filter; }).catch(() => {}),
+    view.whenLayerView(sensorLayer).then(lv => { lv.filter = filter; }).catch(() => {})
+  ]).then(refreshCounts);
+}
+
+/* The regional search area, as an Esri extent. */
+function sensorSearchExtent() {
+  return { type: "extent", ...SENSOR_EXTENT, spatialReference: { wkid: 4326 } };
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Summary statistics and the sensor chart
+   ═══════════════════════════════════════════════════════════════════════════ */
+async function refreshCounts() {
+  // Low-cost sensors within the active filter
+  try {
+    const lv = await view.whenLayerView(sensorLayer);
+    const q = sensorLayer.createQuery();
+    if (lv.filter && lv.filter.geometry) q.geometry = lv.filter.geometry;
+    q.returnGeometry = false;
+    const res = await sensorLayer.queryFeatures(q);
+    sensorRows = res.features.map(f => f.attributes)
+      .filter(a => a.value != null)
+      .map(a => ({ name: a.location || a.city || "Sensor", aqi: pmToAqi(a.value), kind: a.provider_name || "Sensor" }))
+      .filter(r => r.aqi != null);
+    $("cntSensors").textContent = String(res.features.length);
+  } catch (err) {
+    console.error("Sensor query failed:", err);
+    $("cntSensors").textContent = "—";
+    sensorRows = [];
+  }
+
+  // AirNow sites in view of the filter
+  try {
+    const lv = await view.whenLayerView(airnowLayer);
+    const q = airnowLayer.createQuery();   // inherits the layer's Active filter
+    if (lv.filter && lv.filter.geometry) q.geometry = lv.filter.geometry;
+    const res = await airnowLayer.queryFeatures(q);
+    airnowRows = res.features.map(f => f.attributes)
+      .filter(a => a.PM_AQI != null && a.PM_AQI >= 0)
+      .map(a => ({ name: a.SiteName, aqi: a.PM_AQI, kind: "AirNow" }));
+    $("cntAirNow").textContent = String(res.features.length);
+  } catch (err) {
+    console.error("AirNow query failed:", err);
+    $("cntAirNow").textContent = "—";
+  }
+
+  // Fires near the region
+  try {
+    const fq = firisLayer.createQuery();
+    fq.geometry = { type: "extent", ...FIRE_BBOX, spatialReference: { wkid: 4326 } };
+    fq.where = "displayStatus = 'Active'";
+    fq.outFields = ["area_acres"];
+    fq.returnGeometry = false;
+    const fr = await firisLayer.queryFeatures(fq);
+    const acres = fr.features.reduce((s, f) => s + (f.attributes.area_acres || 0), 0);
+    $("cntPerims").textContent = String(fr.features.length);
+    $("statFires").textContent = fmtInt(fr.features.length);
+    $("statAcres").textContent = fmtInt(acres);
+  } catch (err) {
+    console.error("Perimeter query failed:", err);
+    $("cntPerims").textContent = "—";
+  }
+
+  try {
+    const iq = incidentLayer.createQuery();
+    iq.geometry = { type: "extent", ...FIRE_BBOX, spatialReference: { wkid: 4326 } };
+    iq.returnGeometry = false;
+    $("cntIncidents").textContent = String(await incidentLayer.queryFeatureCount(iq));
+  } catch (err) {
+    console.error("Incident query failed:", err);
+    $("cntIncidents").textContent = "—";
+  }
+
+  updateSummary();
+}
+
+function updateSummary() {
+  const all = [...airnowRows, ...sensorRows];
+
+  $("statSensors").textContent = fmtInt(all.length);
+
+  const scope = $("tgBasinOnly").checked ? "basin" : "region";
+
+  if (!all.length) {
+    $("statAqi").textContent = "—";
+    $("statAqiLabel").textContent = `Highest AQI in the ${scope}`;
+    $("conditionsNote").textContent = "No monitors are reporting in the current view.";
+    $("chartSec").hidden = true;
+    return;
+  }
+
+  const worst = all.reduce((a, b) => (b.aqi > a.aqi ? b : a));
+  const cat = aqiCat(worst.aqi);
+  $("statAqi").textContent = String(worst.aqi);
+  $("statAqi").style.color = worst.aqi > 100 ? "#9C3E27" : "#003B71";
+  $("statAqiLabel").textContent = `Highest AQI · ${cat.label}`;
+  $("conditionsNote").textContent =
+    `Worst reading is ${worst.aqi} at ${worst.name}. Updated ${fmtStamp.format(new Date())} Pacific time.`;
+
+  drawChart(all);
+}
+
+function drawChart(rows) {
+  const top = rows.slice().sort((a, b) => b.aqi - a.aqi).slice(0, 12).reverse();
+  $("chartSec").hidden = false;
+
+  Plotly.react("aqiChart", [{
+    type: "bar",
+    orientation: "h",
+    x: top.map(r => r.aqi),
+    y: top.map(r => r.name.length > 22 ? r.name.slice(0, 21) + "…" : r.name),
+    marker: { color: top.map(r => aqiCat(r.aqi).color), line: { color: "#003B71", width: 0.6 } },
+    customdata: top.map(r => [r.kind, aqiCat(r.aqi).label]),
+    hovertemplate: "%{y}<br>AQI %{x} · %{customdata[1]}<br>%{customdata[0]}<extra></extra>"
+  }], {
+    font: { family: "Open Sans, system-ui, sans-serif", color: "#003B71", size: 10 },
+    paper_bgcolor: "transparent",
+    plot_bgcolor: "transparent",
+    margin: { t: 6, r: 10, b: 26, l: 108 },
+    xaxis: { title: { text: "AQI", font: { size: 10 } }, gridcolor: "#e8e8e8", zeroline: false },
+    yaxis: { automargin: false, ticksuffix: "  " },
+    bargap: 0.28,
+    showlegend: false
+  }, { responsive: true, displayModeBar: false });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UI wiring
+   ═══════════════════════════════════════════════════════════════════════════ */
+function wireLayerToggles() {
+  // Layers are resolved on each change, not captured — the smoke layer does not
+  // exist yet when this runs, since its data is still being fetched.
+  const bind = (id, getLayers) => {
+    const sw = $(id);
+    sw.addEventListener("calciteSwitchChange", () => {
+      getLayers().filter(Boolean).forEach(l => { l.visible = sw.checked; });
+    });
+  };
+  bind("tgSmoke",     () => [smokeLayer]);
+  bind("tgPerims",    () => [firisLayer, wfigsLayer]);
+  bind("tgIncidents", () => [incidentLayer]);
+  bind("tgContours",  () => [contourLayer]);
+  bind("tgAirNow",    () => [airnowLayer]);
+  bind("tgSensors",   () => [sensorLayer]);
+  bind("tgBoundary",  () => [boundaryLayer]);
+
+  $("tgBasinOnly").addEventListener("calciteSwitchChange", applyBasinFilter);
+}
+
+$("panelToggle").addEventListener("click", () => {
+  document.body.classList.toggle("panel-collapsed");
+  const collapsed = document.body.classList.contains("panel-collapsed");
+  $("panelToggle").innerHTML = collapsed ? "&#9654;" : "&#9664;";
+  $("panelToggle").title = collapsed ? "Show panel" : "Collapse panel";
+});
+
+const LIVE_LAYERS = () => [firisLayer, wfigsLayer, incidentLayer, airnowLayer, contourLayer, sensorLayer];
+
+function refreshLive() {
+  // The staleness cutoff is relative to now, so it has to be recomputed or a
+  // long-open tab would keep accepting readings that have since aged out.
+  if (sensorLayer) sensorLayer.definitionExpression = sensorWhere();
+  LIVE_LAYERS().forEach(l => l && l.refresh());
+}
+
+$("refreshBtn").addEventListener("click", async () => {
+  $("refreshBtn").loading = true;
+  refreshLive();
+  await refreshCounts();
+  $("refreshBtn").loading = false;
+  toast("Refreshed.");
+});
+
+/* Fire and sensor data move on a scale of minutes, so a quiet refresh keeps a
+   screen left open on a wall display honest. */
+setInterval(() => {
+  refreshLive();
+  refreshCounts().catch(() => {});
+}, 10 * 60 * 1000);
+</script>
+
+</body>
+</html>
