@@ -2,19 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Smoke Forecast and Air Quality - TRPA Maps</title>
   <meta name="description" content="Animated 48-hour National Weather Service smoke forecast for the Tahoe Region, with active fire perimeters and live air quality sensors." />
   <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
 
   <!-- Calcite Design System -->
   <script type="module" src="https://js.arcgis.com/calcite-components/5.0"></script>
-
-  <!-- Plotly must load BEFORE the ArcGIS SDK. Plotly is UMD: if Dojo's AMD
-       loader already exists it registers an anonymous define(), which Dojo
-       misattributes to whichever esri module it is fetching. That throws
-       multipleDefine and leaves the loader unable to resolve esri/Map. -->
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 
   <!-- ArcGIS Maps SDK -->
   <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
@@ -40,7 +34,9 @@
       height: 100%; font-family: var(--brand-font); color: var(--trpa-navy);
       overflow: hidden; background: var(--gray-bg);
     }
-    body { display: flex; flex-direction: column; height: 100vh; }
+    /* 100dvh tracks the iOS URL bar as it collapses; 100vh is the fallback
+       for browsers that predate dynamic viewport units. */
+    body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
 
     /* ── Header ── */
     #appHeader {
@@ -76,7 +72,10 @@
       flex: 0 0 18px; border: none; border-right: 1px solid var(--gray-border);
       background: var(--white); cursor: pointer; color: #8A93A3; padding: 0;
     }
-    #panelToggle:hover { background: var(--gray-bg); color: var(--trpa-blue); }
+    /* :active mirrors :hover so touch users get the same feedback a mouse
+       hover gives, there is no hover state on a phone. */
+    #panelToggle:hover,
+    #panelToggle:active { background: var(--gray-bg); color: var(--trpa-blue); }
 
     #mapWrap { flex: 1 1 auto; position: relative; min-width: 0; display: flex; flex-direction: column; }
     #viewDiv { flex: 1 1 auto; min-height: 0; }
@@ -111,12 +110,13 @@
     #timeBar {
       flex: 0 0 auto; background: var(--white); border-top: 1px solid var(--gray-border);
       padding: 0.45rem 0.9rem; display: flex; align-items: center; gap: 0.9rem;
+      /* The home-indicator inset keeps the slider tappable on notched iPhones. */
+      padding-bottom: calc(0.45rem + env(safe-area-inset-bottom));
       /* Nothing inside may bleed upward over the map. */
       overflow: hidden;
     }
-    #timeLabelWrap { flex: 0 0 auto; min-width: 168px; }
+    #timeLabelWrap { flex: 0 0 auto; }
     #timeLabel { font-size: 0.86rem; font-weight: 700; color: var(--trpa-navy); line-height: 1.2; }
-    #timeSubLabel { font-size: 0.68rem; color: #8A93A3; }
     /* The widget's root element is #timeSliderDiv itself, so these rules go on
        the id, not on a descendant .esri-time-slider.
 
@@ -131,15 +131,27 @@
       font-family: var(--brand-font);
     }
     #timeSliderDiv .esri-time-slider__row { padding: 0; min-height: 0; height: 38px; }
-    #timeSliderDiv .esri-time-slider__row:nth-child(1) { display: none; }
-    #timeSliderDiv .esri-time-slider__row:nth-child(2) { order: 2; flex: 1 1 auto; min-width: 0; }
-    #timeSliderDiv .esri-time-slider__row:nth-child(3) { order: 1; flex: 0 0 auto; }
+    /* Rows 1 and 3 (date readout, transport buttons) are replaced by our own
+       label block and the Calcite #transport controls; only the track shows. */
+    #timeSliderDiv .esri-time-slider__row:nth-child(1),
+    #timeSliderDiv .esri-time-slider__row:nth-child(3) { display: none; }
+    #timeSliderDiv .esri-time-slider__row:nth-child(2) { flex: 1 1 auto; min-width: 0; }
+
+    /* ── Calcite transport ── */
+    #transport { display: flex; align-items: center; gap: 0.15rem; flex: 0 0 auto; }
+    #transport calcite-button { --calcite-color-brand: var(--trpa-blue);
+      --calcite-color-brand-hover: var(--trpa-navy); }
     #timeSliderDiv .esri-time-slider__slider {
       height: 38px; padding: 0 16px; background: transparent;
       display: flex; align-items: center;
     }
     #timeSliderDiv .esri-slider {
       background: transparent; width: 100%;
+      /* Esri ships this element with margin-top -19px, a pull-up hack for its
+         own stacked layout. Inside our flex-centered row that hack is what was
+         hoisting the track above the play button, so it is zeroed and the
+         element fills the row instead, letting the flex centering be true. */
+      height: 100%; margin: 0;
       display: flex; align-items: center;
     }
     /* Esri sizes this wrapper at 2px and lets the track overhang it, so
@@ -157,10 +169,24 @@
        reads as inert next to the rest of the page. The track is thickened and
        rounded, and the segment behind the thumb is filled with TRPA blue so the
        bar doubles as a progress meter through the forecast. */
+    /* The widget ships with its own vertical padding, which pushes the track
+       toward the top of any box that flex-centers the widget itself. Zeroing
+       it makes the widget's visual height equal the track, so centering the
+       widget centers the line you actually see. */
+    #timeSliderDiv .esri-slider { padding: 0; }
     #timeSliderDiv .esri-slider__track {
       height: 6px; border-radius: 3px; background: var(--gray-border);
+      position: relative;
     }
     #timeSliderDiv .esri-slider__segment { height: 6px; background: transparent; }
+    /* The anchor keeps the track's old 4px height, so a thumb positioned at
+       half the ANCHOR sits above the midline of a 6px track. Stretch the
+       anchor to the full track and pin the thumb to its true center. */
+    #timeSliderDiv .esri-slider__anchor { top: 0; height: 100%; }
+    #timeSliderDiv .esri-slider__thumb {
+      top: 50%; left: 50%; margin: 0;
+      transform: translate(-50%, -50%);
+    }
     /* Segment 0 is everything left of the thumb: hours already played. */
     #timeSliderDiv .esri-slider__segment-0 {
       background: linear-gradient(90deg, var(--trpa-blue), #3E9BE0);
@@ -174,8 +200,12 @@
       transition: transform 0.12s ease, box-shadow 0.12s ease;
     }
     #timeSliderDiv .esri-slider__thumb:hover,
+    #timeSliderDiv .esri-slider__thumb:active,
     #timeSliderDiv .esri-slider__anchor:focus .esri-slider__thumb {
-      transform: scale(1.18); box-shadow: 0 2px 7px rgba(0,59,113,0.45);
+      /* The translate must ride along or the grow animation flings the thumb
+         off its centered position. */
+      transform: translate(-50%, -50%) scale(1.18);
+      box-shadow: 0 2px 7px rgba(0,59,113,0.45);
     }
 
     /* ── Hour ticks ──
@@ -185,26 +215,6 @@
        52-hour forecast was decoration paid for in map height. */
     #timeSliderDiv .esri-slider__ticks { display: none; }
 
-    /* ── Transport controls ──
-       Play is the primary action, so it gets a filled brand circle; step
-       forward and back stay quiet beside it. */
-    #timeSliderDiv .esri-widget--button {
-      background: transparent; border-radius: 50%; color: var(--trpa-navy);
-      width: 30px; height: 30px; transition: background 0.12s ease, color 0.12s ease;
-    }
-    #timeSliderDiv .esri-widget--button:hover { background: var(--gray-bg); color: var(--trpa-blue); }
-    #timeSliderDiv .esri-time-slider__animation-button {
-      background: var(--trpa-blue); color: var(--white);
-      width: 34px; height: 34px; box-shadow: 0 1px 5px rgba(0,114,206,0.4);
-    }
-    #timeSliderDiv .esri-time-slider__animation-button:hover {
-      background: var(--trpa-navy); color: var(--white);
-    }
-    #timeSliderDiv .esri-time-slider__previous,
-    #timeSliderDiv .esri-time-slider__next,
-    #timeSliderDiv .esri-time-slider__animation {
-      display: flex; align-items: center; justify-content: center; width: 40px;
-    }
 
     /* ── Misc ── */
     .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
@@ -215,23 +225,56 @@
     .stat .v { font-size: 1.15rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
     .stat .k { font-size: 0.63rem; color: var(--gray-text); margin-top: 0.1rem; }
 
-    #aqiChart { width: 100%; height: 190px; }
 
     .src-list { font-size: 0.68rem; line-height: 1.5; color: #8A93A3; }
     .src-list a { color: var(--trpa-blue); text-decoration: none; }
     .src-list a:hover { text-decoration: underline; }
 
+    /* Fixed to the viewport, not the map: as a map child it vanished whenever
+       the panel overlay covered the map on a phone. Bottom offset clears the
+       time bar so a toast never hides the slider. */
     #toast {
-      position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+      position: fixed; left: 50%; bottom: calc(72px + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
       background: var(--trpa-navy); color: #fff; font-size: 0.78rem;
       padding: 0.5rem 0.9rem; border-radius: 6px; box-shadow: var(--shadow);
-      opacity: 0; pointer-events: none; transition: opacity 0.18s; z-index: 30; max-width: 80%;
+      opacity: 0; pointer-events: none; transition: opacity 0.18s; z-index: 100;
+      max-width: min(90vw, 420px);
     }
     #toast.show { opacity: 1; }
 
     @media (max-width: 760px) {
       #sidePanel { flex-basis: 260px; }
-      #timeLabelWrap { min-width: 128px; }
+    }
+
+    /* ── Phone layout ──
+       The panel becomes a full-width overlay so the map keeps the whole
+       screen, and the time bar wraps to two rows so the slider track gets the
+       entire bottom edge instead of the sliver left beside the transport. */
+    @media (max-width: 640px) {
+      #appBody { position: relative; }
+      #sidePanel {
+        position: absolute; top: 0; left: 0; bottom: 0;
+        width: 100%; flex-basis: 100%; z-index: 15;
+        border-right: none; box-shadow: var(--shadow);
+      }
+      /* The toggle must float above the overlay or there is no way to close it. */
+      #panelToggle { position: relative; z-index: 16; }
+      /* The agency line and back link repeat what the logo says, and at 375px
+         they push the refresh button off the right edge. */
+      .hagency, .hdr-back { display: none; }
+      .hname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      /* Row 1: readout and transport. Row 2: the track, full width. */
+      #timeBar { flex-wrap: wrap; row-gap: 0.25rem; }
+      #timeLabelWrap { flex: 1 1 auto; min-width: 0; }
+      #timeSliderDiv { flex: 1 1 100%; }
+    }
+
+    /* Touch targets. Sized by pointer type, not width: a small window on a
+       desktop still has a precise mouse, a tablet does not. */
+    @media (pointer: coarse) {
+      #panelToggle { min-width: 44px; }
+      .layer-row { min-height: 36px; }
     }
   </style>
 </head>
@@ -315,6 +358,10 @@
           <span class="lbl">Satellite smoke plumes</span>
         </div>
         <div class="layer-row">
+          <calcite-switch id="tgCams" scale="s"></calcite-switch>
+          <span class="lbl">Fire cameras</span>
+        </div>
+        <div class="layer-row">
           <calcite-switch id="tgContours" scale="s"></calcite-switch>
           <span class="lbl">Observed air quality now</span>
         </div>
@@ -378,11 +425,6 @@
         </div>
       </section>
 
-      <!-- Sensor chart -->
-      <section class="panel-sec" id="chartSec" hidden>
-        <h2 class="sec-title">Sensor readings</h2>
-        <div id="aqiChart"></div>
-      </section>
 
       <!-- Sources -->
       <section class="panel-sec">
@@ -393,6 +435,7 @@
           Perimeters and evacuations: <a href="https://www.fire.ca.gov/" target="_blank" rel="noopener">CAL FIRE</a> FIRIS and Zonehaven, plus
           <a href="https://data-nifc.opendata.arcgis.com/" target="_blank" rel="noopener">NIFC</a> WFIGS.<br />
           Hot spots: <a href="https://firms.modaps.eosdis.nasa.gov/" target="_blank" rel="noopener">NASA FIRMS</a> MODIS and VIIRS.<br />
+          Cameras: <a href="https://alertcalifornia.org/" target="_blank" rel="noopener">ALERTCalifornia</a>, UC San Diego.<br />
           Air quality: <a href="https://fire.airnow.gov/" target="_blank" rel="noopener">AirNow</a>
           monitors and hourly AQI surface, plus low-cost sensors via
           <a href="https://openaq.org/" target="_blank" rel="noopener">OpenAQ</a>.<br />
@@ -406,7 +449,6 @@
 
     <div id="mapWrap">
       <div id="viewDiv"></div>
-      <div id="toast"></div>
     </div>
   </div>
 
@@ -414,10 +456,23 @@
   <div id="timeBar">
     <div id="timeLabelWrap">
       <div id="timeLabel">Loading forecast&hellip;</div>
-      <div id="timeSubLabel"></div>
+    </div>
+    <!-- Transport is Calcite, not the Esri widget's buttons: the widget's own
+         row is hidden in CSS and these drive it through its API instead. -->
+    <div id="transport">
+      <calcite-button id="stepBack" appearance="transparent" kind="neutral" scale="s"
+        icon-start="chevron-left" round label="Previous hour"></calcite-button>
+      <calcite-button id="playBtn" scale="m" icon-start="play" round
+        label="Play animation"></calcite-button>
+      <calcite-button id="stepFwd" appearance="transparent" kind="neutral" scale="s"
+        icon-start="chevron-right" round label="Next hour"></calcite-button>
     </div>
     <div id="timeSliderDiv"></div>
   </div>
+
+  <!-- A body-level child so it floats over whatever is on screen, including
+       the phone-width panel overlay that covers the map. -->
+  <div id="toast"></div>
 
 <script>
 "use strict";
@@ -475,7 +530,12 @@ const SVC = {
   // coverage here is thinner, mostly AirGradient units around the basin rim.
   openaq:    "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/Air_Quality_PM25_Latest_Results/FeatureServer/0",
 
-  boundary:  "https://maps.trpa.org/server/rest/services/Datadownloader_PlanningandJurisdictions/MapServer/0"
+  boundary:  "https://maps.trpa.org/server/rest/services/Datadownloader_PlanningandJurisdictions/MapServer/0",
+
+  // ALERTCalifornia (UC San Diego) live fire cameras. On a smoke map they are
+  // the "just look at the sky" layer: each popup shows the camera's latest
+  // frame, which answers "how smoky is it up there" faster than any index.
+  cameras:   "https://services8.arcgis.com/X84q166Srnyl4JMV/ArcGIS/rest/services/ALERTCalifornia_Camera_Feed/FeatureServer/0"
 };
 
 /* PurpleAir requires a key on every request and this page is public, so the
@@ -573,10 +633,12 @@ const FLAME_PATH =
    SVG data URI so it stays self-contained, a CIM symbol would need the flame
    converted to Esri ring geometry. */
 function fireIconUrl(fill) {
+  // The flame fills most of the circle. An earlier cut scaled it to 0.62 and it
+  // read as a dot in a ring at map sizes.
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">` +
     `<circle cx="16" cy="16" r="14.5" fill="${fill}" stroke="#ffffff" stroke-width="2.5"/>` +
-    `<path d="${FLAME_PATH}" transform="translate(8.5,9.2) scale(0.62)" fill="#ffffff"/>` +
+    `<path d="${FLAME_PATH}" transform="translate(3.4,1.8) scale(1.05)" fill="#ffffff"/>` +
     `</svg>`;
   return "data:image/svg+xml;base64," + btoa(svg);
 }
@@ -611,12 +673,111 @@ const $ = (id) => document.getElementById(id);
 const rgba = (rgb, a) => `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
 const fmtInt = (n) => (n == null || !isFinite(n)) ? "N/A" : Math.round(n).toLocaleString();
 
+/* The one phone breakpoint, shared with the 640px CSS media query. Checked at
+   load only: the choices it gates (widget set, button scales) are not worth
+   rebuilding live for the rare mid-session resize across the line. */
+const MOBILE_MQ = window.matchMedia("(max-width: 640px)");
+
+/* Third-party strings that end up inside popup HTML, camera names, county
+   URLs, are data from upstream feeds, not markup. Escape before interpolating. */
+function escHtml(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
 function toast(msg, ms = 3200) {
   const t = $("toast");
   t.textContent = msg;
   t.classList.add("show");
   clearTimeout(toast._t);
   if (ms) toast._t = setTimeout(() => t.classList.remove("show"), ms);
+}
+
+/* "3 hours ago" style relative time for popups. */
+function relTime(ms) {
+  if (!ms) return null;
+  const h = (Date.now() - ms) / 3600000;
+  if (h < 1) return `${Math.max(1, Math.round(h * 60))} minutes ago`;
+  if (h < 48) return `${Math.round(h)} hours ago`;
+  return `${Math.round(h / 24)} days ago`;
+}
+
+/* CAL FIRE's per-incident URL is /incidents/YYYY/M/D/slug/, dated by the
+   discovery date in Pacific time and slugged from the incident name with a
+   "-fire" suffix unless the name already ends in fire or complex. Verified
+   against CAL FIRE's own published URLs. It can still 404 for federal fires
+   CAL FIRE never posts, which is why the link is labeled as their page
+   specifically rather than promising details. */
+function calFireUrl(a) {
+  const p = new Intl.DateTimeFormat("en-US",
+    { timeZone: "America/Los_Angeles", year: "numeric", month: "numeric", day: "numeric" })
+    .formatToParts(new Date(a.FireDiscoveryDateTime)).reduce((o, x) => (o[x.type] = x.value, o), {});
+  let slug = (a.IncidentName || "").toLowerCase().trim().replace(/\s+/g, "-");
+  if (!/(-fire|-complex)$/.test(slug)) slug += "-fire";
+  return `https://www.fire.ca.gov/incidents/${p.year}/${p.month}/${p.day}/${slug}/`;
+}
+
+/* Fire incident popup, patterned on how Watch Duty presents an incident:
+   headline numbers first, a containment bar, then provenance and links to the
+   official incident pages. Returns a DOM element because Esri's popup
+   sanitizer strips inline styles from HTML strings but passes elements
+   through untouched. */
+function incidentPopup(a) {
+  const el = document.createElement("div");
+  el.style.cssText = "font-family:var(--brand-font);color:#003B71;min-width:230px";
+
+  const pct = (a.PercentContained == null || a.PercentContained < 0) ? null : Math.min(100, a.PercentContained);
+  const stat = (v, label) =>
+    `<div style="flex:1;min-width:70px">
+       <div style="font-size:1.25rem;font-weight:700;line-height:1.1">${v}</div>
+       <div style="font-size:0.65rem;color:#5A6577">${label}</div>
+     </div>`;
+
+  let html = `<div style="display:flex;gap:0.8rem;margin:2px 0 8px">`
+    + stat(fmtInt(a.DailyAcres), "acres")
+    + stat(pct == null ? "N/A" : pct + "%", "contained")
+    + (a.TotalIncidentPersonnel ? stat(fmtInt(a.TotalIncidentPersonnel), "personnel") : "")
+    + `</div>`;
+
+  if (pct != null) {
+    html += `<div style="height:7px;border-radius:4px;background:#E2E6EC;margin-bottom:10px">
+               <div style="height:7px;border-radius:4px;width:${pct}%;
+                    background:${pct >= 90 ? "#4A6118" : "#E87722"}"></div>
+             </div>`;
+  }
+
+  const meta = [
+    ["Cause", a.FireCause || "Undetermined"],
+    ["Location", [a.POOCounty, (a.POOState || "").replace("US-", "")].filter(Boolean).join(" County, ")],
+    ["Started", a.FireDiscoveryDateTime
+      ? `${fmtStamp.format(new Date(a.FireDiscoveryDateTime))} · ${relTime(a.FireDiscoveryDateTime)}` : "N/A"],
+    ["Updated", relTime(a.ModifiedOnDateTime) || "N/A"]
+  ];
+  html += `<table class="esri-widget__table">${meta.map(
+    ([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`;
+
+  // Official pages. The direct CAL FIRE page leads when it can be built; the
+  // InciWeb search backs it up because federal California fires never get a
+  // CAL FIRE page and the constructed slug 404s for them. The keys= form is
+  // the one InciWeb actually honors, its /search?query= route redirects to
+  // /search/node and drops the query on the floor.
+  const name = encodeURIComponent(a.IncidentName || "");
+  const links = [];
+  if (a.POOState === "US-CA" && a.FireDiscoveryDateTime && a.IncidentName) {
+    links.push([calFireUrl(a), "CAL FIRE incident page"]);
+  }
+  links.push([`https://inciweb.wildfire.gov/search/node?keys=${name}`, "InciWeb"]);
+  // Nevada has no per-incident pages; InciWeb is the only per-incident
+  // destination for large NV fires, so the statewide portal rides alongside.
+  if (a.POOState === "US-NV") links.push(["https://www.nevadafireinfo.org/", "Nevada Fire Info"]);
+  html += `<div style="margin-top:9px;display:flex;gap:0.5rem;flex-wrap:wrap">` + links.map(
+    ([href, label]) =>
+      `<a href="${href}" target="_blank" rel="noopener" style="font-size:0.72rem;font-weight:600;
+         color:#0072CE;text-decoration:none;border:1px solid #B4CBE8;border-radius:4px;
+         padding:3px 8px">${label} &nearr;</a>`).join("") + `</div>`;
+
+  el.innerHTML = html;
+  return el;
 }
 
 /* NOAA HMS stamps times as "YYYYDDD HHMM", year, day of year, UTC clock. */
@@ -684,7 +845,7 @@ const fmtStamp = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeri
    ═══════════════════════════════════════════════════════════════════════════ */
 let view, smokeLayer, firisLayer, wfigsLayer, incidentLayer, airnowLayer;
 let contourLayer, sensorLayer, boundaryLayer;
-let modisLayer, viirsLayer, evacLayer, hmsLayer, purpleLayer;
+let modisLayer, viirsLayer, evacLayer, hmsLayer, purpleLayer, camLayer;
 let purpleMeta = null;            // freshness and budget from the cached fetch
 let basinPolygon = null;          // TRPA boundary, used to filter sensors
 let airnowRows = [], sensorRows = [], purpleRows = [];
@@ -696,9 +857,11 @@ require([
   "esri/layers/GeoJSONLayer", "esri/Graphic",
   "esri/widgets/TimeSlider", "esri/widgets/Home", "esri/widgets/ScaleBar",
   "esri/widgets/BasemapToggle", "esri/geometry/Point", "esri/geometry/Polygon",
-  "esri/geometry/geometryEngine", "esri/time/TimeExtent"
+  "esri/geometry/geometryEngine", "esri/time/TimeExtent", "esri/Basemap",
+  "esri/core/reactiveUtils", "esri/layers/TileLayer", "esri/layers/VectorTileLayer"
 ], (Map, MapView, FeatureLayer, GeoJSONLayer, Graphic, TimeSlider, Home, ScaleBar,
-    BasemapToggle, Point, Polygon, geomEngine, TimeExtent) => {
+    BasemapToggle, Point, Polygon, geomEngine, TimeExtent, Basemap, reactiveUtils,
+    TileLayer, VectorTileLayer) => {
 
   geometryEngine = geomEngine;
   GraphicCtor = Graphic; PointCtor = Point; PolygonCtor = Polygon;
@@ -777,7 +940,9 @@ require([
     title: "Fire incidents",
     definitionExpression: "IncidentTypeCategory = 'WF' AND FireOutDateTime IS NULL",
     useViewTime: false,
-    outFields: ["IncidentName", "DailyAcres", "PercentContained", "FireDiscoveryDateTime", "FireCause", "POOState"],
+    outFields: ["IncidentName", "DailyAcres", "PercentContained", "FireDiscoveryDateTime",
+                "FireCause", "POOState", "POOCounty", "TotalIncidentPersonnel",
+                "ModifiedOnDateTime", "UniqueFireIdentifier"],
     refreshInterval: 10,
     renderer: {
       type: "simple",
@@ -807,18 +972,9 @@ require([
       minScale: 2000000
     }],
     popupTemplate: {
-      title: "{IncidentName}",
-      content: (f) => {
-        const a = f.graphic.attributes;
-        const rows = [
-          ["Acres", fmtInt(a.DailyAcres)],
-          ["Contained", a.PercentContained == null ? "N/A" : a.PercentContained + " percent"],
-          ["Cause", a.FireCause || "Undetermined"],
-          ["Discovered", a.FireDiscoveryDateTime ? fmtStamp.format(new Date(a.FireDiscoveryDateTime)) : "N/A"]
-        ];
-        return `<table class="esri-widget__table">${rows.map(
-          ([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`;
-      }
+      title: "{IncidentName} Fire",
+      content: (f) => incidentPopup(f.graphic.attributes),
+      outFields: ["*"]
     }
   });
 
@@ -976,7 +1132,7 @@ require([
         ];
         return `<table class="esri-widget__table">${rows.map(
                  ([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`
-             + (a.url ? `<p style="margin-top:6px"><a href="${a.url}" target="_blank" rel="noopener">County evacuation page</a></p>` : "")
+             + (a.url ? `<p style="margin-top:6px"><a href="${escHtml(a.url)}" target="_blank" rel="noopener">County evacuation page</a></p>` : "")
              + `<p style="margin-top:6px;font-size:0.8em;color:#5A6577">Always confirm with your county emergency office.</p>`;
       }
     }
@@ -1024,6 +1180,88 @@ require([
         return `<div style="margin-bottom:6px">Smoke seen from above, which may be aloft rather than at ground level.</div>`
              + `<table class="esri-widget__table">${rows.map(
                  ([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</table>`;
+      }
+    }
+  });
+
+  /* ── Live fire cameras ─────────────────────────────────────────────────── */
+  /* Off by default: cameras support the smoke story, they are not it. */
+  camLayer = new FeatureLayer({
+    url: SVC.cameras,
+    title: "Fire cameras",
+    definitionExpression: "isOnline = 'online'",
+    useViewTime: false,
+    visible: false,
+    outFields: ["cameraName", "cameraURL", "imageURL", "county", "viewTime"],
+    refreshInterval: 30,
+    renderer: {
+      type: "simple",
+      symbol: {
+        type: "simple-marker", style: "circle", size: 9,
+        color: [0, 59, 113, 0.9],
+        outline: { color: [255, 255, 255, 0.95], width: 1.5 }
+      }
+    },
+    popupTemplate: {
+      title: "{cameraName}",
+      // A DOM element, not a string, for the same sanitizer reason as
+      // incidentPopup, and because the frame refreshes itself while open.
+      // ALERTCalifornia republishes latest-frame.jpg about every 10 seconds
+      // (~200 KB), so polling it gives a live feel without iframing their
+      // whole app into a popup.
+      content: (f) => {
+        const a = f.graphic.attributes;
+        const el = document.createElement("div");
+        const camUrl = escHtml(a.cameraURL);
+        const attribution =
+          `<div style="margin-top:5px;font-size:0.75rem">
+             ALERTCalifornia, UC San Diego<br/>
+             <a href="${camUrl}" target="_blank" rel="noopener">Open live camera &nearr;</a>
+           </div>`;
+
+        if (!a.imageURL) {
+          el.innerHTML = attribution;
+          return el;
+        }
+
+        el.innerHTML =
+          `<a href="${camUrl}" target="_blank" rel="noopener">
+             <img alt="Latest frame from ${escHtml(a.cameraName)}"
+                  style="width:100%;max-width:320px;border-radius:6px;display:block" /></a>
+           <div style="margin-top:6px;font-size:0.72rem;color:#5A6577;
+                       display:flex;align-items:center;gap:0.4rem">
+             <span style="flex:0 0 8px;height:8px;border-radius:50%;background:#D6342C"></span>
+             <span class="cam-stamp">Live · updates every 10 seconds</span>
+           </div>` + attribution;
+
+        const img = el.querySelector("img");
+        const stamp = el.querySelector(".cam-stamp");
+        const fmtClock = new Intl.DateTimeFormat("en-US",
+          { hour: "numeric", minute: "2-digit", second: "2-digit", timeZone: TZ });
+
+        // Each refresh loads into a detached Image first and only swaps the
+        // visible src once it has arrived, so the popup never flashes a
+        // half-loaded or broken frame mid-cycle.
+        const refreshFrame = () => {
+          const pre = new Image();
+          pre.onload = () => {
+            img.src = pre.src;
+            stamp.textContent =
+              `Live · updates every 10 seconds · frame ${fmtClock.format(new Date())}`;
+          };
+          pre.src = `${a.imageURL}?t=${Date.now()}`;
+        };
+        refreshFrame();
+
+        // Tied to the element's lifecycle: once the popup closes the element
+        // leaves the DOM and the next tick shuts the interval down, so a
+        // browsing session never accumulates orphaned pollers.
+        const poll = setInterval(() => {
+          if (!el.isConnected) { clearInterval(poll); return; }
+          refreshFrame();
+        }, 12000);
+
+        return el;
       }
     }
   });
@@ -1136,17 +1374,46 @@ require([
     }
   });
 
+  /* ── Basemap ──
+     The same three-layer stack Esri assembles for its own Wildfire Aware app,
+     rather than a stock basemap id. Reading their webmap was worth it for two
+     details that are not obvious:
+
+       - the Firefly imagery carries a minScale, so it drops out above roughly
+         1:12M and the vector base carries the small scales on its own. Dark
+         imagery at continental zoom is an unreadable smear.
+       - the hillshade sits on TOP with blendMode multiply, so it contributes
+         only shadow and leaves the imagery's color alone. That is what makes
+         basin topography legible underneath translucent smoke bands.
+
+     Their "Wildfire Aware Base" vector style is a public item, so the labels
+     are the ones their cartographers tuned for exactly this kind of map. */
+  const darkBasemap = new Basemap({
+    title: "Firefly imagery",
+    baseLayers: [
+      new TileLayer({
+        portalItem: { id: "a66bfb7dd3b14228bf7ba42b138fe2ea" },
+        minScale: 12112078
+      }),
+      new VectorTileLayer({ portalItem: { id: "23a79f4136b846c8bfd62edcd3e4cf71" } }),
+      new TileLayer({
+        portalItem: { id: "1b243539f4514b6ba35e7d995890db1d" },
+        blendMode: "multiply"
+      })
+    ]
+  });
+
   /* Draw order, bottom to top: the observed and satellite surfaces, then the
      smoke forecast (inserted below evacuations once its data arrives), then
      evacuation zones, fire geometry, and finally the reading badges. */
   const map = new Map({
-    basemap: "gray-vector",
+    basemap: darkBasemap,
     layers: [
       contourLayer, hmsLayer,
       evacLayer, boundaryLayer,
       wfigsLayer, firisLayer,
       modisLayer, viirsLayer, incidentLayer,
-      airnowLayer, sensorLayer
+      airnowLayer, sensorLayer, camLayer
     ]
   });
 
@@ -1158,13 +1425,43 @@ require([
     timeZone: TZ,
     constraints: { minZoom: 5, maxZoom: 16, snapToZoom: false },
     ui: { components: ["zoom", "attribution"] },
-    popup: { dockEnabled: false, collapseEnabled: false }
+    // Docked to the bottom on narrow views: a floating popup anchored to a
+    // point can land under a thumb or off screen entirely on a phone.
+    popup: {
+      dockEnabled: true,
+      collapseEnabled: true,
+      dockOptions: {
+        buttonEnabled: false,
+        breakpoint: { width: 640 },
+        position: "bottom-center"
+      }
+    }
   });
 
   view.when(() => {
     view.ui.add(new Home({ view }), "top-left");
-    view.ui.add(new ScaleBar({ view, unit: "dual" }), "bottom-left");
-    view.ui.add(new BasemapToggle({ view, nextBasemap: "hybrid" }), "bottom-right");
+    // Phone screens skip the scale bar and basemap toggle: they crowd the
+    // corners of a small map and neither earns the pixels there.
+    if (!MOBILE_MQ.matches) {
+      view.ui.add(new ScaleBar({ view, unit: "dual" }), "bottom-left");
+      // Terrain with Labels as the light alternate: relief matters in a basin
+      // where smoke pools by elevation, and it contrasts cleanly with the
+      // dark imagery default.
+      view.ui.add(new BasemapToggle({ view, nextBasemap: "terrain" }), "bottom-right");
+
+      // The navy boundary that works on gray vanishes on dark imagery, so the
+      // outline follows the basemap: white-on-dark, navy-on-light.
+      reactiveUtils.watch(() => view.map.basemap, (bm) => {
+        // Identity, not a property sniff: the dark basemap is assembled from
+        // layers and so has no portalItem of its own to test.
+        const dark = bm === darkBasemap;
+        boundaryLayer.renderer = {
+          type: "simple",
+          symbol: { type: "simple-fill", color: [0, 0, 0, 0],
+                    outline: { color: dark ? [255, 255, 255, 0.9] : [0, 59, 113, 0.9], width: 2 } }
+        };
+      }, { initial: true });
+    }
 
     loadSmokeForecast();
     loadBoundary();
@@ -1178,7 +1475,7 @@ require([
   /* Layer failures should degrade the page, not break it. The TRPA service in
      particular has been unreachable from some networks. */
   [firisLayer, wfigsLayer, incidentLayer, airnowLayer, contourLayer, sensorLayer,
-   boundaryLayer, modisLayer, viirsLayer, evacLayer, hmsLayer].forEach(l => {
+   boundaryLayer, modisLayer, viirsLayer, evacLayer, hmsLayer, camLayer].forEach(l => {
     l.when().catch(err => {
       console.error(`Layer "${l.title}" failed to load:`, err);
       toast(`${l.title} is unavailable right now.`);
@@ -1269,10 +1566,32 @@ return '500';`;
    instant rather than a round trip per frame.
    ═══════════════════════════════════════════════════════════════════════════ */
 let timeSlider = null, smokeLayerView = null, smokeHours = [];
+let smokeBlobUrl = null;  // the object URL backing the current GeoJSONLayer
 
 async function loadSmokeForecast() {
-  $("timeLabel").textContent = "Loading forecast…";
-  $("timeSubLabel").textContent = "Fetching the National Weather Service hours.";
+  const previous = smokeLayer;
+  if (!previous) {
+    $("timeLabel").textContent = "Loading forecast…";
+  }
+
+  /* The query endpoint answers with Cache-Control max-age=3600, and a
+     byte-identical URL lets the browser or CDN serve an hour-stale payload,
+     so a fresh NWS run could sit unseen behind the cache. The run's own
+     publish stamp is fetched first (cache-busted, it is tiny) and folded into
+     the big query URL: a new run changes the URL and punches through every
+     cache, while between runs the cached 2-3 MB payload is reused, which is
+     exactly the split we want. If the stamp is unavailable, a 30-minute time
+     bucket approximates the same behavior. */
+  let runStamp = null;
+  try {
+    const metaResp = await fetch(`${SVC.smoke}?f=json&_=${Date.now()}`,
+      { signal: AbortSignal.timeout(10000) });
+    const meta = await metaResp.json();
+    runStamp = (meta.editingInfo || {}).dataLastEditDate || null;
+  } catch (err) {
+    console.warn("Smoke run metadata unavailable, using a time bucket:", err);
+  }
+  if (!runStamp) runStamp = Math.floor(Date.now() / 1800000);
 
   let fc;
   try {
@@ -1289,21 +1608,31 @@ async function loadSmokeForecast() {
       resultRecordCount: "8000",
       f: "geojson"
     });
-    const resp = await fetch(`${SVC.smoke}/query?${params}`);
+    // A hard timeout, because a hung national service otherwise leaves the
+    // time bar saying "Loading" forever with no signal that it gave up.
+    const resp = await fetch(`${SVC.smoke}/query?${params}&_run=${runStamp}`,
+      { signal: AbortSignal.timeout(20000) });
     fc = await resp.json();
     if (fc.error) throw new Error(fc.error.message);
   } catch (err) {
     console.error("Smoke forecast unavailable:", err);
     $("timeLabel").textContent = "Forecast unavailable";
-    $("timeSubLabel").textContent = "The National Weather Service feed did not respond.";
-    toast("The smoke forecast did not load. Fires and sensors are unaffected.");
+    const timedOut = err && (err.name === "TimeoutError" || err.name === "AbortError");
+    toast(timedOut
+      ? "The smoke forecast timed out. It retries automatically, or press Refresh."
+      : "The smoke forecast did not load. Fires and sensors are unaffected.");
     return;
+  }
+
+  // The service caps a query at a record count; if this trips, the later
+  // forecast hours are silently missing and the animation ends early.
+  if (fc.properties && fc.properties.exceededTransferLimit) {
+    console.warn("Smoke forecast query exceeded the transfer limit; some forecast hours may be missing.");
   }
 
   const feats = (fc.features || []).filter(f => f.geometry);
   if (!feats.length) {
     $("timeLabel").textContent = "No smoke forecast";
-    $("timeSubLabel").textContent = "No smoke is forecast for the region.";
     return;
   }
 
@@ -1320,9 +1649,11 @@ async function loadSmokeForecast() {
   // GeoJSONLayer reads from a URL, so the fetched collection is handed over as
   // a blob. That also lets the SDK do the GeoJSON to Esri ring conversion,
   // including hole winding, rather than hand-rolling it.
+  const oldBlobUrl = smokeBlobUrl;
   const blobUrl = URL.createObjectURL(
     new Blob([JSON.stringify({ type: "FeatureCollection", features: feats })], { type: "application/json" })
   );
+  smokeBlobUrl = blobUrl;
 
   smokeLayer = new ctors.GeoJSONLayer({
     url: blobUrl,
@@ -1354,6 +1685,15 @@ async function loadSmokeForecast() {
     }
   });
 
+  // Replace the previous run rather than stacking a second copy on the map.
+  if (previous) {
+    view.map.remove(previous);
+    try { previous.destroy(); } catch (err) { /* already gone */ }
+    // The blob behind the old layer would otherwise live until the tab closes,
+    // a few MB leaked on every half-hourly refresh of a wall display.
+    if (oldBlobUrl) URL.revokeObjectURL(oldBlobUrl);
+  }
+
   // Just under the evacuation zones, so smoke never obscures an evacuation.
   view.map.add(smokeLayer, view.map.layers.indexOf(evacLayer));
   smokeLayer.visible = $("tgSmoke").checked;
@@ -1363,7 +1703,6 @@ async function loadSmokeForecast() {
   } catch (err) {
     console.error("Smoke layer view failed:", err);
   }
-  showHour(0);
 
   buildTimeSlider(smokeHours);
 }
@@ -1373,8 +1712,26 @@ function showHour(i) {
   if (smokeLayerView) smokeLayerView.filter = { where: `hourIndex = ${i}` };
 }
 
+/* The hour to open on: the current one, not the oldest published one.
+
+   The NWS window is fixed at 52 hours and only rolls forward when the feed is
+   reissued, so its first hour is routinely in the past; at the time of writing
+   the newest available run was 21 hours old and 24 of its 52 hours had already
+   happened. Opening at index 0 meant the map loaded showing yesterday evening. */
+function currentHourIndex(dates) {
+  const now = Date.now();
+  const i = dates.findIndex(d => d.getTime() >= now);
+  return i < 0 ? dates.length - 1 : i;   // whole run in the past: show its end
+}
+
 function buildTimeSlider(dates) {
   const TimeSlider = ctors.TimeSlider, TimeExtent = ctors.TimeExtent;
+
+  // Rebuilt on every refresh, so tear down the previous widget first.
+  if (timeSlider) {
+    try { timeSlider.destroy(); } catch (err) { /* already gone */ }
+    timeSlider = null;
+  }
 
   timeSlider = new TimeSlider({
     container: "timeSliderDiv",
@@ -1403,14 +1760,33 @@ function buildTimeSlider(dates) {
     updateTimeLabel(dates[i], dates);
   });
 
-  updateTimeLabel(dates[0], dates);
+  const start = currentHourIndex(dates);
+  timeSlider.timeExtent = new TimeExtent({ start: dates[start], end: dates[start] });
+  showHour(start);
+  updateTimeLabel(dates[start], dates);
+
+  // Keep the Calcite play button honest about the widget's state, whichever
+  // side started or stopped the animation.
+  timeSlider.watch("state", (s) => {
+    const playing = s === "playing";
+    $("playBtn").iconStart = playing ? "pause" : "play";
+    $("playBtn").label = playing ? "Pause animation" : "Play animation";
+  });
 }
 
-function updateTimeLabel(d, dates) {
+/* The Calcite transport drives the Esri widget through its API. Wired once;
+   every handler tolerates the slider not existing yet. */
+(function wireTransport() {
+  $("playBtn").addEventListener("click", () => {
+    if (!timeSlider) return;
+    timeSlider.state === "playing" ? timeSlider.stop() : timeSlider.play();
+  });
+  $("stepBack").addEventListener("click", () => { timeSlider && timeSlider.previous(); });
+  $("stepFwd").addEventListener("click", () => { timeSlider && timeSlider.next(); });
+})();
+
+function updateTimeLabel(d) {
   $("timeLabel").textContent = `${fmtDay.format(d)}, ${fmtHour.format(d)}`;
-  if (!dates) return;
-  const i = dates.findIndex(x => x.getTime() === d.getTime());
-  if (i >= 0) $("timeSubLabel").textContent = `Hour ${i + 1} of ${dates.length} · Pacific time`;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1421,7 +1797,8 @@ async function loadBoundary() {
     const params = new URLSearchParams({
       where: "1=1", returnGeometry: "true", outSR: "4326", outFields: "OBJECTID", f: "json"
     });
-    const resp = await fetch(`${SVC.boundary}/query?${params}`);
+    const resp = await fetch(`${SVC.boundary}/query?${params}`,
+      { signal: AbortSignal.timeout(20000) });
     const json = await resp.json();
     if (json.error) throw new Error(json.error.message);
     const rings = (json.features || []).flatMap(f => f.geometry.rings || []);
@@ -1446,9 +1823,11 @@ async function loadBoundary() {
    the age is shown rather than hidden.
    ═══════════════════════════════════════════════════════════════════════════ */
 async function loadPurpleAir() {
+  const previous = purpleLayer;
   let payload;
   try {
-    const resp = await fetch(PURPLEAIR_FILE, { cache: "no-store" });
+    const resp = await fetch(PURPLEAIR_FILE,
+      { cache: "no-store", signal: AbortSignal.timeout(15000) });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     payload = await resp.json();
   } catch (err) {
@@ -1510,6 +1889,13 @@ async function loadPurpleAir() {
     }
   });
 
+  // Replace, never stack: this now also runs on the periodic refresh so a tab
+  // left open picks up the hourly Action commits.
+  if (previous) {
+    purpleLayer.visible = previous.visible;
+    view.map.remove(previous);
+    try { previous.destroy(); } catch (err) { /* already gone */ }
+  }
   view.map.add(purpleLayer);
   purpleRows = rows.map(s => ({ name: `PurpleAir ${s.id}`, aqi: s.aqi, kind: "PurpleAir" }));
   refreshCounts();
@@ -1536,9 +1922,14 @@ function applyBasinFilter() {
   const geometry = basinOnly ? basinPolygon : sensorSearchExtent();
   const filter = { geometry, spatialRelationship: "intersects" };
 
+  // Cameras stay regional regardless of the basin switch: the useful ones sit
+  // on peaks around the rim, looking into the basin from outside it.
+  const regional = { geometry: sensorSearchExtent(), spatialRelationship: "intersects" };
+
   Promise.all([
     view.whenLayerView(airnowLayer).then(lv => { lv.filter = filter; }).catch(() => {}),
-    view.whenLayerView(sensorLayer).then(lv => { lv.filter = filter; }).catch(() => {})
+    view.whenLayerView(sensorLayer).then(lv => { lv.filter = filter; }).catch(() => {}),
+    view.whenLayerView(camLayer).then(lv => { lv.filter = regional; }).catch(() => {})
   ]).then(refreshCounts);
 }
 
@@ -1656,7 +2047,6 @@ function updateSummary() {
     $("statAqi").textContent = "N/A";
     $("statAqiLabel").textContent = `Highest AQI in the ${scope}`;
     $("conditionsNote").textContent = "No monitors are reporting in the current view.";
-    $("chartSec").hidden = true;
     return;
   }
 
@@ -1665,7 +2055,7 @@ function updateSummary() {
      Sacramento sat at 407 µg/m³, an AQI of 500, while its neighbours read under
      30 and the next-highest reading in the region was 148. That is a broken
      sensor, not a smoke event, and it should not be the number this page leads
-     with. Sensors still draw on the map and appear in the chart below. */
+     with. Sensors still draw on the map with their own readings. */
   const usingMonitors = airnowRows.length > 0;
   const pool = usingMonitors ? airnowRows : sensorRows;
   const worst = pool.reduce((a, b) => (b.aqi > a.aqi ? b : a));
@@ -1686,33 +2076,8 @@ function updateSummary() {
   const age = purpleAge();
   if (age && age !== "just now") note += ` PurpleAir readings collected ${age}.`;
   $("conditionsNote").textContent = note;
-
-  drawChart(all);
 }
 
-function drawChart(rows) {
-  const top = rows.slice().sort((a, b) => b.aqi - a.aqi).slice(0, 12).reverse();
-  $("chartSec").hidden = false;
-
-  Plotly.react("aqiChart", [{
-    type: "bar",
-    orientation: "h",
-    x: top.map(r => r.aqi),
-    y: top.map(r => r.name.length > 22 ? r.name.slice(0, 21) + "…" : r.name),
-    marker: { color: top.map(r => aqiCat(r.aqi).color), line: { color: "#003B71", width: 0.6 } },
-    customdata: top.map(r => [r.kind, aqiCat(r.aqi).label]),
-    hovertemplate: "%{y}<br>AQI %{x} · %{customdata[1]}<br>%{customdata[0]}<extra></extra>"
-  }], {
-    font: { family: "Open Sans, system-ui, sans-serif", color: "#003B71", size: 10 },
-    paper_bgcolor: "transparent",
-    plot_bgcolor: "transparent",
-    margin: { t: 6, r: 10, b: 26, l: 108 },
-    xaxis: { title: { text: "AQI", font: { size: 10 } }, gridcolor: "#e8e8e8", zeroline: false },
-    yaxis: { automargin: false, ticksuffix: "  " },
-    bargap: 0.28,
-    showlegend: false
-  }, { responsive: true, displayModeBar: false });
-}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    UI wiring
@@ -1732,6 +2097,7 @@ function wireLayerToggles() {
   bind("tgHotspots",  () => [modisLayer, viirsLayer]);
   bind("tgEvac",      () => [evacLayer]);
   bind("tgHms",       () => [hmsLayer]);
+  bind("tgCams",      () => [camLayer]);
   bind("tgContours",  () => [contourLayer]);
   bind("tgAirNow",    () => [airnowLayer]);
   bind("tgPurple",    () => [purpleLayer]);
@@ -1746,11 +2112,48 @@ $("panelToggle").addEventListener("click", () => {
   const collapsed = document.body.classList.contains("panel-collapsed");
   $("panelToggle").innerHTML = collapsed ? "&#9654;" : "&#9664;";
   $("panelToggle").title = collapsed ? "Show panel" : "Collapse panel";
+  $("panelToggle").setAttribute("aria-label", collapsed ? "Show panel" : "Collapse panel");
 });
+
+/* The switch itself is a small target; on touch the whole row forwards a tap
+   to its switch. Taps on the switch pass through untouched, or the toggle
+   would fire twice and cancel itself. Wired everywhere, not just on phones:
+   clicking a layer's name is a reasonable way to toggle it with a mouse too. */
+$("sidePanel").addEventListener("click", (e) => {
+  const row = e.target.closest(".layer-row");
+  if (!row) return;
+  const sw = row.querySelector("calcite-switch");
+  if (!sw || sw === e.target || sw.contains(e.target)) return;
+  sw.click();
+});
+
+/* ── Phone-only setup, applied once at load ─────────────────────────────────
+   These are attribute and DOM changes CSS cannot express: Calcite's scale is
+   an attribute, and the panel-collapsed start state has to match the toggle's
+   arrow. Load-time only, same reasoning as MOBILE_MQ above. */
+(function phoneInit() {
+  if (!MOBILE_MQ.matches) return;
+
+  // The panel is a full-screen overlay at this width, so it starts closed:
+  // the map, not the legend, is what someone opening this on a phone wants.
+  document.body.classList.add("panel-collapsed");
+  $("panelToggle").innerHTML = "&#9654;";
+  $("panelToggle").title = "Show panel";
+  $("panelToggle").setAttribute("aria-label", "Show panel");
+
+  // Thumb-sized transport. Scale is a Calcite attribute, not styleable css.
+  $("playBtn").setAttribute("scale", "l");
+  $("stepBack").setAttribute("scale", "m");
+  $("stepFwd").setAttribute("scale", "m");
+
+  // Icon-only refresh; the label keeps it named for screen readers.
+  $("refreshBtn").textContent = "";
+  $("refreshBtn").setAttribute("label", "Refresh");
+})();
 
 const LIVE_LAYERS = () => [firisLayer, wfigsLayer, incidentLayer, airnowLayer,
                            contourLayer, sensorLayer, modisLayer, viirsLayer,
-                           evacLayer, hmsLayer];
+                           evacLayer, hmsLayer, camLayer];
 
 function refreshLive() {
   // The staleness cutoff is relative to now, so it has to be recomputed or a
@@ -1762,6 +2165,11 @@ function refreshLive() {
 $("refreshBtn").addEventListener("click", async () => {
   $("refreshBtn").loading = true;
   refreshLive();
+  // If the forecast never loaded, a timeout or outage, Refresh is the retry
+  // the failure toast promises. A loaded forecast keeps its half-hour cycle.
+  if (!smokeLayer) {
+    await loadSmokeForecast().catch(err => console.error("Smoke forecast retry failed:", err));
+  }
   await refreshCounts();
   $("refreshBtn").loading = false;
   toast("Refreshed.");
@@ -1771,8 +2179,35 @@ $("refreshBtn").addEventListener("click", async () => {
    screen left open on a wall display honest. */
 setInterval(() => {
   refreshLive();
+  // The committed sensor file changes hourly; re-reading it here keeps a tab
+  // left open honest without any per-visitor API cost.
+  loadPurpleAir().catch(() => {});
   refreshCounts().catch(() => {});
 }, 10 * 60 * 1000);
+
+/* The smoke forecast is a client-side layer built from one fetch, so the
+   refresh above never touched it: a tab left open would show the same run
+   forever, and its "current" hour would drift further into the past every hour.
+   Re-fetching rebuilds the layer and re-centres the slider on the present. */
+setInterval(() => {
+  loadSmokeForecast().catch(err => console.error("Smoke forecast refresh failed:", err));
+}, 30 * 60 * 1000);
+
+/* Even between re-fetches, the hour that counts as "now" moves. Nudge the
+   slider forward on the hour unless someone is actively scrubbing it. */
+setInterval(() => {
+  if (!timeSlider || !smokeHours.length || timeSlider.state === "playing") return;
+  const te = timeSlider.timeExtent;
+  const shown = te && te.start ? smokeHours.findIndex(d => d.getTime() === te.start.getTime()) : -1;
+  const should = currentHourIndex(smokeHours);
+  // Only advance if the view is still parked on what used to be the current
+  // hour. If the user has moved it somewhere deliberate, leave it alone.
+  if (shown >= 0 && should > shown && should - shown === 1) {
+    timeSlider.timeExtent = new ctors.TimeExtent({
+      start: smokeHours[should], end: smokeHours[should]
+    });
+  }
+}, 5 * 60 * 1000);
 </script>
 
 </body>
