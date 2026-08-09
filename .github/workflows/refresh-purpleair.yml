@@ -8,9 +8,27 @@ name: Refresh PurpleAir sensors
 # Requires a repository secret named PURPLEAIR_READ_KEY holding a PurpleAir
 # READ key. The key must never be committed to the repo.
 
+# PAUSED (Aug 2026). The hourly schedule is commented out because the runs were
+# failing; manual dispatch is left on so the workflow can be exercised while
+# debugging. Nothing here spends points on its own while the schedule is off.
+#
+# To resume: uncomment the two schedule lines below.
+#
+# Most likely cause, in order of probability:
+#   1. The PURPLEAIR_READ_KEY repository secret was never added. The script
+#      exits 1 with "PURPLEAIR_READ_KEY is not set" as its very first action,
+#      which matches a run that fails immediately every time.
+#   2. Branch protection on main rejecting the bot's push, despite
+#      contents: write below.
+#   3. The commit step's "git pull --rebase" running against the shallow
+#      checkout actions/checkout makes by default, which can fail to rebase.
+#      If so, add "fetch-depth: 0" to the checkout step.
+#
+# Diagnose with: gh run list --workflow=refresh-purpleair.yml
+#                gh run view <run-id> --log-failed
 on:
-  schedule:
-    - cron: "7 * * * *"     # hourly, off the hour to avoid the busiest minute
+  # schedule:
+  #   - cron: "7 * * * *"   # hourly, off the hour to avoid the busiest minute
   workflow_dispatch:         # manual "Run workflow" button
 
 permissions:
@@ -27,6 +45,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The commit step rebases onto origin/main, which cannot work against
+          # the single-commit shallow clone checkout makes by default.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:

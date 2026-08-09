@@ -229,8 +229,16 @@ def main() -> int:
 
     key = os.environ.get("PURPLEAIR_READ_KEY", "").strip()
     if not key:
-        LOG.error("PURPLEAIR_READ_KEY is not set")
-        return 1
+        # A missing secret is an unfinished setup, not a failure of this run.
+        # Exiting non-zero here turned every scheduled run into a red X, which
+        # is hourly noise that says the same thing once would have. Skip
+        # cleanly and say plainly what is missing.
+        LOG.warning(
+            "PURPLEAIR_READ_KEY is not set, so there is nothing to fetch. "
+            "Add it under Settings, Secrets and variables, Actions. "
+            "Skipping, 0 points spent."
+        )
+        return 0
 
     # Gate 1, spend nothing on clear air.
     degraded = basin_air_is_degraded()
