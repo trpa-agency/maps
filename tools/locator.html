@@ -34,7 +34,7 @@
       height: 100%; font-family: var(--brand-font); color: var(--brand-dark);
       overflow: hidden; background: var(--gray-bg);
     }
-    body { display: flex; flex-direction: column; height: 100vh; }
+    body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }  /* dvh: mobile browser chrome */
 
     /* ── Header: branding only ── */
     #appHeader {
@@ -148,6 +148,7 @@
     body[data-brand="eip"] .search-box { border-radius: 999px; }
     body[data-brand="eip"] .search-box input { padding-left: 0.25rem; }
     body[data-brand="eip"] .sec-tool { border-radius: 999px; }
+    body[data-brand="eip"] .yr-row button { border-radius: 999px; }
     body[data-brand="eip"] .bm-btn { border-radius: 12px; }
     body[data-brand="eip"] .bm-btn img { border-radius: 8px; }
     body[data-brand="eip"] calcite-button {
@@ -174,9 +175,16 @@
     .layout-picker .lp-dims { font-size: 0.64rem; font-weight: 400; color: #8A93A3; text-transform: none; letter-spacing: 0; }
     .cap-toggle { display: flex; align-items: center; gap: 0.35rem; font-size: 0.76rem;
       color: var(--brand-dark); margin-top: 0.2rem; }
-    select.bm-select { font-family: var(--brand-font); font-size: 0.76rem; font-weight: 600;
-      color: var(--brand-dark); border: 1px solid var(--gray-border); border-radius: 7px;
-      padding: 0.35rem 0.5rem; background: #fff; cursor: pointer; }
+    /* Imagery-year chips (Current · Nearmap years · TRPA aerials), wrap freely */
+    .yr-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
+    .yr-row.off { opacity: 0.45; }   /* dimmed (still usable) when the basemap isn't Imagery */
+    .yr-row button { border: 1.5px solid var(--gray-border); background: #fff; border-radius: 7px;
+      cursor: pointer; font-family: var(--brand-font); font-size: 0.72rem; font-weight: 600;
+      color: #6B7688; padding: 0.26rem 0.55rem; transition: all 120ms; }
+    .yr-row button:hover { border-color: var(--brand-primary); }
+    .yr-row button.active { background: var(--brand-primary); border-color: var(--brand-primary); color: #fff; }
+    .yr-row .yr-group { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: #A6AFBD; margin-left: 0.2rem; }
 
     /* Basemap thumbnail buttons (2×2) */
     .bm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
@@ -225,18 +233,40 @@
     /* Added-locations chips (stack inside the panel) */
     #locChips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 
-    /* Responsive: below 760px the panel sits above the map */
+    /* Responsive: below 760px the map fills the screen and the panel becomes a
+       bottom sheet beneath it, collapsed to a handle bar with the toggle. The
+       sheet sits in the flex flow (not overlaid) so the map view resizes and
+       nothing fights the map's own widgets for z-index. */
     @media (max-width: 760px) {
       .hdr-brand .hagency { display: none; }
       .hdr-brand img { height: 30px; }
       .hdr-back { display: none; }     /* back-link hidden on small screens (mirrors projects-map) */
       .link-label { display: none; }   /* header links go icon-only on small screens */
+      .beta-chip a { font-size: 0.64rem; }
       #appBody { flex-direction: column; }
-      #sidePanel { flex: 0 0 auto; max-height: 45vh; border-right: none;
-        border-bottom: 1px solid var(--gray-border); }
-      #panelToggle { flex: 0 0 18px; border-right: none;
-        border-bottom: 1px solid var(--gray-border); width: 100%; height: 18px; }
-      #panelToggleIcon { transform: rotate(90deg); }
+      #mapWrap { order: 1; min-height: 0; }
+      #panelToggle { order: 2; flex: 0 0 28px; width: 100%; height: 28px; border-right: none;
+        border-top: 1px solid var(--gray-border); border-bottom: 1px solid var(--gray-border); }
+      /* chevron-left → down while open (sheet collapses downward), chevron-right → up when collapsed */
+      #panelToggleIcon { transform: rotate(-90deg); }
+      #sidePanel { order: 3; flex: 0 0 auto; max-height: 50vh; border-right: none;
+        padding: 0.7rem 1rem 1rem; gap: 0.9rem; }
+      .layout-picker { display: grid; grid-template-columns: 1fr 1fr; }
+      .bm-grid { grid-template-columns: repeat(4, 1fr); }
+      .bm-btn img { height: 36px; }
+      .search-box input { font-size: 1rem; }              /* ≥16px: iOS doesn't zoom the page on focus */
+      .seg button, .yr-row button, .bm-btn { min-height: 34px; }   /* touch targets */
+      .suggest-list { max-height: min(320px, 40vh); }
+      /* the location card moves to the top of the map, clear of the zoom / draw
+         widgets (#mapWrap prefix: the base .loc-card rules come later in the sheet) */
+      #mapWrap .loc-card { bottom: auto; top: 12px; left: 50%; transform: translateX(-50%);
+        max-width: calc(100% - 130px); padding: 0.4rem 0.7rem; }
+      #mapWrap .loc-card .loc-addr { font-size: 0.82rem; }
+      #mapWrap .loc-card .loc-meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    }
+    @media (max-width: 400px) {
+      .beta-chip { display: none; }
+      .hdr-brand .hname { font-size: 0.85rem; }
     }
 
     /* ── Map ── */
@@ -329,9 +359,9 @@
       <section class="panel-sec freeze">
         <h2 class="sec-title"><span class="sec-num" id="secNum2" tabindex="0">2</span> Style &amp; layout</h2>
         <label class="field">Style
-          <div class="seg seg-fill" id="brandSeg">
-            <button data-brand="eip" class="active">EIP</button>
-            <button data-brand="trpa">TRPA</button>
+          <div class="seg seg-fill" id="brandSeg" role="radiogroup" aria-label="Style">
+            <button data-brand="eip" class="active" role="radio" aria-checked="true">EIP</button>
+            <button data-brand="trpa" role="radio" aria-checked="false">TRPA</button>
           </div>
         </label>
         <label class="field">Layout
@@ -383,6 +413,11 @@
             <span>Plain</span>
           </button>
         </div>
+        <label class="field" id="yearLabel">Imagery year <span class="field-hint">(Nearmap 2021–2026 · TRPA aerials)</span></label>
+        <div class="yr-row" id="yearSeg" role="radiogroup" aria-label="Imagery year"></div>
+        <label class="cap-toggle" title="Place and road labels over the imagery (Esri Hybrid Reference Layer)">
+          <calcite-switch id="labelsSwitch" checked scale="s"></calcite-switch> Labels
+        </label>
         <label class="field">Detail zoom
           <div class="seg seg-fill" id="scaleSeg" role="radiogroup" aria-label="Detail zoom">
             <button data-value="fit" class="active" role="radio" aria-checked="true">Fit</button>
@@ -455,9 +490,11 @@
       <em>Basin Only</em>, full-basin portrait page (8.5×11).</span>
   </calcite-tooltip>
   <calcite-tooltip reference-element="secNum3" placement="right" close-on-click>
-    <span class="tip-text">The <strong>basemap</strong> and <strong>detail zoom</strong> set the
-      close-up map used by the <em>Detail + Basin</em> and <em>Detail Only</em> layouts.
-      Draw tools (pencil on the map)
+    <span class="tip-text">The <strong>basemap</strong>, <strong>imagery year</strong>, and
+      <strong>detail zoom</strong> set the close-up map used by the <em>Detail + Basin</em> and
+      <em>Detail Only</em> layouts. Years: current Esri imagery, Nearmap 2021–2026, and TRPA
+      aerials from 1969 (basin-wide) and 1940 (South Shore only); the export caption credits
+      the source. Draw tools (pencil on the map)
       add annotations to that view; Home returns to the Tahoe Basin.</span>
   </calcite-tooltip>
   <calcite-tooltip reference-element="secNum4" placement="right" close-on-click>
@@ -500,10 +537,12 @@
           <em>Title Slide</em> (text + basin map, 16:9), <em>Detail + Basin</em> (close-up
           beside the basin locator, 16:9), <em>Detail Only</em> (full-frame close-up, 16:9),
           or <em>Basin Only</em> (full basin, portrait 8.5×11).</li>
-        <li><strong>Set the detail view</strong>, the basemap thumbnails and zoom buttons
+        <li><strong>Set the detail view</strong>, the basemap thumbnails, imagery year
+          <span class="ui-sample ui-seg"><span class="on">Current</span><span>2024</span><span>1969</span></span>
+          (Nearmap 2021–2026, TRPA aerials 1969 and 1940), and zoom buttons
           <span class="ui-sample ui-seg"><span class="on">Fit</span><span>1:5k</span><span>1:24k</span></span>
           control the close-up map of the <em>Detail + Basin</em> and <em>Detail Only</em>
-          layouts. The draw tools
+          layouts; the caption credits the imagery source. The draw tools
           <span class="ui-sample ui-btn square"><calcite-icon icon="pencil" scale="s"></calcite-icon></span>
           (top-right of the map) add annotations that appear in that panel too;
           <span class="ui-sample ui-btn square"><calcite-icon icon="home" scale="s"></calcite-icon></span>
@@ -551,13 +590,88 @@
     // Basemaps for the interactive/split-detail map. Enum strings are keyless Esri
     // basemaps; the rest load from public ArcGIS Online web-map items.
     const PORTAL_BM = { terrain: "a52ab98763904006aa382d90e906fdd5",     // Esri "Terrain with Labels"
-                        imagery: "9e557abc61ce41c9b8ec8b15800c20d3",     // Esri "Firefly Imagery Hybrid" (shown as "Imagery + Labels")
                         humangeo: "3582b744bba84668b52a16b0b6942544" };  // Esri "Human Geography Map"
+    // Esri "World Imagery (Firefly)" tiles + "Hybrid Reference Layer" labels, the
+    // two halves of the Firefly Imagery Hybrid web map (9e557abc61ce41c9b8ec8b15800c20d3),
+    // split so the labels can be toggled over any imagery year.
+    const FIREFLY_URL = "https://fly.maptiles.arcgis.com/arcgis/rest/services/World_Imagery_Firefly/MapServer";
+    const HYBRID_REF_ID = "30d6b8271e1849cd9c3042060001f425";
+
+    // Imagery years for the detail map. Nearmap years are WMS 1.1.1 services
+    // (layer "places/all", one place per year, EPSG:3857, CORS open). The TRPA
+    // years are dynamic map services on maps.trpa.org: 1969 covers the whole
+    // basin, 1940 the South Shore only. `coverage` is the service's full extent
+    // in Web Mercator, used to warn when a location falls outside it.
+    //
+    // The Nearmap URL embeds the account API key: this page is public, so the
+    // key is readable by anyone who views source. It must be domain-restricted
+    // to maps.trpa.gov / trpa-agency.github.io in the Nearmap admin console.
+    const NEARMAP_KEY = "NGZhMTA4MDEtYTY5Yi00ODQwLWFmNDQtMDUxMmQwNTJhMmFj";
+    const nearmapUrl = (place) => `https://api.nearmap.com/wms/v1/places/${place}/apikey/${NEARMAP_KEY}`;
+    const IMAGERY = {
+      current:  { label: "Current", group: null, kind: "tile", url: FIREFLY_URL,
+                  credit: "Esri, Maxar, Earthstar Geographics", title: "Esri World Imagery (Firefly), current" },
+      nm2026:   { label: "2026", group: "Nearmap", kind: "wms", url: nearmapUrl("ec7db8bd-1a03-4e43-8b1e-3384141628dd"),
+                  credit: "Nearmap, 2026", title: "Nearmap aerial imagery, summer 2026" },
+      nm2025:   { label: "2025", group: "Nearmap", kind: "wms", url: nearmapUrl("c2b3fcfb-cdb1-4f22-8333-bfa243c10b09"),
+                  credit: "Nearmap, 2025", title: "Nearmap aerial imagery, summer 2025" },
+      nm2024:   { label: "2024", group: "Nearmap", kind: "wms", url: nearmapUrl("5e3fd66b-4de6-4d84-bd53-dd89df317f45"),
+                  credit: "Nearmap, 2024", title: "Nearmap aerial imagery, summer 2024" },
+      nm2023:   { label: "2023", group: "Nearmap", kind: "wms", url: nearmapUrl("45617c98-dc77-427e-8b4c-2368ac998288"),
+                  credit: "Nearmap, 2023", title: "Nearmap aerial imagery, 2023" },
+      nm2022:   { label: "2022", group: "Nearmap", kind: "wms", url: nearmapUrl("c4e81d9b-8998-4fb4-949c-3844afe1f825"),
+                  credit: "Nearmap, 2022", title: "Nearmap aerial imagery, 2022" },
+      nm2021:   { label: "2021", group: "Nearmap", kind: "wms", url: nearmapUrl("68b5becf-baf4-430e-a34b-0a6548f6ac7f"),
+                  credit: "Nearmap, 2021", title: "Nearmap aerial imagery, 2021" },
+      trpa1969: { label: "1969", group: "TRPA", kind: "mapimage", url: SVC + "1969_Imagery/MapServer",
+                  credit: "TRPA, 1969 aerial photography", title: "TRPA 1969 aerial photography (basin-wide)",
+                  coverage: [-13388486, 4675910, -13340317, 4772248] },
+      trpa1940: { label: "1940", group: "TRPA", kind: "mapimage", url: SVC + "1940_Imagery/MapServer",
+                  credit: "TRPA, 1940s aerial photography", title: "TRPA 1940s aerial photography (South Shore only)",
+                  coverage: [-13373188, 4676193, -13343103, 4722523], note: "South Shore only" },
+    };
+    let basemapKey = "imagery", imageryKey = "current", imageryLabels = true;
     const BM_CACHE = {};
     function makeBasemap(v) {
       if (v === "plain") return "gray-vector";    // Light Gray Canvas
+      if (v === "imagery") return imageryBasemap(imageryKey, imageryLabels);
       if (!BM_CACHE[v]) BM_CACHE[v] = new window._Basemap({ portalItem: { id: PORTAL_BM[v] } });
       return BM_CACHE[v];
+    }
+    // One Basemap per (year, labels) pair, built lazily and cached. Layer
+    // instances aren't shared between basemaps (a layer has one parent).
+    function imageryBasemap(key, labels) {
+      const ck = `imagery:${key}:${labels ? "labels" : "plain"}`;
+      if (!BM_CACHE[ck]) {
+        const src = IMAGERY[key];
+        const base = src.kind === "wms"
+          ? new window._WMSLayer({ url: src.url, version: "1.1.1", sublayers: [{ name: "places/all" }],
+              imageFormat: "image/jpeg", spatialReferences: [3857], copyright: "Nearmap", title: src.title })
+          : src.kind === "mapimage"
+          ? new window._MapImageLayer({ url: src.url, title: src.title })
+          : new window._TileLayer({ url: src.url, title: src.title });
+        const refs = labels ? [new window._VectorTileLayer({ portalItem: { id: HYBRID_REF_ID } })] : [];
+        BM_CACHE[ck] = new window._Basemap({ baseLayers: [base], referenceLayers: refs, title: src.title });
+      }
+      return BM_CACHE[ck];
+    }
+    // Source line for exports of the detail map (split / detail layouts).
+    function imageryCredit() {
+      if (basemapKey !== "imagery") return "Basemap: Esri";
+      return "Imagery: " + IMAGERY[imageryKey].credit;
+    }
+    // Locations outside a limited-coverage year (1940 South Shore, 1969 strip)
+    function outsideCoverage() {
+      const src = IMAGERY[imageryKey];
+      if (basemapKey !== "imagery" || !src.coverage) return 0;
+      const [x0, y0, x1, y1] = src.coverage;
+      return locations.filter(l => l.point.x < x0 || l.point.x > x1 || l.point.y < y0 || l.point.y > y1).length;
+    }
+    function coverageNote() {
+      const n = outsideCoverage();
+      if (!n) return "";
+      const src = IMAGERY[imageryKey];
+      return `${n === locations.length ? (n === 1 ? "The location is" : "All locations are") : `${n} of ${locations.length} locations are`} outside the ${src.label} imagery coverage${src.note ? ` (${src.note.toLowerCase()})` : ""}.`;
     }
 
     // Basin locator palette (sampled from the TRPA reference)
@@ -643,10 +757,14 @@
       "esri/core/reactiveUtils", "esri/Basemap", "esri/geometry/Extent",
       "esri/geometry/Point", "esri/geometry/Multipoint", "esri/geometry/Polyline",
       "esri/geometry/Polygon", "esri/geometry/support/webMercatorUtils",
-    ], (Map, MapView, FeatureLayer, GraphicsLayer, Graphic, ScaleBar, Home, Sketch, Expand, reactiveUtils, Basemap, Extent, Point, Multipoint, Polyline, Polygon, wmUtils) => {
+      "esri/layers/WMSLayer", "esri/layers/MapImageLayer", "esri/layers/TileLayer", "esri/layers/VectorTileLayer",
+    ], (Map, MapView, FeatureLayer, GraphicsLayer, Graphic, ScaleBar, Home, Sketch, Expand, reactiveUtils, Basemap, Extent, Point, Multipoint, Polyline, Polygon, wmUtils,
+        WMSLayer, MapImageLayer, TileLayer, VectorTileLayer) => {
       window._Graphic = Graphic; window._reactiveUtils = reactiveUtils; window._Basemap = Basemap;
       window._Extent = Extent; window._Point = Point; window._wm = wmUtils;
       window._Multipoint = Multipoint; window._Polyline = Polyline; window._Polygon = Polygon;
+      window._WMSLayer = WMSLayer; window._MapImageLayer = MapImageLayer;
+      window._TileLayer = TileLayer; window._VectorTileLayer = VectorTileLayer;
 
       // The interactive map carries a real basemap (used by the split detail
       // panel). The styled locator layers live only on the offscreen basin view.
@@ -659,7 +777,9 @@
 
       map = new Map({ basemap: makeBasemap("imagery"), layers: [parcelsFL, sketchLayer, pinLayer, mapPinLayer] });
       view = new MapView({ container: "viewDiv", map, center: BASIN.center, zoom: BASIN.zoom,
-        constraints: { minZoom: 7, maxZoom: 20, snapToZoom: false }, ui: { components: ["zoom"] },
+        constraints: { minZoom: 7, maxZoom: 20, snapToZoom: false },
+        // attribution stays on: Esri and Nearmap imagery both require a visible credit
+        ui: { components: ["zoom", "attribution"] },
         popup: { autoOpenEnabled: false } });
 
       view.when(() => {
@@ -874,14 +994,36 @@
       }
       return ext;
     }
+    // Detail zoom: "fit" frames the location(s); a scale value keeps that fixed
+    // scale centered on them (adding/removing locations re-centers, not re-fits).
+    let detailScale = "fit";
+    // Aspect of the detail-map panel in the current export (split: 2/3 of the
+    // slide width; detail: full width; both lose the caption strip's height).
+    function exportAspect() {
+      const E = exportLayout === "split" ? EXPORT.split : EXPORT.detail;
+      const mapH = E.H - ($("capSwitch").checked ? Math.round(E.H * E.capFrac) : 0);
+      return (exportLayout === "split" ? Math.round(E.W * 2 / 3) : E.W) / mapH;
+    }
+    // shotZoom crops a centered area of the view at the export aspect, so a
+    // "fit" that fills the whole view can lose a location off the crop's edge
+    // (a tall view under a wide 16:9 export loses the top and bottom). This is
+    // the extra zoom-out that keeps the fitted extent inside that crop.
+    function cropPad() {
+      if (!view || !view.width || !view.height) return 1;
+      if (exportLayout !== "split" && exportLayout !== "detail") return 1;
+      const va = view.width / view.height, ea = exportAspect();
+      return va > ea ? va / ea : ea / va;
+    }
     function zoomToLocations() {
       if (!locations.length) return;
-      if (locations.length === 1) {
+      if (detailScale !== "fit") {
+        view.goTo({ target: unionExtent().center, scale: +detailScale }, { duration: 550 });
+      } else if (locations.length === 1) {
         const loc = loc0();
-        view.goTo({ target: loc.geometry.extent ? loc.geometry.extent.expand(2.2)
+        view.goTo({ target: loc.geometry.extent ? loc.geometry.extent.expand(Math.max(2.2, 1.5 * cropPad()))
                                                 : { center: loc.point, zoom: loc.fitZoom || 17 } }, { duration: 550 });
       } else {
-        view.goTo({ target: unionExtent().expand(1.3) }, { duration: 550 });
+        view.goTo({ target: unionExtent().expand(1.3 * cropPad()) }, { duration: 550 });
       }
     }
 
@@ -948,7 +1090,11 @@
         view.goTo({ center: BASIN.center, zoom: BASIN.zoom }, { duration: 500 });
       }
     }
-    function refreshLocations() { drawResult(); updateLocCard(); renderLocationChips(); }
+    function refreshLocations() {
+      drawResult(); updateLocCard(); renderLocationChips();
+      const note = locations.length ? coverageNote() : "";
+      if (note) toast(note, 5000);
+    }
 
     // ?eip=a,b,c intake, the Projects Map's "Locator map" button opens us
     // with a comma-separated list of EIP project numbers. Matched against
@@ -1177,7 +1323,7 @@
       getLogo().then(im => { if (key === brandKey && im && im._durl) $("brandLogo").src = im._durl; });
       $("faviconLink").href = b.favicon;
       $("brandAgency").textContent = b.agency;
-      $("brandSeg").querySelectorAll("button").forEach(btn => btn.classList.toggle("active", btn.dataset.brand === brandKey));
+      setSegActive("brandSeg", brandKey, "brand");
       // Header shows the related map for the active style
       $("projectsLink").hidden = brandKey !== "eip";
       $("permitLink").hidden = brandKey !== "trpa";
@@ -1194,6 +1340,8 @@
         x.setAttribute("aria-checked", x === btn ? "true" : "false");
       });
       syncDetailSec();
+      // the export crop's aspect changed, re-fit so every pin stays inside it
+      if (detailScale === "fit" && locations.length && view) zoomToLocations();
     });
     // The Detail view section only affects the Detail + Basin layout -
     // dim it (still usable) and show its note under the other layouts.
@@ -1211,17 +1359,55 @@
         onPick(btn.dataset.value);
       });
     }
-    wireSeg("basemapSeg", (v) => { map.basemap = makeBasemap(v); });
-    // Detail-map zoom: "fit" frames the location(s); a scale value zooms to that
-    // fixed scale centered on the locations (or current view center if none).
-    wireSeg("scaleSeg", (v) => {
-      if (v === "fit") {
-        if (locations.length) zoomToLocations();
-        else view.goTo({ center: BASIN.center, zoom: BASIN.zoom }, { duration: 500 });
-      } else {
-        const ext = unionExtent();
-        view.goTo({ target: ext ? ext.center : view.center, scale: +v }, { duration: 500 });
+    // Mark one button of a radiogroup active (shared by the click wiring and
+    // the cross-control syncs, e.g. picking a year selects the Imagery basemap).
+    function setSegActive(id, value, attr = "value") {
+      $(id).querySelectorAll("button").forEach(x => {
+        const on = x.dataset[attr] === value;
+        x.classList.toggle("active", on);
+        x.setAttribute("aria-checked", on ? "true" : "false");
+      });
+    }
+    // Imagery-year chips, rendered from IMAGERY so the config is the one source of truth.
+    (function renderYearSeg() {
+      const row = $("yearSeg"); let lastGroup = null;
+      for (const [key, src] of Object.entries(IMAGERY)) {
+        if (src.kind === "wms" && !NEARMAP_KEY) continue;   // Nearmap years need the key
+        if (src.group && src.group !== lastGroup) {
+          const g = document.createElement("span"); g.className = "yr-group"; g.textContent = src.group;
+          row.appendChild(g); lastGroup = src.group;
+        }
+        const b = document.createElement("button");
+        b.dataset.value = key; b.textContent = src.label; b.title = src.title;
+        b.setAttribute("role", "radio"); b.setAttribute("aria-checked", key === imageryKey ? "true" : "false");
+        if (key === imageryKey) b.classList.add("active");
+        row.appendChild(b);
       }
+    })();
+    function applyBasemap() {
+      if (!map) return;   // controls are live before the SDK finishes loading
+      map.basemap = makeBasemap(basemapKey);
+      $("yearSeg").classList.toggle("off", basemapKey !== "imagery");
+      const note = coverageNote();
+      if (note) toast(note, 5000);
+    }
+    wireSeg("basemapSeg", (v) => { basemapKey = v; applyBasemap(); });
+    // Picking a year implies the Imagery basemap
+    wireSeg("yearSeg", (v) => {
+      imageryKey = v;
+      if (basemapKey !== "imagery") { basemapKey = "imagery"; setSegActive("basemapSeg", "imagery"); }
+      applyBasemap();
+    });
+    $("labelsSwitch").addEventListener("calciteSwitchChange", (e) => {
+      imageryLabels = e.target.checked;
+      if (basemapKey === "imagery") applyBasemap();
+    });
+    wireSeg("scaleSeg", (v) => {
+      if (!view) return;
+      detailScale = v;
+      if (locations.length) zoomToLocations();
+      else if (v === "fit") view.goTo({ center: BASIN.center, zoom: BASIN.zoom }, { duration: 500 });
+      else view.goTo({ target: view.center, scale: +v }, { duration: 500 });
     });
     let exportFormat = "png";
     wireSeg("formatSeg", (v) => {
@@ -1240,7 +1426,7 @@
         e.preventDefault(); next.click(); next.focus();
       });
     }
-    ["brandSeg", "layoutSeg", "basemapSeg", "scaleSeg", "formatSeg"].forEach(radioKeys);
+    ["brandSeg", "layoutSeg", "basemapSeg", "yearSeg", "scaleSeg", "formatSeg"].forEach(radioKeys);
 
     // ───────────── Export ─────────────
     function loadImage(src) { return new Promise((res, rej) => { const im = new Image();
@@ -1299,7 +1485,14 @@
     // dropped with a warning (a fixed-scale detail view can crop a location out -
     // better to warn than draw the pin at a garbage position).
     function inFrame(p) { return p && p.nx >= -0.02 && p.nx <= 1.02 && p.ny >= -0.02 && p.ny <= 1.02; }
-    function offFrameWarn() { toast("Note: a location falls outside the exported map frame.", 4500); }
+    // Export-time notes are collected and appended to the final toast; a toast
+    // fired mid-render would be overwritten by the "downloaded" toast.
+    let exportNotes = [];
+    function exportNote(msg) { if (!exportNotes.includes(msg)) exportNotes.push(msg); }
+    function offFrameWarn() { exportNote("A location falls outside the exported map frame."); }
+    function exportDone(msg, ms = 2200) {
+      toast(exportNotes.length ? `${msg} Note: ${exportNotes.join(" ")}` : msg, exportNotes.length ? 7000 : ms);
+    }
     function pinNorms(v, w, hgt, ax = 0, ay = 0) {
       const pins = []; let dropped = false;
       locations.forEach((loc, i) => {
@@ -1466,6 +1659,10 @@
         ctx.fillStyle = b.dark; ctx.font = `700 ${Math.round(h*0.26)}px ${baseFont()}`;
         ctx.fillText(b.exportName, tx, y + h*0.5);
       }
+      if (!showAddress) {   // detail-map layouts: credit the imagery source, right-aligned
+        ctx.fillStyle = "#6B7688"; ctx.font = `400 ${Math.round(h*0.15)}px ${baseFont()}`;
+        ctx.textAlign = "right"; ctx.fillText(imageryCredit(), x + w - pad, y + h*0.5); ctx.textAlign = "left";
+      }
     }
 
     // Slide, branded presentation slide: logo + title block | basin locator (16:9)
@@ -1585,6 +1782,8 @@
       exporting = true;
       btn.loading = true;
       document.body.classList.add("exporting");   // freezes brand/layout/caption/basemap controls
+      exportNotes = [];
+      if (exportLayout === "split" || exportLayout === "detail") { const n = coverageNote(); if (n) exportNote(n); }
       toast(busyMsg, 0);
       try { await worker(); }
       catch (e) { console.error(e);
@@ -1604,7 +1803,7 @@
         const url = URL.createObjectURL(blob);
         downloadUrl(url, `${brandKey}-${exportLayout}-${exportSlug()}.png`);
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-        toast("PNG downloaded.");
+        exportDone("PNG downloaded.");
       });
     }
 
@@ -1629,9 +1828,9 @@
       return `<g transform="translate(${cx} ${cy})"><circle r="${(size*0.46).toFixed(1)}" fill="#FFFFFF" fill-opacity="0.92"/>` +
         `<g transform="translate(${-size/2} ${-size/2}) scale(${(size/32).toFixed(3)})"><path d="${NORTH_PATH}" fill="${hexColor}"/></g></g>`;
     }
-    function svgText(x, y, text, { size, weight = 400, fill, middle = false } = {}) {
+    function svgText(x, y, text, { size, weight = 400, fill, middle = false, anchor = null } = {}) {
       return `<text x="${Math.round(x)}" y="${Math.round(y)}" font-size="${Math.round(size)}" font-weight="${weight}" fill="${fill}"` +
-        `${middle ? ` dominant-baseline="central"` : ""}>${escHtml(text)}</text>`;
+        `${middle ? ` dominant-baseline="central"` : ""}${anchor ? ` text-anchor="${anchor}"` : ""}>${escHtml(text)}</text>`;
     }
     const svgImage = (src, x, y, w, h) =>
       `<image href="${src}" x="${Math.round(x)}" y="${Math.round(y)}" width="${Math.round(w)}" height="${Math.round(h)}" preserveAspectRatio="none"/>`;
@@ -1785,6 +1984,8 @@
         } else if (!locations.length) {
           o.push(svgText(tx, y + h*0.5, b.exportName, { size: fsB, weight: 700, fill: b.dark, middle: true }));
         }
+        if (!showAddress)
+          o.push(svgText(x + w - pad, y + h*0.5, imageryCredit(), { size: Math.round(h*0.15), fill: "#6B7688", middle: true, anchor: "end" }));
         return o.join("\n");
       }
 
@@ -1800,7 +2001,7 @@
         const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
         downloadUrl(url, `${brandKey}-${exportLayout}-${exportSlug()}.svg`);
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-        toast("SVG downloaded, vector text, pins, and shapes; maps embedded as images.", 4500);
+        exportDone("SVG downloaded, vector text, pins, and shapes; maps embedded as images.", 4500);
       });
     }
 
@@ -2034,6 +2235,11 @@
             fontFace: font, fontSize: PT(Math.round(h*0.26)), bold: true, color: pptHex(b.dark),
             align: "left", valign: "middle" });
         }
+        if (!showAddress) {   // imagery credit, right-aligned in the strip
+          const cw = Math.min(tw, w * 0.4);
+          slide.addText(imageryCredit(), { x: IN(x + w - pad - cw), y: IN(y + h*0.38), w: IN(cw), h: IN(h*0.24),
+            fontFace: font, fontSize: PT(Math.round(h*0.15)), color: PPT_GRAY, align: "right", valign: "middle" });
+        }
       }
 
       await pptx.writeFile({ fileName: `${brandKey}-${exportLayout}-${exportSlug()}-editable.pptx` });
@@ -2044,7 +2250,7 @@
         await ensurePptx();
         if ($("editableSwitch").checked) {
           await buildEditablePptx();
-          toast("PPTX downloaded, text, logo, and maps are separate editable elements.", 4000);
+          exportDone("PPTX downloaded, text, logo, and maps are separate editable elements.", 4000);
           return;
         }
         const cv = await composeCurrent();
@@ -2058,7 +2264,7 @@
         }
         pptx.addSlide().addImage({ data: cv.toDataURL("image/png"), x: 0, y: 0, w, h });
         await pptx.writeFile({ fileName: `${brandKey}-${exportLayout}-${exportSlug()}.pptx` });
-        toast("PPTX downloaded.");
+        exportDone("PPTX downloaded.");
       });
     }
 
@@ -2075,7 +2281,7 @@
         })();
         try {
           await navigator.clipboard.write([new ClipboardItem({ "image/png": blobPromise })]);
-          toast("Image copied, paste into PowerPoint.");
+          exportDone("Image copied, paste into PowerPoint.");
         } catch (e) {
           console.error(e);
           toast("Copy failed, use Export PNG instead.");
