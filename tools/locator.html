@@ -71,11 +71,16 @@
     #panelToggle:hover { background: var(--gray-bg); color: var(--brand-primary); }
 
     .panel-sec { display: flex; flex-direction: column; gap: 0.55rem; }
-    /* Detail-view section is dimmed (still usable) unless the Detail + Basin
-       layout is active; the note explains why. */
-    .panel-sec.dimmed > .field, .panel-sec.dimmed > .bm-grid { opacity: 0.45; }
+    .sec-body { display: flex; flex-direction: column; gap: 0.55rem; }
+    /* Detail-view controls only apply to the two detail layouts: under the
+       other layouts the body collapses to a one-line note saying so. */
+    .panel-sec.dimmed .sec-body { display: none; }
     .sec-note { margin: -0.2rem 0 0; font-size: 0.7rem; line-height: 1.45; color: #8A93A3; display: none; }
     .panel-sec.dimmed .sec-note { display: block; }
+    /* Always-visible guidance: one line under a section title (sec-help) or
+       under a control (field-help), what the choice does and when to use it. */
+    .sec-help { margin: -0.25rem 0 0; font-size: 0.7rem; line-height: 1.45; color: #8A93A3; }
+    .field-help { font-size: 0.64rem; font-weight: 400; line-height: 1.4; color: #A6AFBD; }
     .sec-title { display: flex; align-items: center; gap: 0.45rem; margin: 0;
       font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
       color: #6B7688; }
@@ -96,10 +101,7 @@
     .gj-status.err { color: #B3261E; }
     .sec-num { display: inline-flex; align-items: center; justify-content: center;
       width: 1.15rem; height: 1.15rem; border-radius: 50%;
-      background: var(--brand-primary); color: #fff; font-size: 0.66rem;
-      cursor: help; }   /* hover/focus shows the step's info pane */
-    .tip-text { display: block; max-width: 260px; font-size: 0.74rem; line-height: 1.5;
-      font-family: var(--brand-font); }
+      background: var(--brand-primary); color: #fff; font-size: 0.66rem; }
     .field { display: flex; flex-direction: column; gap: 0.25rem;
       font-size: 0.68rem; font-weight: 600; color: #8A93A3; }
     .field-hint { font-weight: 400; text-transform: none; letter-spacing: 0; }
@@ -170,9 +172,20 @@
     .layout-picker button:hover { border-color: var(--brand-primary); }
     .layout-picker button.active { border-color: var(--brand-primary); background: var(--gray-bg);
       box-shadow: inset 0 0 0 1px var(--brand-primary); }
-    .layout-picker .lp-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.2; }
+    .layout-picker .lp-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.25; min-width: 0; }
     .layout-picker .lp-name { font-size: 0.78rem; font-weight: 700; color: var(--brand-dark); text-transform: none; letter-spacing: 0; }
-    .layout-picker .lp-dims { font-size: 0.64rem; font-weight: 400; color: #8A93A3; text-transform: none; letter-spacing: 0; }
+    .lp-dims { font-size: 0.62rem; font-weight: 400; color: #A6AFBD; text-transform: none; letter-spacing: 0; margin-left: 0.2rem; }
+    .layout-picker .lp-use { font-size: 0.66rem; font-weight: 400; color: #8A93A3; text-transform: none; letter-spacing: 0; }
+    /* Wireframe previews of each export layout (inline SVG, shared with the intro dialog) */
+    .lp-wire { flex: 0 0 48px; width: 48px; height: 27px; }
+    .lp-wire svg { width: 100%; height: 100%; display: block; }
+    .wf-bg   { fill: #fff; stroke: #C9D2DE; stroke-width: 1; }
+    .wf-img  { fill: #CFD6DF; }
+    .wf-map  { fill: #0B1F41; opacity: 0.78; }
+    .wf-pin  { fill: var(--brand-accent); }
+    .wf-txt  { fill: #B8C0CC; }
+    .wf-cap  { fill: #F5F7FA; }
+    .wf-line { fill: var(--brand-primary); }
     .cap-toggle { display: flex; align-items: center; gap: 0.35rem; font-size: 0.76rem;
       color: var(--brand-dark); margin-top: 0.2rem; }
     /* Imagery-year chips (Current · Nearmap years · TRPA aerials), wrap freely */
@@ -214,21 +227,15 @@
     .info-content p { margin: 0 0 0.7rem; }
     .info-content ol { margin: 0 0 0.7rem; padding-left: 1.2rem; display: grid; gap: 0.55rem; }
     .info-content .info-fine { font-size: 0.74rem; color: #6B7688; margin-bottom: 0; }
-    /* Inline, non-interactive replicas of the real controls (always match the live UI) */
-    .ui-sample { display: inline-flex; align-items: center; vertical-align: middle;
-      pointer-events: none; user-select: none; margin: 0 0.15rem; transform: translateY(-1px); }
-    .ui-chip { gap: 0.3rem; background: var(--gray-bg); border: 1.5px solid var(--gray-border);
-      border-radius: 7px; padding: 0.1rem 0.5rem; font-size: 0.74rem; color: #6B7688; white-space: nowrap; }
-    .ui-chip calcite-icon { color: var(--brand-primary); }
-    .ui-seg { border: 1px solid var(--gray-border); border-radius: 6px; overflow: hidden; font-size: 0.7rem; font-weight: 600; }
-    .ui-seg span { padding: 0.12rem 0.45rem; color: #6B7688; background: #fff; white-space: nowrap; }
-    .ui-seg span.on { background: var(--brand-primary); color: #fff; }
-    .ui-btn { gap: 0.3rem; border-radius: 6px; padding: 0.14rem 0.55rem; font-size: 0.72rem;
-      font-weight: 600; white-space: nowrap; }
-    .ui-btn.solid { background: var(--brand-primary); color: #fff; }
-    .ui-btn.outline { border: 1px solid var(--brand-primary); color: var(--brand-primary); background: #fff; }
-    .ui-btn.square { border: 1px solid var(--gray-border); background: #fff; color: var(--brand-dark);
-      padding: 0.14rem 0.3rem; }
+    .info-content ol.info-steps { gap: 0.45rem; }
+    /* Layout gallery in the intro dialog: wireframe + name + when to use it */
+    .info-layouts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; margin: 0.2rem 0 0.9rem; }
+    .info-card { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.55rem 0.6rem;
+      border: 1.5px solid var(--gray-border); border-radius: 8px; background: var(--gray-bg); }
+    .info-card .lp-wire { width: 100%; height: auto; aspect-ratio: 48 / 27; flex: none; }
+    .info-card .ic-name { font-size: 0.8rem; font-weight: 700; line-height: 1.25; }
+    .info-card .ic-use { font-size: 0.72rem; line-height: 1.4; color: #6B7688; }
+    @media (max-width: 480px) { .info-layouts { grid-template-columns: 1fr; } }
 
     /* Added-locations chips (stack inside the panel) */
     #locChips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
@@ -252,6 +259,7 @@
       #sidePanel { order: 3; flex: 0 0 auto; max-height: 50vh; border-right: none;
         padding: 0.7rem 1rem 1rem; gap: 0.9rem; }
       .layout-picker { display: grid; grid-template-columns: 1fr 1fr; }
+      .layout-picker .lp-use { display: none; }   /* keeps the 2×2 grid short; the use line stays in the title and intro */
       .bm-grid { grid-template-columns: repeat(4, 1fr); }
       .bm-btn img { height: 36px; }
       .search-box input { font-size: 1rem; }              /* ≥16px: iOS doesn't zoom the page on focus */
@@ -330,7 +338,7 @@
            deep link enters with locations pre-filled. Style/layout have good
            defaults and re-apply instantly if changed later. -->
       <section class="panel-sec freeze">
-        <h2 class="sec-title"><span class="sec-num" id="secNum1" tabindex="0">1</span> Locations
+        <h2 class="sec-title"><span class="sec-num">1</span> Locations
           <button id="geojsonBtn" class="sec-tool" title="Paste GeoJSON (advanced)"
                   aria-label="Paste GeoJSON (advanced)">
             <calcite-icon icon="code" scale="s"></calcite-icon>
@@ -340,6 +348,8 @@
             <calcite-icon icon="trash" scale="s"></calcite-icon>
           </button>
         </h2>
+        <p class="sec-help">Search an address, APN, EIP project, or “lat, lon” and pick a result.
+          Up to 9 locations; each gets a numbered pin.</p>
         <div class="hdr-search">
           <div class="search-box">
             <calcite-icon icon="search" scale="s"></calcite-icon>
@@ -357,40 +367,33 @@
       </section>
 
       <section class="panel-sec freeze">
-        <h2 class="sec-title"><span class="sec-num" id="secNum2" tabindex="0">2</span> Style &amp; layout</h2>
+        <h2 class="sec-title"><span class="sec-num">2</span> Style &amp; layout</h2>
+        <p class="sec-help">Style sets the logo and colors on the export. Layout sets what the
+          export shows and its page shape.</p>
         <label class="field">Style
           <div class="seg seg-fill" id="brandSeg" role="radiogroup" aria-label="Style">
             <button data-brand="eip" class="active" role="radio" aria-checked="true">EIP</button>
             <button data-brand="trpa" role="radio" aria-checked="false">TRPA</button>
           </div>
+          <span class="field-help">EIP for Environmental Improvement Program materials, TRPA for agency materials.</span>
         </label>
         <label class="field">Layout
-          <div class="layout-picker" id="layoutSeg" role="radiogroup" aria-label="Export layout">
-            <button data-layout="slide" class="active" role="radio" aria-checked="true">
-              <span class="lp-text"><span class="lp-name">Title Slide</span>
-                <span class="lp-dims">Text + basin map · 16:9</span></span>
-            </button>
-            <button data-layout="split" role="radio" aria-checked="false">
-              <span class="lp-text"><span class="lp-name">Detail + Basin</span>
-                <span class="lp-dims">Close-up beside basin · 16:9</span></span>
-            </button>
-            <button data-layout="detail" role="radio" aria-checked="false">
-              <span class="lp-text"><span class="lp-name">Detail Only</span>
-                <span class="lp-dims">Full close-up map · 16:9</span></span>
-            </button>
-            <button data-layout="locator" role="radio" aria-checked="false">
-              <span class="lp-text"><span class="lp-name">Basin Only</span>
-                <span class="lp-dims">Full basin, portrait · 8.5×11</span></span>
-            </button>
-          </div>
+          <!-- buttons rendered from LAYOUTS (shared with the intro dialog's gallery) -->
+          <div class="layout-picker" id="layoutSeg" role="radiogroup" aria-label="Export layout"></div>
         </label>
       </section>
 
       <section class="panel-sec freeze" id="detailSec">
-        <h2 class="sec-title"><span class="sec-num" id="secNum3" tabindex="0">3</span> Detail view</h2>
-        <p class="sec-note">Sets the close-up map of the <strong>Detail + Basin</strong> and
-          <strong>Detail Only</strong> layouts, pick one in step 2 to use it.</p>
-        <label class="field">Basemap <span class="field-hint">(detail map)</span></label>
+        <h2 class="sec-title"><span class="sec-num">3</span> Detail view</h2>
+        <p class="sec-note">These options set the close-up map of the <strong>Detail + Basin</strong> and
+          <strong>Detail Only</strong> layouts. Pick one of those in step 2 to use them.</p>
+        <div class="sec-body">
+        <p class="sec-help">The close-up map is what you see on screen: pan and zoom it, pick its
+          basemap, and draw on it with the pencil tool (top right of the map).</p>
+        <label class="field">Basemap
+          <span class="field-help">Imagery for site conditions, Terrain for topography, Human Geo
+            for roads and places, Plain to keep annotations legible.</span>
+        </label>
         <div class="bm-grid" id="basemapSeg" role="radiogroup" aria-label="Basemap">
           <button data-value="imagery" class="bm-btn active" role="radio" aria-checked="true">
             <img src="https://www.arcgis.com/sharing/rest/content/items/9e557abc61ce41c9b8ec8b15800c20d3/info/thumbnail/thumbnail1578325626861.jpeg"
@@ -413,7 +416,10 @@
             <span>Plain</span>
           </button>
         </div>
-        <label class="field" id="yearLabel">Imagery year <span class="field-hint">(Nearmap 2021–2026 · TRPA aerials)</span></label>
+        <label class="field" id="yearLabel">Imagery year
+          <span class="field-help">Compare conditions over time. Nearmap flights are summer
+            leaf-on; the TRPA aerials are scanned black-and-white photos.</span>
+        </label>
         <div class="yr-row" id="yearSeg" role="radiogroup" aria-label="Imagery year"></div>
         <label class="cap-toggle" title="Place and road labels over the imagery (Esri Hybrid Reference Layer)">
           <calcite-switch id="labelsSwitch" checked scale="s"></calcite-switch> Labels
@@ -425,21 +431,24 @@
             <button data-value="24000" role="radio" aria-checked="false">1:24k</button>
             <button data-value="125000" role="radio" aria-checked="false">1:125k</button>
           </div>
+          <span class="field-help">Fit frames every pin. A fixed scale matches a standard map
+            scale and stays put as you add locations.</span>
         </label>
+        </div><!-- /sec-body -->
       </section>
 
       <section class="panel-sec">
-        <h2 class="sec-title"><span class="sec-num" id="secNum4" tabindex="0">4</span> Export</h2>
+        <h2 class="sec-title"><span class="sec-num">4</span> Export</h2>
         <div class="freeze">
           <label class="field">Format
             <div class="seg seg-fill" id="formatSeg" role="radiogroup" aria-label="Export format">
               <button data-value="png" class="active" role="radio" aria-checked="true">PNG</button>
               <button data-value="pptx" role="radio" aria-checked="false">PPTX</button>
-              <button data-value="svg" role="radio" aria-checked="false"
-                title="Vector graphic, pins, text, and shapes stay editable in Illustrator, Inkscape, or Affinity; modern PowerPoint can convert it to shapes">SVG</button>
+              <button data-value="svg" role="radio" aria-checked="false">SVG</button>
             </div>
+            <span class="field-help" id="fmtHelp"></span>
           </label>
-          <label class="cap-toggle" title="Include the styled caption strip in the export">
+          <label class="cap-toggle" title="Include the styled caption strip (logo, location details, imagery credit) in the export">
             <calcite-switch id="capSwitch" checked scale="s"></calcite-switch> Caption
           </label>
           <label class="cap-toggle" id="editableRow" hidden
@@ -449,9 +458,9 @@
         </div>
         <div class="export-row">
           <calcite-button id="copyBtn" icon-start="copy-to-clipboard" appearance="outline" kind="brand" scale="s" disabled
-            width="full" title="Copy image to clipboard">Copy</calcite-button>
+            width="full" title="Copy the image to the clipboard, then paste it into a slide or document">Copy</calcite-button>
           <calcite-button id="exportBtn" icon-start="save" appearance="solid" kind="brand" scale="s" disabled
-            width="full">Save</calcite-button>
+            width="full" title="Download the file in the chosen format">Save</calcite-button>
         </div>
       </section>
     </aside>
@@ -474,35 +483,6 @@
 
   <div id="basinDiv"></div>
 
-  <!-- ── Hover help for each workflow step (anchored to the number badges) ── -->
-  <calcite-tooltip reference-element="secNum1" placement="right" close-on-click>
-    <span class="tip-text">Add up to 9 locations, each with a numbered pin. Search an
-      <strong>address</strong>, <strong>APN</strong>, <strong>EIP project</strong> (name or
-      number), or <strong>coordinates</strong> ("39.0968, -119.9435"). Advanced: the
-      ⟨⟩ button pastes GeoJSON. Remove a location with its chip, or all of them
-      with the trash button.</span>
-  </calcite-tooltip>
-  <calcite-tooltip reference-element="secNum2" placement="right" close-on-click>
-    <span class="tip-text"><strong>Style</strong> picks the EIP or TRPA look (logo, colors, pin -
-      and the related map link in the header). <strong>Layout</strong>: <em>Title Slide</em> -
-      text block + basin map (16:9); <em>Detail + Basin</em>, close-up beside the basin
-      locator (16:9); <em>Detail Only</em>, full-frame close-up (16:9);
-      <em>Basin Only</em>, full-basin portrait page (8.5×11).</span>
-  </calcite-tooltip>
-  <calcite-tooltip reference-element="secNum3" placement="right" close-on-click>
-    <span class="tip-text">The <strong>basemap</strong>, <strong>imagery year</strong>, and
-      <strong>detail zoom</strong> set the close-up map used by the <em>Detail + Basin</em> and
-      <em>Detail Only</em> layouts. Years: current Esri imagery, Nearmap 2021–2026, and TRPA
-      aerials from 1969 (basin-wide) and 1940 (South Shore only); the export caption credits
-      the source. Draw tools (pencil on the map)
-      add annotations to that view; Home returns to the Tahoe Basin.</span>
-  </calcite-tooltip>
-  <calcite-tooltip reference-element="secNum4" placement="right" close-on-click>
-    <span class="tip-text"><strong>Save</strong> downloads the map as a PNG image or a PowerPoint
-      slide (PPTX); <strong>Copy</strong> puts the image on the clipboard to paste straight into
-      a slide. <em>Caption</em> adds the styled text strip with the location details.</span>
-  </calcite-tooltip>
-
   <!-- ── Paste GeoJSON (advanced) ── -->
   <calcite-dialog id="geojsonModal" modal heading="Paste GeoJSON" width-scale="s">
     <div class="gj-content">
@@ -521,44 +501,26 @@
   <!-- ── Info / help dialog ── -->
   <calcite-dialog id="infoModal" modal heading="Project Locator" width-scale="s">
     <div class="info-content">
-      <p>Make consistent, branded <strong>EIP</strong> or <strong>TRPA</strong> locator maps of
-        project locations for presentations and reports.</p>
-      <ol>
-        <li><strong>Search</strong>
-          <span class="ui-sample ui-chip"><calcite-icon icon="search" scale="s"></calcite-icon> Address, APN, EIP project…</span>
-         , an address, APN, <strong>EIP project name or number</strong>, or coordinates
-          ("39.0968, -119.9435"), and pick a result. Repeat to add up to 9 locations
-          (numbered pins). Remove one with its chip, or the trash button removes them all.
-          Advanced: the <span class="ui-sample ui-btn square"><calcite-icon icon="code" scale="s"></calcite-icon></span>
-          button pastes GeoJSON directly.</li>
-        <li><strong>Pick style and layout</strong> -
-          <span class="ui-sample ui-seg"><span class="on">EIP</span><span>TRPA</span></span>
-          sets the look (and the related map link in the header), then a layout:
-          <em>Title Slide</em> (text + basin map, 16:9), <em>Detail + Basin</em> (close-up
-          beside the basin locator, 16:9), <em>Detail Only</em> (full-frame close-up, 16:9),
-          or <em>Basin Only</em> (full basin, portrait 8.5×11).</li>
-        <li><strong>Set the detail view</strong>, the basemap thumbnails, imagery year
-          <span class="ui-sample ui-seg"><span class="on">Current</span><span>2024</span><span>1969</span></span>
-          (Nearmap 2021–2026, TRPA aerials 1969 and 1940), and zoom buttons
-          <span class="ui-sample ui-seg"><span class="on">Fit</span><span>1:5k</span><span>1:24k</span></span>
-          control the close-up map of the <em>Detail + Basin</em> and <em>Detail Only</em>
-          layouts; the caption credits the imagery source. The draw tools
-          <span class="ui-sample ui-btn square"><calcite-icon icon="pencil" scale="s"></calcite-icon></span>
-          (top-right of the map) add annotations that appear in that panel too;
-          <span class="ui-sample ui-btn square"><calcite-icon icon="home" scale="s"></calcite-icon></span>
-          returns to the Tahoe Basin.</li>
-        <li><strong>Export</strong>, pick
-          <span class="ui-sample ui-seg"><span class="on">PNG</span><span>PPTX</span></span> and
-          <span class="ui-sample ui-btn solid"><calcite-icon icon="save" scale="s"></calcite-icon> Save</span>,
-          or <span class="ui-sample ui-btn outline"><calcite-icon icon="copy-to-clipboard" scale="s"></calcite-icon> Copy</span>
-          puts the image on the clipboard to paste onto a slide. Toggle <em>Caption</em>
-          for the styled text strip. For PPTX, <em>Editable elements</em> builds the
-          slide from separate text boxes, images, and shapes you can rearrange and
-          rewrite in PowerPoint.</li>
+      <p>Branded <strong>EIP</strong> or <strong>TRPA</strong> maps of where a project is,
+        ready to drop into a slide or report. Three steps:</p>
+      <ol class="info-steps">
+        <li><strong>Add locations.</strong> Search an address, APN, EIP project, or
+          “lat, lon” and pick a result. Up to 9; each gets a numbered pin.</li>
+        <li><strong>Choose a style and a layout.</strong> Style sets the logo and colors.
+          Layout sets what the export shows:</li>
       </ol>
-      <p class="info-fine">Parcel data: TRPA GIS · Home button returns to the Tahoe Basin.
-        Browse and filter all EIP projects on the <strong>EIP Projects Map</strong>
-        (link in the header), its <em>Locator map</em> button sends a selection here.</p>
+      <!-- gallery rendered from LAYOUTS -->
+      <div class="info-layouts" id="infoLayouts"></div>
+      <ol class="info-steps" start="3">
+        <li><strong>Save or Copy.</strong> Save downloads a PNG, a PowerPoint slide, or an
+          SVG; Copy puts the image on the clipboard to paste straight into a slide. The
+          detail layouts also let you pick the basemap, an imagery year (Nearmap 2021–2026,
+          TRPA aerials from 1969 and 1940), and the zoom, and draw on the map with the
+          pencil tool.</li>
+      </ol>
+      <p class="info-fine">Each control in the panel explains what it does. Parcel data:
+        TRPA GIS. The <strong>EIP Projects Map</strong> (link in the header) can send a
+        selection of projects here with its <em>Locator map</em> button.</p>
     </div>
   </calcite-dialog>
 
@@ -674,6 +636,16 @@
       return `${n === locations.length ? (n === 1 ? "The location is" : "All locations are") : `${n} of ${locations.length} locations are`} outside the ${src.label} imagery coverage${src.note ? ` (${src.note.toLowerCase()})` : ""}.`;
     }
 
+    // Lake Tahoe shoreline for the basin locator, embedded so exports never wait
+    // on the service: the live layer (Streams_and_Flood_Zone/MapServer/2, "Lake
+    // Tahoe at High Water") is a 1-million-vertex polygon, a 43 MB / 40 s query
+    // that routinely missed the export's settle window and left the lake out.
+    // Web Mercator (3857) integers, generalized server-side with
+    // maxAllowableOffset=25 m (about 1 px at the largest basin export), Sep 2026.
+    const LAKE_RINGS = [
+      [[-13357354,4757401],[-13357065,4757355],[-13356670,4757353],[-13356630,4757323],[-13356388,4757337],[-13356035,4757224],[-13355687,4757316],[-13355247,4757187],[-13354901,4756952],[-13354870,4756813],[-13354837,4756856],[-13354762,4756848],[-13354631,4756716],[-13354518,4756663],[-13354504,4756613],[-13354484,4756650],[-13354420,4756614],[-13354381,4756664],[-13354123,4756614],[-13353461,4756355],[-13353255,4756300],[-13353125,4756307],[-13352698,4756119],[-13352493,4755979],[-13352457,4755999],[-13352468,4755965],[-13352374,4755889],[-13352296,4755900],[-13352313,4755866],[-13352179,4755764],[-13351294,4755182],[-13351099,4754938],[-13350948,4754870],[-13350804,4754723],[-13350806,4754443],[-13350940,4754205],[-13350942,4753985],[-13350859,4753944],[-13350844,4753751],[-13350783,4753786],[-13350730,4753755],[-13350630,4753648],[-13350594,4753503],[-13350452,4753450],[-13350319,4753310],[-13350297,4753229],[-13350352,4753071],[-13350328,4753081],[-13350270,4752940],[-13350295,4752799],[-13350465,4752549],[-13350448,4752418],[-13350390,4752364],[-13350415,4752166],[-13350388,4751999],[-13350608,4751700],[-13350508,4751540],[-13350533,4751324],[-13350576,4751195],[-13350711,4751175],[-13350753,4751081],[-13350742,4751007],[-13350667,4751013],[-13350630,4750959],[-13350632,4750813],[-13350562,4750695],[-13350542,4750545],[-13350644,4750373],[-13350842,4750347],[-13350854,4750283],[-13350774,4750283],[-13350776,4750165],[-13350968,4750097],[-13351027,4749951],[-13350938,4749851],[-13350897,4749961],[-13350688,4749918],[-13350399,4749674],[-13350248,4749475],[-13350295,4749257],[-13350251,4748823],[-13350312,4748711],[-13350284,4748421],[-13350336,4748242],[-13350274,4748105],[-13350306,4748055],[-13350293,4747918],[-13350196,4747779],[-13350156,4747642],[-13350103,4747226],[-13350126,4747160],[-13350320,4747021],[-13350392,4746796],[-13350495,4746763],[-13350593,4746831],[-13350717,4746736],[-13350757,4746761],[-13350800,4746699],[-13350777,4746598],[-13350832,4746504],[-13350803,4746448],[-13350858,4746402],[-13350830,4746276],[-13350879,4746255],[-13350874,4746201],[-13350828,4746199],[-13350943,4746058],[-13350899,4746022],[-13350954,4745847],[-13350912,4745765],[-13351010,4745657],[-13350979,4745635],[-13350964,4745451],[-13351003,4745393],[-13350957,4745400],[-13350884,4745312],[-13350844,4745365],[-13350864,4745279],[-13350806,4745136],[-13350847,4745054],[-13350831,4744901],[-13350875,4744851],[-13350860,4744741],[-13350947,4744670],[-13350945,4744575],[-13351012,4744483],[-13351029,4744380],[-13351076,4744386],[-13351032,4744220],[-13351089,4744088],[-13351077,4744035],[-13351016,4744041],[-13350960,4743906],[-13350920,4743963],[-13350848,4743902],[-13350934,4743775],[-13350877,4743635],[-13350944,4743417],[-13350848,4743270],[-13350797,4742975],[-13351009,4742873],[-13351031,4742704],[-13351116,4742611],[-13351188,4742613],[-13351235,4742660],[-13351239,4742567],[-13351399,4742397],[-13351412,4742242],[-13351461,4742175],[-13351799,4742069],[-13351871,4741961],[-13351959,4741990],[-13351982,4741865],[-13352095,4741819],[-13352330,4741500],[-13352350,4741359],[-13352259,4741079],[-13351996,4740701],[-13351963,4740515],[-13352022,4740350],[-13351967,4740298],[-13352046,4740175],[-13352177,4740204],[-13352251,4740155],[-13352266,4740077],[-13352438,4740095],[-13352599,4739933],[-13352796,4740042],[-13352825,4739936],[-13352908,4739935],[-13352902,4739853],[-13352979,4739788],[-13353073,4739774],[-13353198,4739643],[-13353271,4739314],[-13353232,4739252],[-13353137,4739226],[-13353115,4739102],[-13353182,4739007],[-13353140,4738947],[-13353200,4738711],[-13353186,4738573],[-13353372,4738313],[-13353416,4738173],[-13353413,4737989],[-13353567,4737816],[-13353610,4737506],[-13353708,4737431],[-13353748,4737302],[-13353866,4737187],[-13353979,4736954],[-13353913,4736693],[-13353784,4736699],[-13353774,4736588],[-13353686,4736605],[-13353591,4736528],[-13353501,4736367],[-13353352,4736217],[-13353236,4736235],[-13353033,4736191],[-13353017,4736098],[-13352941,4736029],[-13352748,4736126],[-13352596,4736101],[-13352585,4736132],[-13352396,4736032],[-13352135,4735682],[-13351904,4735271],[-13351706,4734780],[-13351670,4734478],[-13351672,4734283],[-13351747,4734116],[-13351841,4734130],[-13351911,4734081],[-13351937,4734127],[-13352097,4734103],[-13352265,4733961],[-13352344,4733978],[-13352423,4733928],[-13352437,4733782],[-13352561,4733747],[-13352555,4733661],[-13352659,4733509],[-13352519,4733081],[-13352530,4733005],[-13352589,4732991],[-13352597,4733025],[-13352599,4732998],[-13352525,4733000],[-13352573,4732919],[-13352555,4732820],[-13352481,4732745],[-13352452,4732568],[-13352475,4732495],[-13352413,4732360],[-13352316,4732336],[-13352322,4732366],[-13351965,4731952],[-13351919,4731766],[-13351904,4731787],[-13351941,4731704],[-13351903,4731530],[-13351934,4731443],[-13351953,4731478],[-13351967,4731456],[-13351934,4731428],[-13351969,4731317],[-13352035,4731262],[-13352055,4731297],[-13352081,4731198],[-13352124,4731202],[-13352101,4731150],[-13352273,4730873],[-13352238,4730857],[-13352225,4730701],[-13352098,4730651],[-13352063,4730530],[-13352094,4730326],[-13352195,4730224],[-13352245,4730027],[-13352182,4729575],[-13352357,4729248],[-13352303,4729157],[-13352352,4729093],[-13352376,4729126],[-13352343,4728829],[-13352611,4728492],[-13352665,4728321],[-13352626,4728114],[-13352635,4728052],[-13352674,4728079],[-13352653,4727746],[-13352634,4727671],[-13352601,4727692],[-13352568,4727655],[-13352573,4727521],[-13352623,4727451],[-13352690,4727437],[-13352665,4727406],[-13352693,4727347],[-13352765,4727350],[-13352736,4727302],[-13352793,4727271],[-13352781,4727212],[-13352848,4727145],[-13352875,4726954],[-13352915,4726997],[-13352883,4726935],[-13352949,4726787],[-13352874,4726701],[-13352904,4726692],[-13352867,4726676],[-13352804,4726433],[-13352737,4726348],[-13352803,4726361],[-13352708,4726318],[-13352693,4726273],[-13352741,4726295],[-13352688,4726269],[-13352661,4726189],[-13352677,4726159],[-13352726,4726191],[-13352662,4726107],[-13352741,4726022],[-13352604,4725771],[-13352574,4725628],[-13352611,4725605],[-13352635,4725657],[-13352621,4725595],[-13352717,4725461],[-13352664,4725232],[-13352757,4724946],[-13352808,4724907],[-13352841,4724935],[-13352857,4724912],[-13352807,4724894],[-13352833,4724839],[-13352960,4724803],[-13352988,4724744],[-13353135,4724717],[-13353161,4724751],[-13353224,4724702],[-13353219,4724645],[-13353189,4724671],[-13353132,4724642],[-13353092,4724564],[-13353139,4724495],[-13353104,4724471],[-13353154,4724334],[-13353081,4724082],[-13353125,4723998],[-13353087,4723964],[-13353110,4723909],[-13352956,4723904],[-13352934,4723778],[-13352841,4723702],[-13352870,4723675],[-13352731,4723414],[-13352765,4723332],[-13352848,4723317],[-13352733,4723296],[-13352662,4723203],[-13352615,4722754],[-13352767,4722393],[-13352922,4722231],[-13353041,4722190],[-13353041,4722236],[-13353073,4722218],[-13353220,4722383],[-13353286,4722304],[-13353423,4722339],[-13353495,4722288],[-13353551,4722305],[-13353604,4722127],[-13353787,4722048],[-13353861,4721956],[-13353943,4721946],[-13354013,4721853],[-13353959,4721708],[-13353858,4721609],[-13353861,4721640],[-13353733,4721631],[-13353488,4721287],[-13353236,4720783],[-13353141,4720463],[-13353125,4720077],[-13353271,4720025],[-13353308,4719915],[-13353359,4719894],[-13353385,4719935],[-13353417,4719848],[-13353472,4719817],[-13353465,4719856],[-13353515,4719781],[-13353591,4719802],[-13353630,4719765],[-13353616,4719812],[-13353637,4719636],[-13353604,4719669],[-13353580,4719641],[-13353585,4719598],[-13353632,4719612],[-13353494,4719455],[-13353481,4719359],[-13353373,4719360],[-13353445,4719336],[-13353423,4719243],[-13352959,4718193],[-13352886,4718185],[-13352951,4718167],[-13352720,4717107],[-13352746,4717095],[-13352742,4716483],[-13352799,4716092],[-13352896,4715956],[-13352956,4715702],[-13353305,4715149],[-13353602,4714798],[-13353800,4714637],[-13353792,4714499],[-13353843,4714535],[-13353827,4714627],[-13354444,4714217],[-13355046,4713968],[-13355441,4713858],[-13355823,4713783],[-13356834,4713715],[-13357822,4713412],[-13357910,4713371],[-13357893,4713315],[-13357831,4713315],[-13357879,4713283],[-13357834,4713213],[-13357887,4713214],[-13357880,4713261],[-13357914,4713276],[-13357908,4713236],[-13357949,4713233],[-13357921,4713207],[-13357965,4713209],[-13357988,4713152],[-13358020,4713170],[-13358011,4713107],[-13358044,4713129],[-13358141,4712990],[-13358216,4712969],[-13358215,4712926],[-13358159,4712898],[-13358211,4712827],[-13358201,4712780],[-13358201,4712912],[-13358514,4713043],[-13358363,4712832],[-13358367,4712060],[-13358297,4711993],[-13358385,4711833],[-13358366,4711605],[-13358177,4711497],[-13358153,4711439],[-13358070,4711402],[-13358035,4711315],[-13358095,4711412],[-13358382,4711599],[-13358397,4711845],[-13358319,4711987],[-13358382,4712053],[-13358384,4712821],[-13358555,4713020],[-13358468,4713145],[-13358500,4713195],[-13358478,4713271],[-13358560,4713232],[-13358591,4713249],[-13358559,4713274],[-13358604,4713281],[-13358638,4713242],[-13358730,4713253],[-13359004,4713052],[-13358841,4712893],[-13358757,4712949],[-13358702,4712923],[-13358596,4713003],[-13358562,4712953],[-13358794,4712773],[-13358781,4712748],[-13358697,4712779],[-13358643,4712708],[-13358622,4712426],[-13358702,4712366],[-13358637,4712279],[-13358533,4712274],[-13358482,4712204],[-13358561,4712052],[-13358811,4711849],[-13358858,4711895],[-13358846,4711982],[-13358609,4712192],[-13358816,4712426],[-13358819,4712470],[-13358746,4712509],[-13358799,4712579],[-13358889,4712511],[-13358973,4712590],[-13358932,4712642],[-13358946,4712740],[-13359054,4712705],[-13359078,4712730],[-13359012,4712788],[-13358959,4712770],[-13358942,4712857],[-13358874,4712887],[-13359022,4713028],[-13359431,4712740],[-13359909,4712626],[-13359910,4712518],[-13359860,4712503],[-13359450,4712578],[-13359369,4712653],[-13359325,4712566],[-13359253,4712623],[-13359261,4712704],[-13359179,4712630],[-13359464,4712439],[-13359610,4712412],[-13359676,4712454],[-13359749,4712357],[-13359672,4712282],[-13359501,4712308],[-13359180,4712490],[-13359176,4712429],[-13359342,4712312],[-13359566,4712242],[-13359580,4712194],[-13359559,4712148],[-13359464,4712151],[-13359088,4712342],[-13359082,4712305],[-13359188,4712224],[-13359482,4712095],[-13359488,4712019],[-13359443,4711993],[-13359292,4712042],[-13359007,4712225],[-13358985,4712183],[-13359254,4712007],[-13359484,4711942],[-13359508,4711889],[-13359487,4711842],[-13359434,4711835],[-13359036,4712000],[-13359037,4711934],[-13359427,4711793],[-13359466,4711729],[-13359418,4711682],[-13359092,4711788],[-13359077,4711749],[-13359430,4711631],[-13359457,4711584],[-13359420,4711524],[-13359031,4711647],[-13359006,4711608],[-13359277,4711499],[-13359481,4711473],[-13359509,4711754],[-13359601,4711780],[-13359625,4711725],[-13359587,4711392],[-13359650,4711478],[-13359716,4711460],[-13359745,4711401],[-13359796,4711476],[-13359683,4711508],[-13359657,4711570],[-13359697,4711614],[-13359770,4711607],[-13359775,4711642],[-13359697,4711652],[-13359666,4711709],[-13359693,4711755],[-13359781,4711751],[-13359785,4711789],[-13359609,4711863],[-13359555,4712015],[-13359568,4712057],[-13359635,4712068],[-13359681,4711939],[-13359761,4711913],[-13359783,4711970],[-13359709,4712061],[-13359771,4712110],[-13359887,4711970],[-13359859,4711872],[-13359894,4711770],[-13359833,4711443],[-13359973,4711478],[-13359984,4711391],[-13360013,4711393],[-13360044,4711519],[-13359936,4711573],[-13359907,4711646],[-13359973,4711680],[-13360051,4711626],[-13360061,4711670],[-13359992,4711740],[-13359956,4711858],[-13360057,4711884],[-13360097,4711785],[-13360124,4711844],[-13360092,4711929],[-13359927,4711975],[-13359944,4712067],[-13360157,4712026],[-13360150,4712131],[-13360214,4712169],[-13360282,4712061],[-13360405,4712076],[-13360532,4712018],[-13360491,4711946],[-13360371,4711964],[-13360211,4711927],[-13360204,4711836],[-13360133,4711776],[-13360217,4711784],[-13360337,4711928],[-13360417,4711917],[-13360426,4711856],[-13360323,4711740],[-13360387,4711532],[-13360301,4711524],[-13360243,4711669],[-13360099,4711668],[-13360093,4711618],[-13360208,4711631],[-13360250,4711580],[-13360224,4711529],[-13360079,4711514],[-13360082,4711481],[-13360462,4711487],[-13360469,4711678],[-13360401,4711711],[-13360388,4711764],[-13360480,4711812],[-13360627,4712054],[-13360678,4712051],[-13360708,4712001],[-13360641,4711865],[-13360708,4711856],[-13360735,4711800],[-13360702,4711751],[-13360610,4711773],[-13360593,4711735],[-13360715,4711633],[-13360727,4711574],[-13360649,4711536],[-13360571,4711608],[-13360498,4711423],[-13360756,4711537],[-13360774,4711612],[-13360722,4711707],[-13360776,4711809],[-13360731,4711900],[-13360727,4712089],[-13360312,4712119],[-13360269,4712192],[-13360268,4712403],[-13360152,4712345],[-13360227,4712235],[-13360182,4712196],[-13360088,4712219],[-13360073,4712090],[-13360009,4712098],[-13359958,4712170],[-13359906,4712111],[-13359847,4712117],[-13359836,4712240],[-13360004,4712303],[-13360093,4712457],[-13360275,4712446],[-13360234,4712497],[-13359974,4712507],[-13359973,4712632],[-13360092,4712605],[-13360876,4712620],[-13361925,4712723],[-13363306,4713003],[-13364323,4713297],[-13364540,4713151],[-13364697,4713164],[-13364882,4713235],[-13364886,4713195],[-13364688,4713083],[-13364549,4713110],[-13364609,4713040],[-13364698,4713020],[-13364587,4712841],[-13364653,4712925],[-13364688,4712907],[-13364677,4712960],[-13364727,4712944],[-13364723,4712830],[-13364820,4712816],[-13364746,4712860],[-13364753,4712900],[-13364831,4712848],[-13364829,4712793],[-13364765,4712736],[-13364794,4712728],[-13364830,4712782],[-13364920,4712767],[-13364838,4712785],[-13364830,4712879],[-13364752,4712918],[-13364735,4712992],[-13364792,4712944],[-13364842,4712985],[-13364764,4713002],[-13364769,4713034],[-13364901,4713047],[-13364843,4713023],[-13364944,4713010],[-13365168,4713061],[-13365022,4713042],[-13365031,4713083],[-13364809,4713038],[-13364833,4713086],[-13364781,4713080],[-13364775,4713114],[-13364891,4713149],[-13364982,4713246],[-13365077,4713264],[-13364991,4713264],[-13365312,4713340],[-13365972,4713626],[-13366066,4713620],[-13366175,4713673],[-13366244,4713550],[-13365990,4713467],[-13366064,4713458],[-13366104,4713515],[-13366197,4713539],[-13366278,4713500],[-13366292,4713430],[-13366284,4713492],[-13366325,4713483],[-13366253,4713521],[-13366210,4713701],[-13366070,4713638],[-13366049,4713668],[-13366591,4713999],[-13366931,4714534],[-13366911,4714714],[-13367057,4715148],[-13367012,4715442],[-13367003,4716019],[-13367093,4716657],[-13367173,4716730],[-13367351,4716634],[-13367584,4716131],[-13367664,4716110],[-13367778,4715865],[-13367873,4715835],[-13368051,4715595],[-13368195,4715280],[-13368392,4714985],[-13368684,4714708],[-13368821,4714687],[-13368946,4714586],[-13369046,4714577],[-13369307,4714418],[-13369519,4714341],[-13369749,4714448],[-13369855,4714405],[-13369953,4714433],[-13370057,4714504],[-13370129,4714635],[-13370214,4714526],[-13370258,4714534],[-13370188,4714588],[-13370186,4714619],[-13370243,4714610],[-13370160,4714681],[-13370191,4714760],[-13370144,4714745],[-13370147,4714707],[-13370117,4714726],[-13370205,4714937],[-13370069,4715262],[-13369926,4715355],[-13369824,4715350],[-13369838,4715433],[-13369648,4715601],[-13369336,4715710],[-13369047,4715907],[-13368737,4716327],[-13368422,4716641],[-13368296,4716663],[-13368141,4716611],[-13367916,4716634],[-13367848,4716775],[-13367665,4716745],[-13367655,4716780],[-13367719,4717002],[-13368106,4717126],[-13368154,4717248],[-13368327,4717208],[-13368395,4717364],[-13368461,4717337],[-13368585,4717445],[-13368603,4717536],[-13368753,4717587],[-13368776,4717783],[-13368846,4717885],[-13368797,4718161],[-13368748,4718231],[-13368761,4718434],[-13368816,4718566],[-13368785,4718599],[-13368749,4718960],[-13368694,4719068],[-13368769,4719311],[-13368747,4719427],[-13368780,4719665],[-13368891,4719824],[-13368862,4719948],[-13368909,4720003],[-13368753,4720305],[-13368777,4720420],[-13368724,4720587],[-13368741,4720663],[-13368872,4720799],[-13368832,4720883],[-13368866,4720978],[-13368782,4721092],[-13368898,4721240],[-13368941,4721434],[-13369054,4721593],[-13369118,4721540],[-13369253,4721527],[-13369747,4721865],[-13369794,4721848],[-13369779,4721882],[-13369956,4722023],[-13369994,4721998],[-13369967,4722042],[-13370277,4722273],[-13370229,4722270],[-13370662,4722676],[-13371064,4723258],[-13371103,4723424],[-13371089,4723623],[-13371405,4724082],[-13371566,4724470],[-13371624,4724720],[-13371575,4724791],[-13371678,4725046],[-13371688,4725383],[-13371646,4725421],[-13371650,4725531],[-13371531,4725815],[-13371333,4726101],[-13371146,4726227],[-13371131,4726410],[-13371324,4726551],[-13371440,4726796],[-13371627,4726819],[-13371749,4726793],[-13371879,4726969],[-13372044,4726855],[-13372089,4726883],[-13372171,4726859],[-13372248,4726913],[-13372299,4726850],[-13372249,4726923],[-13372148,4726877],[-13371973,4726984],[-13371966,4727024],[-13371929,4726964],[-13371889,4726980],[-13371936,4727320],[-13371884,4727435],[-13371692,4727456],[-13371767,4727627],[-13371741,4727760],[-13371535,4727870],[-13371399,4728041],[-13371164,4728090],[-13371087,4728192],[-13370715,4728466],[-13370685,4728646],[-13370907,4729126],[-13370929,4729556],[-13371003,4729583],[-13370979,4729513],[-13371086,4729495],[-13370997,4729529],[-13371015,4729597],[-13370937,4729592],[-13371044,4729881],[-13370977,4730330],[-13371061,4730537],[-13371549,4730985],[-13371748,4730998],[-13371948,4731070],[-13372780,4731650],[-13373004,4731648],[-13373191,4731596],[-13373354,4731637],[-13373633,4731819],[-13373981,4732178],[-13374007,4732072],[-13374000,4732188],[-13374076,4732260],[-13374161,4732250],[-13374408,4732407],[-13375035,4732415],[-13375423,4732740],[-13375788,4733222],[-13376269,4734498],[-13376326,4734748],[-13376575,4735396],[-13376594,4735580],[-13376490,4736131],[-13376438,4736146],[-13376342,4736371],[-13376259,4736369],[-13376251,4736436],[-13376171,4736423],[-13376068,4736780],[-13375955,4736981],[-13376094,4737112],[-13376208,4737073],[-13376109,4737130],[-13375916,4737009],[-13375976,4737122],[-13376009,4737377],[-13375946,4737780],[-13375890,4737899],[-13375965,4738292],[-13375957,4738439],[-13375920,4738486],[-13375954,4738587],[-13376082,4738621],[-13376152,4738706],[-13376252,4738948],[-13376326,4739408],[-13376286,4739809],[-13376195,4740019],[-13376079,4740127],[-13375675,4740119],[-13375699,4740254],[-13375640,4740140],[-13375509,4740405],[-13375412,4740469],[-13375262,4740917],[-13375401,4741702],[-13375327,4742006],[-13375136,4742276],[-13374945,4742460],[-13374577,4742652],[-13374463,4742873],[-13374326,4743030],[-13374339,4743455],[-13374397,4743580],[-13374385,4743779],[-13374316,4744011],[-13374228,4744098],[-13374072,4744443],[-13374132,4744611],[-13374095,4744829],[-13374131,4744953],[-13374107,4745298],[-13374042,4745420],[-13374116,4745439],[-13374104,4745508],[-13374241,4745653],[-13374235,4745714],[-13374164,4745791],[-13374082,4746007],[-13373920,4746207],[-13373753,4746266],[-13373698,4746245],[-13373518,4746404],[-13373225,4746763],[-13373218,4746817],[-13373181,4746823],[-13373092,4747015],[-13372878,4747217],[-13372775,4747406],[-13372433,4747584],[-13372069,4747685],[-13371741,4747723],[-13371924,4747820],[-13371905,4747850],[-13371746,4747763],[-13371750,4747822],[-13371698,4747835],[-13371724,4747699],[-13371674,4747654],[-13371613,4747690],[-13371363,4747656],[-13371116,4747559],[-13371079,4747656],[-13370931,4747805],[-13370366,4748056],[-13369424,4748129],[-13368960,4748117],[-13368642,4748218],[-13368608,4748358],[-13368630,4748459],[-13368850,4748767],[-13369055,4749253],[-13369030,4749430],[-13368946,4749593],[-13368978,4749770],[-13368930,4750103],[-13368975,4750399],[-13368955,4750789],[-13368884,4751095],[-13368787,4751288],[-13368545,4751439],[-13368269,4751547],[-13368169,4751735],[-13368206,4751800],[-13368192,4751934],[-13368062,4752170],[-13368092,4752493],[-13368045,4752893],[-13367960,4753123],[-13367939,4753544],[-13367849,4753794],[-13367592,4753995],[-13367419,4754059],[-13367423,4754187],[-13367335,4754195],[-13367312,4754100],[-13366961,4754127],[-13366739,4754043],[-13366542,4754034],[-13366251,4754299],[-13366006,4754360],[-13365948,4754470],[-13365917,4754722],[-13366103,4754967],[-13366143,4755205],[-13366134,4755387],[-13365957,4755546],[-13365369,4755669],[-13365024,4755907],[-13364810,4756001],[-13364179,4756011],[-13363807,4755971],[-13363761,4755890],[-13363689,4755898],[-13363723,4755924],[-13363706,4755956],[-13363669,4755955],[-13363668,4755913],[-13363638,4755956],[-13363529,4755945],[-13363427,4755868],[-13363426,4755805],[-13363136,4755719],[-13363131,4755749],[-13363059,4755752],[-13363016,4755835],[-13362736,4755841],[-13362704,4755873],[-13362709,4755839],[-13362600,4755811],[-13362496,4755728],[-13362344,4755784],[-13362252,4755772],[-13361704,4755631],[-13361482,4755611],[-13360999,4755468],[-13360862,4755383],[-13360867,4755290],[-13360792,4755232],[-13360481,4755167],[-13360317,4755061],[-13359900,4754334],[-13359755,4753974],[-13359554,4753885],[-13359430,4753654],[-13359346,4753599],[-13359260,4753670],[-13359033,4753646],[-13358736,4753484],[-13358693,4753382],[-13358595,4753362],[-13358503,4753403],[-13358484,4753479],[-13358507,4753666],[-13358564,4753707],[-13358503,4753770],[-13358516,4753918],[-13358591,4753977],[-13358533,4754030],[-13358530,4754243],[-13358449,4754385],[-13358460,4754511],[-13358401,4754692],[-13358457,4754835],[-13358416,4754926],[-13358484,4754981],[-13358403,4755265],[-13358419,4755406],[-13358290,4755643],[-13358293,4755899],[-13358190,4756040],[-13358275,4756223],[-13358267,4756334],[-13358189,4756416],[-13358218,4756430],[-13358083,4756657],[-13358045,4756913],[-13357879,4757179],[-13357567,4757391],[-13357354,4757401]],
+      [[-13357928,4713365],[-13358312,4713302],[-13358390,4713329],[-13358440,4713238],[-13358450,4713085],[-13358263,4713095],[-13358199,4713234],[-13358116,4713302],[-13357979,4713241],[-13357928,4713365]]
+    ];
     // Basin locator palette (sampled from the TRPA reference)
     const BASIN_STYLE = {
       outside: [11, 31, 65, 0.64], lake: [157, 175, 194, 1], outline: [74, 129, 179, 1],
@@ -741,9 +713,17 @@
       const mk = (url, sym) => new FeatureLayer({ url, renderer: { type: "simple", symbol: sym },
         legendEnabled: false, popupEnabled: false, listMode: "hide" });
       const fill = (color, ow, oc) => ({ type: "simple-fill", color, outline: { width: ow, color: oc || [0,0,0,0] } });
+      // Client-side lake from the embedded shoreline (see LAKE_RINGS)
+      const lake = new FeatureLayer({
+        source: [new window._Graphic({ attributes: { OBJECTID: 1 },
+          geometry: new window._Polygon({ rings: LAKE_RINGS, spatialReference: { wkid: 3857 } }) })],
+        objectIdField: "OBJECTID", fields: [{ name: "OBJECTID", type: "oid" }],
+        geometryType: "polygon", spatialReference: { wkid: 3857 },
+        renderer: { type: "simple", symbol: fill(S.lake, 0) },
+        legendEnabled: false, popupEnabled: false, listMode: "hide" });
       return {
         mask:  mk(SVC+"Boundaries/MapServer/15",            fill(S.outside, 0)),
-        lake:  mk(SVC+"Streams_and_Flood_Zone/MapServer/2", fill(S.lake, 0)),
+        lake,
         juris: mk(SVC+"Boundaries/MapServer/16",            fill([0,0,0,0], 1, S.stateln)),
         cslt:  mk(SVC+"Boundaries/MapServer/2",             fill([0,0,0,0], 0.7, S.cslt)),
         bnd:   mk(SVC+"Boundaries/MapServer/4",             fill([0,0,0,0], 3.5, S.outline)),
@@ -812,7 +792,9 @@
         basinView = new MapView({ container: "basinDiv", map: bmap, background: { color: [255,255,255,1] },
           constraints: { snapToZoom: false, rotationEnabled: false }, ui: { components: [] } });
         await basinView.when();
-        await s.bnd.when();
+        // every locator layer loaded before the first fit/screenshot (they're all
+        // small: the heavy lake polygon is embedded, not fetched)
+        await Promise.all(Object.values(s).map(l => l.when()));
         basinView._basinExtent = s.bnd.fullExtent.clone().expand(1.06);
         await basinView.goTo(basinView._basinExtent, { animate: false });
       })().catch((e) => {
@@ -1333,6 +1315,43 @@
     $("brandSeg").addEventListener("click", (e) => {
       const btn = e.target.closest("button"); if (!btn) return; brandKey = btn.dataset.brand; applyBrand();
     });
+    // ── Layouts: one config drives the panel picker and the intro gallery ──
+    // Wireframes are tiny inline SVGs of each export's composition (viewBox 48×27).
+    const WF = {
+      slide:   `<svg viewBox="0 0 48 27" aria-hidden="true"><rect class="wf-bg" x=".5" y=".5" width="47" height="26" rx="1.5"/>` +
+               `<rect class="wf-txt" x="4" y="5" width="11" height="2" rx=".5"/><rect class="wf-txt" x="4" y="9.5" width="17" height="3" rx=".5"/>` +
+               `<rect class="wf-txt" x="4" y="14.5" width="12" height="2" rx=".5"/><rect class="wf-line" x="4" y="22.5" width="40" height="1"/>` +
+               `<rect class="wf-map" x="26" y="3" width="18" height="19.5"/><circle class="wf-pin" cx="35" cy="11" r="1.8"/></svg>`,
+      split:   `<svg viewBox="0 0 48 27" aria-hidden="true"><rect class="wf-img" width="32" height="23"/><circle class="wf-pin" cx="16" cy="11" r="2.4"/>` +
+               `<rect class="wf-map" x="32" width="16" height="23"/><circle class="wf-pin" cx="40" cy="9" r="1.3"/>` +
+               `<rect class="wf-cap" y="23" width="48" height="4"/><rect class="wf-line" y="23" width="48" height=".8"/></svg>`,
+      detail:  `<svg viewBox="0 0 48 27" aria-hidden="true"><rect class="wf-img" width="48" height="23"/><circle class="wf-pin" cx="24" cy="11" r="2.6"/>` +
+               `<rect class="wf-cap" y="23" width="48" height="4"/><rect class="wf-line" y="23" width="48" height=".8"/></svg>`,
+      locator: `<svg viewBox="0 0 48 27" aria-hidden="true"><rect class="wf-map" x="14" y=".5" width="20" height="23.5"/><circle class="wf-pin" cx="24" cy="10" r="1.8"/>` +
+               `<rect class="wf-cap" x="14" y="24" width="20" height="2.5"/><rect class="wf-line" x="14" y="24" width="20" height=".6"/></svg>`,
+    };
+    const LAYOUTS = [
+      { key: "slide",   name: "Title Slide",    dims: "16:9",
+        use: "Opening slide for a project presentation: title block beside a basin map." },
+      { key: "split",   name: "Detail + Basin", dims: "16:9",
+        use: "Show the site close up and where it sits in the basin." },
+      { key: "detail",  name: "Detail Only",    dims: "16:9",
+        use: "Full-frame site close-up for review or design slides." },
+      { key: "locator", name: "Basin Only",     dims: "8.5×11",
+        use: "Basin-wide context page for reports and handouts." },
+    ];
+    (function renderLayouts() {
+      $("layoutSeg").innerHTML = LAYOUTS.map(L =>
+        `<button data-layout="${L.key}" class="${L.key === exportLayout ? "active" : ""}" role="radio"
+                 aria-checked="${L.key === exportLayout}" title="${escHtml(L.use)}">
+           <span class="lp-wire">${WF[L.key]}</span>
+           <span class="lp-text"><span class="lp-name">${L.name} <span class="lp-dims">${L.dims}</span></span>
+             <span class="lp-use">${escHtml(L.use)}</span></span></button>`).join("");
+      $("infoLayouts").innerHTML = LAYOUTS.map(L =>
+        `<div class="info-card"><span class="lp-wire">${WF[L.key]}</span>
+           <span class="ic-name">${L.name} <span class="lp-dims">${L.dims}</span></span>
+           <span class="ic-use">${escHtml(L.use)}</span></div>`).join("");
+    })();
     $("layoutSeg").addEventListener("click", (e) => {
       const btn = e.target.closest("button"); if (!btn) return; exportLayout = btn.dataset.layout;
       $("layoutSeg").querySelectorAll("button").forEach(x => {
@@ -1410,11 +1429,18 @@
       else view.goTo({ target: view.center, scale: +v }, { duration: 500 });
     });
     let exportFormat = "png";
+    const FORMAT_HELP = {
+      png:  "Flat image for documents, email, or pasting anywhere.",
+      pptx: "A PowerPoint slide. Editable elements keeps the text, logo, and maps as separate pieces you can move and retitle.",
+      svg:  "Vector file for Illustrator, Inkscape, or Affinity: text and pins stay editable, the maps are embedded images.",
+    };
     wireSeg("formatSeg", (v) => {
       exportFormat = v;
       // The editable-elements option only applies to PPTX
       $("editableRow").hidden = v !== "pptx";
+      $("fmtHelp").textContent = FORMAT_HELP[v];
     });
+    $("fmtHelp").textContent = FORMAT_HELP[exportFormat];
     // Arrow-key support for the button radiogroups (ARIA radio pattern)
     function radioKeys(id) {
       $(id).addEventListener("keydown", (e) => {
@@ -1451,9 +1477,17 @@
     const rgba = (a) => `rgba(${a[0]},${a[1]},${a[2]},${a[3]})`;
     const baseFont = () => brand().font.split(",")[0].replace(/'/g, "") + ", sans-serif";
 
+    // Wait for a view to finish fetching and drawing. `updating` flips to true
+    // asynchronously after a goTo/resize, so first give it a moment to start
+    // (else an immediate check sees the stale false and returns too early),
+    // then wait for it to clear, capped so a starved view can't hang the export.
     async function settle(v, ms = 3500) {
-      if (v && v.updating && window._reactiveUtils)
-        await Promise.race([window._reactiveUtils.whenOnce(() => !v.updating), new Promise(r => setTimeout(r, ms))]);
+      const R = window._reactiveUtils;
+      if (!v || !R) return;
+      if (!v.updating)
+        await Promise.race([R.whenOnce(() => v.updating), new Promise(r => setTimeout(r, 400))]);
+      if (v.updating)
+        await Promise.race([R.whenOnce(() => !v.updating), new Promise(r => setTimeout(r, ms))]);
     }
     // A view.takeScreenshot() can stall indefinitely if the WebGL context is
     // starved, cap it so a stuck export fails with a toast instead of freezing
@@ -1513,18 +1547,26 @@
       // happens inside the click gesture, Safari's transient activation
       // would expire if we awaited the basin init before calling it.
       await ensureBasin();
-      const d = $("basinDiv"); d.style.width = wPx + "px"; d.style.height = hPx + "px";
-      await withTimeout(window._reactiveUtils.whenOnce(() => Math.abs(basinView.width - wPx) <= 2),
+      // The offscreen view is sized to the final output pixels and shot 1:1.
+      // Asking takeScreenshot for a larger image than the view re-renders at a
+      // different resolution, so feature tiles the settle wait never saw get
+      // fetched mid-shot and the mask/boundaries come out partially drawn.
+      const k = EXPORT.basinShot2x, W = wPx * k, H = hPx * k;
+      const d = $("basinDiv"); d.style.width = W + "px"; d.style.height = H + "px";
+      await withTimeout(window._reactiveUtils.whenOnce(() => Math.abs(basinView.width - W) <= 2),
         3000, "Basin resize").catch(() => {});   // background tabs may never fire ResizeObserver, proceed
       // goTo on a render-starved view can neither resolve nor reject, cap it and
       // proceed (the extent is usually already correct from the previous export).
       await withTimeout(basinView.goTo(basinView._basinExtent, { animate: false }), 5000, "Basin re-fit")
         .catch(e => console.warn(e.message || e));
-      await settle(basinView, 4000);
+      await settle(basinView, 8000);
+      // A throttled tab (hidden, or starved of animation frames) can run out
+      // the settle cap with layers still drawing; say so instead of shipping
+      // a half-drawn basin silently.
+      if (basinView.updating) exportNote("The basin map hadn't finished drawing when it was captured, keep this tab in front and try again.");
       const pins = pinNorms(basinView, basinView.width, basinView.height);
-      const k = EXPORT.basinShot2x;
       const s = await withTimeout(
-        basinView.takeScreenshot({ width: wPx * k, height: hPx * k, format: "png" }),
+        basinView.takeScreenshot({ width: W, height: H, format: "png" }),
         20000, "Basin map render");
       return { img: await loadImage(s.dataUrl), pins };
     }
@@ -2303,13 +2345,6 @@
     $("panelToggle").addEventListener("click", () => {
       const collapsed = document.body.classList.toggle("panel-collapsed");
       $("panelToggleIcon").icon = collapsed ? "chevron-right" : "chevron-left";
-    });
-
-    // ── Step tooltips, resolve reference elements programmatically
-    // (Calcite 5 doesn't reliably resolve the reference-element id attribute) ──
-    document.querySelectorAll("calcite-tooltip[reference-element]").forEach(t => {
-      const el = document.getElementById(t.getAttribute("reference-element"));
-      if (el) t.referenceElement = el;
     });
 
     // ── Beta-feedback chip (Survey123), shown while FEEDBACK_URL is set ──
