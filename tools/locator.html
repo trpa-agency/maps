@@ -191,6 +191,29 @@
     .wf-line { fill: var(--brand-primary); }
     .cap-toggle { display: flex; align-items: center; gap: 0.35rem; font-size: 0.76rem;
       color: var(--brand-dark); margin-top: 0.2rem; }
+    /* Collapsible sub-section (Map colors), closed by default */
+    .fold summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 0.35rem;
+      font-size: 0.68rem; font-weight: 600; color: #6B7688; user-select: none; }
+    .fold summary::-webkit-details-marker { display: none; }
+    .fold summary::before { content: "▸"; font-size: 0.7rem; width: 0.7rem; color: #6B7688; }
+    .fold[open] summary::before { content: "▾"; }
+    .fold-hint { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+      color: #6B7688; background: var(--gray-bg); border: 1px solid var(--gray-border); border-radius: 999px;
+      padding: 0 0.4rem; }
+    .fold-hint.custom { color: #fff; background: var(--brand-primary); border-color: var(--brand-primary); }
+    .fold-body { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.4rem 0 0.1rem 0.2rem; }
+    /* Map color swatches: Auto + palette, for the pin and for the outline */
+    .swatch-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
+    .swatch-row .sw-label { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: #6B7688; width: 3.2rem; }
+    .swatch-row button { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #fff; cursor: pointer;
+      padding: 0; box-shadow: 0 0 0 1px var(--gray-border); transition: transform 100ms; }
+    .swatch-row button:hover { transform: scale(1.15); }
+    .swatch-row button.active { box-shadow: 0 0 0 2px var(--brand-dark); }
+    .swatch-row button.sw-auto { width: auto; height: 20px; border-radius: 999px; padding: 0 0.5rem;
+      background: #fff; font-family: var(--brand-font); font-size: 0.64rem; font-weight: 700; color: #6B7688; }
+    .swatch-row button.sw-auto.active { color: var(--brand-dark); }
+
     /* Imagery-year chips (Current · Nearmap years · TRPA aerials), wrap freely */
     .yr-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
     .yr-row.off { opacity: 0.45; }   /* dimmed (still usable) when the basemap isn't Imagery */
@@ -319,6 +342,10 @@
     .pv-meta { font-size: 0.74rem; color: #6B7688; }
 
     #basinDiv { position: absolute; left: -10000px; top: 0; width: 900px; height: 600px; }
+
+    /* Select-parcels toggle on the map (styled like the Esri Home button) */
+    .sel-btn calcite-icon { color: inherit; }
+    .sel-btn.active { background: var(--brand-primary) !important; color: #fff !important; }
   </style>
 </head>
 <body data-brand="eip">
@@ -381,8 +408,9 @@
             <calcite-icon icon="trash" scale="s"></calcite-icon>
           </button>
         </h2>
-        <p class="sec-help">Search an address, APN, EIP project, or “lat, lon” and pick a result.
-          Up to 9 locations; each gets a numbered pin.</p>
+        <p class="sec-help">Search an address, APN, EIP project, or “lat, lon” and pick a result,
+          or turn on the arrow button on the map and click parcels. Up to 9 locations; each
+          gets a numbered pin.</p>
         <div class="hdr-search">
           <div class="search-box">
             <calcite-icon icon="search" scale="s"></calcite-icon>
@@ -411,6 +439,16 @@
           </div>
           <span class="field-help">EIP for Environmental Improvement Program materials, TRPA for agency materials.</span>
         </label>
+        <!-- Folded by default; the header says "custom" when an override is set -->
+        <details class="fold" id="colorFold">
+          <summary>Map colors <span class="fold-hint" id="colorFoldHint">auto</span></summary>
+          <div class="fold-body">
+            <span class="field-help">Pin, and the outline used for the parcel highlight and drawings.
+              Auto follows the style; the choice carries into exports.</span>
+            <div class="swatch-row" id="pinSwatches" role="radiogroup" aria-label="Pin color"><span class="sw-label">Pin</span></div>
+            <div class="swatch-row" id="accentSwatches" role="radiogroup" aria-label="Outline color"><span class="sw-label">Outline</span></div>
+          </div>
+        </details>
         <label class="field">Layout
           <!-- buttons rendered from LAYOUTS (shared with the intro dialog's gallery) -->
           <div class="layout-picker" id="layoutSeg" role="radiogroup" aria-label="Export layout"></div>
@@ -557,7 +595,8 @@
         ready to drop into a slide or report. Three steps:</p>
       <ol class="info-steps">
         <li><strong>Add locations.</strong> Search an address, APN, EIP project, or
-          “lat, lon” and pick a result. Up to 9; each gets a numbered pin.</li>
+          “lat, lon” and pick a result, or turn on the arrow button on the map and click
+          parcels. Up to 9; each gets a numbered pin.</li>
         <li><strong>Choose a style and a layout.</strong> Style sets the logo and colors.
           Layout sets what the export shows:</li>
       </ol>
@@ -608,6 +647,18 @@
     };
     let brandKey = "eip";
     const brand = () => BRANDS[brandKey];
+    // Map symbol colors. "Auto" follows the style; an override applies to the
+    // pin, or to the outline (parcel highlight + drawings), on screen and in
+    // every export. The caption card keeps the style's accent regardless.
+    const SWATCHES = [
+      { hex: "#0072CE", name: "TRPA blue" },   { hex: "#007DC3", name: "EIP blue" },    { hex: "#003B71", name: "Navy" },
+      { hex: "#E87722", name: "TRPA orange" }, { hex: "#F16022", name: "EIP orange" },  { hex: "#9C3E27", name: "Brick" },
+      { hex: "#4A6118", name: "Forest" },      { hex: "#B47E00", name: "Earth" },       { hex: "#7B6A8A", name: "Purple" },
+      { hex: "#FFC20E", name: "Yellow, stands out on imagery" }, { hex: "#1A1A1A", name: "Black" },
+    ];
+    let pinOverride = null, accentOverride = null;
+    const pinColor = () => pinOverride || brand().pin;
+    const accentColor = () => accentOverride || brand().accent;
     let exportLayout = "slide";   // slide = branded slide, split = 2/3 detail + 1/3 locator
     const LOGO_CACHE = {};
 
@@ -752,7 +803,45 @@
     function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return [(n>>16)&255,(n>>8)&255,n&255,a]; }
 
     // ───────────────────────── App ─────────────────────────
-    let map, view, pinLayer, mapPinLayer, parcelsFL;
+    let map, view, pinLayer, mapPinLayer, parcelsFL, sketchLayer, sketch, selectBtn;
+    // ── Select parcels on the map ──
+    let selectMode = false, selectBusy = false;
+    function setSelectMode(on) {
+      selectMode = on;
+      if (selectBtn) { selectBtn.classList.toggle("active", on); selectBtn.setAttribute("aria-pressed", on ? "true" : "false"); }
+      if (view) view.container.style.cursor = on ? "crosshair" : "";
+      if (parcelsFL) parcelsFL.visible = on;   // lot lines while selecting (1:24k and closer)
+      if (on) toast("Click parcels to add them. Esc to stop.", 3500);
+    }
+    // Reset: clear locations, drawings, and select mode, back to the basin (undoable)
+    function resetMap() {
+      const hadLocs = locations, hadDrawings = sketchLayer ? sketchLayer.graphics.toArray() : [];
+      if (!hadLocs.length && !hadDrawings.length && !selectMode) {
+        flyTo({ center: BASIN.center, zoom: BASIN.zoom }, 500); return;
+      }
+      locations = [];
+      if (sketchLayer) sketchLayer.removeAll();
+      if (sketch) sketch.cancel();
+      setSelectMode(false);
+      input.value = ""; clearBtn.style.display = "none"; closeSuggest(); suggestItems = [];
+      refreshLocations();
+      flyTo({ center: BASIN.center, zoom: BASIN.zoom }, 500);
+      toast("Map reset.", 8000, { label: "Undo", onClick: () => {
+        locations = hadLocs; if (sketchLayer) sketchLayer.addMany(hadDrawings);
+        refreshLocations(); zoomToLocations(); } });
+    }
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && selectMode) setSelectMode(false); });
+    async function addParcelAt(mapPoint) {
+      if (selectBusy) return;
+      selectBusy = true;
+      try {
+        const r = await parcelsFL.queryFeatures({ geometry: mapPoint, spatialRelationship: "intersects",
+          outFields: PARCEL_FIELDS, returnGeometry: true, outSpatialReference: view.spatialReference, num: 1 });
+        if (r.features[0]) selectResult({ kind: "parcel", g: r.features[0] }, { keepView: true });
+        else toast("No parcel here.");
+      } catch (e) { console.error(e); toast("Parcel lookup failed, check the network connection and try again.", 4000); }
+      finally { selectBusy = false; }
+    }
     let basinView, basinCtors = null, basinInitPromise = null;
     let locations = [];                 // selected parcels: {apn, address, jurisdiction, county, geometry, point}
     const MAX_LOCATIONS = 9;            // single-digit pin numbers stay legible
@@ -817,12 +906,16 @@
 
       // The interactive map carries a real basemap (used by the split detail
       // panel). The styled locator layers live only on the offscreen basin view.
+      // Hidden until the select tool is on; then it draws lot lines close in
+      // (the click query itself runs server-side and doesn't need visibility)
       parcelsFL = new FeatureLayer({ url: PARCELS_URL,
         outFields: PARCEL_FIELDS,
-        visible: false, legendEnabled: false, listMode: "hide" });
+        visible: false, legendEnabled: false, listMode: "hide", minScale: 24000,
+        renderer: { type: "simple", symbol: { type: "simple-fill", color: [0, 0, 0, 0],
+          outline: { color: [255, 255, 255, 0.85], width: 1 } } } });
       pinLayer = new GraphicsLayer({ listMode: "hide" });      // parcel outline
       mapPinLayer = new GraphicsLayer({ listMode: "hide" });   // the pin (hidden during export so a crisp vector pin is drawn on the canvas)
-      const sketchLayer = new GraphicsLayer({ title: "Annotations" });
+      sketchLayer = new GraphicsLayer({ title: "Annotations" });
 
       map = new Map({ basemap: makeBasemap("imagery"), layers: [parcelsFL, sketchLayer, pinLayer, mapPinLayer] });
       view = new MapView({ container: "viewDiv", map, center: BASIN.center, zoom: BASIN.zoom,
@@ -835,11 +928,33 @@
         view.ui.move("zoom", "top-left");
         view.ui.add(new Home({ view }), "top-left");
         view.ui.add(new ScaleBar({ view, unit: "dual" }), "bottom-left");
-        const sketch = new Sketch({ view, layer: sketchLayer, creationMode: "update",
+        sketch = new Sketch({ view, layer: sketchLayer, creationMode: "update",
           layout: "vertical", visibleElements: { settingsMenu: false } });
+        applySketchSymbols();   // draw in the app's own symbols (orange shapes, blue pin)
         const sketchExpand = new Expand({ view, content: sketch, expandIcon: "pencil",
           expandTooltip: "Draw / annotate", collapseTooltip: "Close draw tools" });
         view.ui.add(sketchExpand, "top-right");
+        // Select-parcels toggle (below Home): click a lot on the map to add it
+        selectBtn = document.createElement("div");
+        selectBtn.className = "esri-widget--button esri-widget esri-interactive sel-btn";
+        selectBtn.setAttribute("role", "button"); selectBtn.tabIndex = 0;
+        selectBtn.setAttribute("aria-pressed", "false");
+        selectBtn.title = "Select parcels: click a parcel on the map to add it";
+        selectBtn.innerHTML = '<calcite-icon icon="cursor" scale="s"></calcite-icon>';
+        selectBtn.addEventListener("click", () => setSelectMode(!selectMode));
+        selectBtn.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelectMode(!selectMode); } });
+        view.ui.add(selectBtn, "top-left");
+        // Reset (below the select tool): clears locations, drawings, and select mode
+        const resetBtn = document.createElement("div");
+        resetBtn.className = "esri-widget--button esri-widget esri-interactive sel-btn";
+        resetBtn.setAttribute("role", "button"); resetBtn.tabIndex = 0;
+        resetBtn.title = "Reset the map: clear locations and drawings, back to the basin";
+        resetBtn.innerHTML = '<calcite-icon icon="reset" scale="s"></calcite-icon>';
+        resetBtn.addEventListener("click", resetMap);
+        resetBtn.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); resetMap(); } });
+        view.ui.add(resetBtn, "top-left");
+        view.on("click", (e) => { if (selectMode && !(sketch && sketch.state === "active")) { e.stopPropagation(); addParcelAt(e.mapPoint); } });
         applyBrand();
         applyEipParam().then(applyShareHash);
         ["previewBtn", "copyBtn", "exportBtn"].forEach(id => { $(id).loading = false; $(id).disabled = false; });
@@ -1118,7 +1233,8 @@
       return { key: label, label, sub: "Coordinates (WGS84)", short: label,
         geometry: pt, point: pt, fitZoom: 16 };
     }
-    function selectResult(item) {
+    // opts.keepView: don't re-zoom (map clicks while selecting parcels)
+    function selectResult(item, opts = {}) {
       closeSuggest();
       const loc = buildLoc(item);
       if (!loc) { toast("No geometry for this result."); return; }
@@ -1126,8 +1242,8 @@
       if (existing >= 0) {
         toast("Already added.");
         const ex = locations[existing];
-        flyTo({ target: ex.geometry.extent ? ex.geometry.extent.expand(2.2)
-                                           : { center: ex.point, zoom: ex.fitZoom } });
+        if (!opts.keepView) flyTo({ target: ex.geometry.extent ? ex.geometry.extent.expand(2.2)
+                                                              : { center: ex.point, zoom: ex.fitZoom } });
         return;
       }
       if (locations.length >= MAX_LOCATIONS) {
@@ -1139,10 +1255,10 @@
       input.value = locations.length === 1 ? loc.label : "";
       clearBtn.style.display = input.value ? "block" : "none";
       refreshLocations();
-      zoomToLocations();
+      if (!opts.keepView) zoomToLocations();
       // Phone: the next step is looking at the map, so tuck the sheet away after
       // the first location (the handle brings it back).
-      if (locations.length === 1 && window.matchMedia("(max-width: 760px)").matches) setPanelCollapsed(true);
+      if (locations.length === 1 && !opts.keepView && window.matchMedia("(max-width: 760px)").matches) setPanelCollapsed(true);
     }
     function removeLocation(i) {
       locations.splice(i, 1);
@@ -1241,6 +1357,8 @@
       const p = new URLSearchParams({ v: "1", s: brandKey, l: exportLayout, bm: basemapKey, yr: imageryKey,
         lb: imageryLabels ? 1 : 0, z: detailScale, cap: $("capSwitch").checked ? 1 : 0,
         fmt: exportFormat, ed: $("editableSwitch").checked ? 1 : 0 });
+      if (pinOverride) p.set("pc", pinOverride.slice(1));
+      if (accentOverride) p.set("oc", accentOverride.slice(1));
       const kept = locs.filter(Boolean);
       if (kept.length) p.set("loc", kept.join("|"));
       return { hash: "#" + p.toString().replace(/%7C/g, "|").replace(/%3A/g, ":").replace(/%2C/g, ","),
@@ -1272,6 +1390,10 @@
         exportFormat = p.get("fmt"); setSegActive("formatSeg", exportFormat);
         $("editableRow").hidden = exportFormat !== "pptx"; $("fmtHelp").textContent = FORMAT_HELP[exportFormat]; }
       if (p.has("ed")) $("editableSwitch").checked = p.get("ed") === "1";
+      const hex6 = v => /^[0-9a-f]{6}$/i.test(v);
+      if (has("pc", hex6)) pinOverride = "#" + p.get("pc").toUpperCase();
+      if (has("oc", hex6)) accentOverride = "#" + p.get("oc").toUpperCase();
+      if (pinOverride || accentOverride) applyMapColors();
       const specs = (p.get("loc") || "").split("|").filter(Boolean);
       if (!specs.length) return;
       let missing = 0;
@@ -1305,11 +1427,11 @@
       locations.forEach((loc, i) => {
         const num = locations.length > 1 ? i + 1 : undefined;
         if (loc.geometry.type === "polygon")
-          pinLayer.add(new G({ geometry: loc.geometry, symbol: parcelFillSymbol(brand().accent) }));
+          pinLayer.add(new G({ geometry: loc.geometry, symbol: parcelFillSymbol(accentColor()) }));
         else if (loc.geometry.type === "polyline")
           pinLayer.add(new G({ geometry: loc.geometry,
-            symbol: { type: "simple-line", color: brand().accent, width: 2.5 } }));
-        mapPinLayer.add(new G({ geometry: loc.point, symbol: pinSymbol(brand().pin, num) }));
+            symbol: { type: "simple-line", color: accentColor(), width: 2.5 } }));
+        mapPinLayer.add(new G({ geometry: loc.point, symbol: pinSymbol(pinColor(), num) }));
       });
     }
     function updateLocCard() {
@@ -1490,6 +1612,23 @@
     document.addEventListener("click", (e) => { if (!e.target.closest(".hdr-search")) closeSuggest(); });
 
     // ───────────── Header controls ─────────────
+    // Draw-tool symbols match the app's own: polygons and lines in the accent
+    // orange (like the parcel outline), points as the blue pin. Re-applied on a
+    // style change, including to shapes already drawn, so annotations always
+    // match the pins and parcel outlines around them.
+    function sketchSymbolFor(geomType) {
+      return geomType === "point" ? pinSymbol(pinColor())
+           : geomType === "polyline" ? { type: "simple-line", color: accentColor(), width: 2.5 }
+           : parcelFillSymbol(accentColor());
+    }
+    function applySketchSymbols() {
+      if (!sketch) return;
+      const vm = sketch.viewModel;
+      vm.pointSymbol = sketchSymbolFor("point");
+      vm.polylineSymbol = sketchSymbolFor("polyline");
+      vm.polygonSymbol = sketchSymbolFor("polygon");
+      sketchLayer.graphics.forEach(g => { if (g.geometry) g.symbol = sketchSymbolFor(g.geometry.type); });
+    }
     function applyBrand() {
       const b = brand(); document.body.dataset.brand = brandKey;
       const r = document.documentElement.style;
@@ -1503,11 +1642,48 @@
       // The EIP Projects Map link only makes sense in the EIP style
       $("projectsLink").hidden = brandKey !== "eip";
       if (locations.length) drawResult();
+      applySketchSymbols();
       updateLocCard();
     }
     $("brandSeg").addEventListener("click", (e) => {
       const btn = e.target.closest("button"); if (!btn) return; brandKey = btn.dataset.brand; applyBrand();
     });
+    // ── Map color swatches ──
+    function renderSwatches(id, current) {
+      const row = $(id);
+      row.querySelectorAll("button").forEach(b => b.remove());
+      const mk = (hex, name) => {
+        const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", "radio");
+        b.dataset.hex = hex || ""; b.title = name; b.setAttribute("aria-label", name);
+        if (hex) b.style.background = hex; else { b.className = "sw-auto"; b.textContent = "Auto"; }
+        const on = (hex || null) === current;
+        b.classList.toggle("active", on); b.setAttribute("aria-checked", on ? "true" : "false");
+        row.appendChild(b);
+      };
+      mk(null, "Auto, follows the style");
+      SWATCHES.forEach(s => mk(s.hex, s.name));
+    }
+    function syncSwatches() {
+      renderSwatches("pinSwatches", pinOverride);
+      renderSwatches("accentSwatches", accentOverride);
+      const custom = !!(pinOverride || accentOverride);
+      const h = $("colorFoldHint"); h.textContent = custom ? "custom" : "auto"; h.classList.toggle("custom", custom);
+    }
+    function applyMapColors() {
+      syncSwatches();
+      if (locations.length) drawResult();
+      applySketchSymbols();
+    }
+    $("pinSwatches").addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      pinOverride = b.dataset.hex || null; applyMapColors();
+    });
+    $("accentSwatches").addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      accentOverride = b.dataset.hex || null; applyMapColors();
+    });
+    syncSwatches();
+
     // ── Layouts: one config drives the panel picker and the intro gallery ──
     // Wireframes are tiny inline SVGs of each export's composition (viewBox 48×27).
     const WF = {
@@ -1910,7 +2086,7 @@
       const { img: basin, pins } = await shotBasin(Math.round(mp.w*0.72), Math.round(mp.h*0.72));
       ctx.fillStyle = rgba(BASIN_STYLE.outside); ctx.fillRect(mp.x, mp.y, mp.w, mp.h);
       if (basin) ctx.drawImage(basin, mp.x, mp.y, mp.w, mp.h);
-      pins.forEach(p => drawPin(ctx, mp.x + p.nx*mp.w, mp.y + p.ny*mp.h, pinH, b.pin, p.num));
+      pins.forEach(p => drawPin(ctx, mp.x + p.nx*mp.w, mp.y + p.ny*mp.h, pinH, pinColor(), p.num));
       await drawNorthArrow(ctx, mp.x+mp.w-64, mp.y+mp.h-64, arrow, b.dark);
       const logo = await getLogo(); drawLogo(ctx, logo, 150, 130, brand().slideLogoH || 130);
       ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
@@ -1947,7 +2123,7 @@
       const capH = caption ? Math.round(H*capFrac) : 0, mapH = H - capH;
       const { img: basin, pins } = await shotBasin(850, Math.round(850*mapH/W));
       if (basin) ctx.drawImage(basin, 0, 0, W, mapH);
-      pins.forEach(p => drawPin(ctx, p.nx*W, p.ny*mapH, pinH, b.pin, p.num));
+      pins.forEach(p => drawPin(ctx, p.nx*W, p.ny*mapH, pinH, pinColor(), p.num));
       await drawNorthArrow(ctx, W-96, mapH-96, arrow, b.dark);
       if (caption) await drawCaption(ctx, 0, mapH, W, capH);
       return cv;
@@ -1962,10 +2138,10 @@
       const [zoom, basin] = await Promise.all([
         shotZoom(leftW/mapH), shotBasin(Math.round(rightW*0.6), Math.round(mapH*0.6)) ]);
       if (zoom.img) ctx.drawImage(zoom.img, 0, 0, leftW, mapH);
-      zoom.pins.forEach(p => drawPin(ctx, p.nx*leftW, p.ny*mapH, pinHZoom, b.pin, p.num));
+      zoom.pins.forEach(p => drawPin(ctx, p.nx*leftW, p.ny*mapH, pinHZoom, pinColor(), p.num));
       ctx.fillStyle = rgba(BASIN_STYLE.outside); ctx.fillRect(leftW, 0, rightW, mapH);
       if (basin.img) ctx.drawImage(basin.img, leftW, 0, rightW, mapH);
-      basin.pins.forEach(p => drawPin(ctx, leftW + p.nx*rightW, p.ny*mapH, pinHBasin, b.pin, p.num));
+      basin.pins.forEach(p => drawPin(ctx, leftW + p.nx*rightW, p.ny*mapH, pinHBasin, pinColor(), p.num));
       ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.fillRect(leftW-2, 0, 4, mapH);
       await drawNorthArrow(ctx, W-64, mapH-64, arrow, b.dark);
       drawLocationCard(ctx, 44, mapH - 44, 1.15);
@@ -1980,7 +2156,7 @@
       const capH = caption ? Math.round(H*capFrac) : 0, mapH = H - capH;
       const zoom = await shotZoom(W/mapH);
       if (zoom.img) ctx.drawImage(zoom.img, 0, 0, W, mapH);
-      zoom.pins.forEach(p => drawPin(ctx, p.nx*W, p.ny*mapH, pinH, b.pin, p.num));
+      zoom.pins.forEach(p => drawPin(ctx, p.nx*W, p.ny*mapH, pinH, pinColor(), p.num));
       await drawNorthArrow(ctx, W-64, mapH-64, arrow, b.dark);
       drawLocationCard(ctx, 44, mapH - 44, 1.15);
       if (caption) await drawCaption(ctx, 0, mapH, W, capH, false);  // address is on the LOCATION card
@@ -2135,7 +2311,7 @@
         parts.push(svgRect(0, 0, W, H, "#FFFFFF"));
         parts.push(`<rect x="${mp.x}" y="${mp.y}" width="${mp.w}" height="${mp.h}" ${svgFillA(BASIN_STYLE.outside)}/>`);
         if (img) parts.push(svgImage(img.src, mp.x, mp.y, mp.w, mp.h));
-        pins.forEach(p => parts.push(svgPin(mp.x + p.nx*mp.w, mp.y + p.ny*mp.h, pinH, b.pin, p.num)));
+        pins.forEach(p => parts.push(svgPin(mp.x + p.nx*mp.w, mp.y + p.ny*mp.h, pinH, pinColor(), p.num)));
         parts.push(svgNorthArrow(mp.x + mp.w - 64, mp.y + mp.h - 64, arrow, b.dark));
         const logo = await getLogo();
         if (logo) {
@@ -2169,10 +2345,10 @@
           shotZoom(leftW/mapH), shotBasin(Math.round(rightW*0.6), Math.round(mapH*0.6)) ]);
         parts.push(svgRect(0, 0, W, H, "#FFFFFF"));
         if (zoom.img) parts.push(svgImage(zoom.img.src, 0, 0, leftW, mapH));
-        zoom.pins.forEach(p => parts.push(svgPin(p.nx*leftW, p.ny*mapH, pinHZoom, b.pin, p.num)));
+        zoom.pins.forEach(p => parts.push(svgPin(p.nx*leftW, p.ny*mapH, pinHZoom, pinColor(), p.num)));
         parts.push(`<rect x="${leftW}" y="0" width="${rightW}" height="${mapH}" ${svgFillA(BASIN_STYLE.outside)}/>`);
         if (basin.img) parts.push(svgImage(basin.img.src, leftW, 0, rightW, mapH));
-        basin.pins.forEach(p => parts.push(svgPin(leftW + p.nx*rightW, p.ny*mapH, pinHBasin, b.pin, p.num)));
+        basin.pins.forEach(p => parts.push(svgPin(leftW + p.nx*rightW, p.ny*mapH, pinHBasin, pinColor(), p.num)));
         parts.push(svgRect(leftW - 2, 0, 4, mapH, "#FFFFFF", 'fill-opacity="0.9"'));
         parts.push(svgNorthArrow(W - 64, mapH - 64, arrow, b.dark));
         parts.push(svgLocCard(mapH));
@@ -2185,7 +2361,7 @@
         const zoom = await shotZoom(W/mapH);
         parts.push(svgRect(0, 0, W, H, "#FFFFFF"));
         if (zoom.img) parts.push(svgImage(zoom.img.src, 0, 0, W, mapH));
-        zoom.pins.forEach(p => parts.push(svgPin(p.nx*W, p.ny*mapH, pinH, b.pin, p.num)));
+        zoom.pins.forEach(p => parts.push(svgPin(p.nx*W, p.ny*mapH, pinH, pinColor(), p.num)));
         parts.push(svgNorthArrow(W - 64, mapH - 64, arrow, b.dark));
         parts.push(svgLocCard(mapH));
         if (caption) parts.push(await svgCaption(0, mapH, W, capH, false));
@@ -2197,7 +2373,7 @@
         const { img, pins } = await shotBasin(850, Math.round(850 * mapH / W));
         parts.push(`<rect x="0" y="0" width="${W}" height="${H}" ${svgFillA(BASIN_STYLE.outside)}/>`);
         if (img) parts.push(svgImage(img.src, 0, 0, W, mapH));
-        pins.forEach(p => parts.push(svgPin(p.nx*W, p.ny*mapH, pinH, b.pin, p.num)));
+        pins.forEach(p => parts.push(svgPin(p.nx*W, p.ny*mapH, pinH, pinColor(), p.num)));
         parts.push(svgNorthArrow(W - 96, mapH - 96, arrow, b.dark));
         if (caption) parts.push(await svgCaption(0, mapH, W, capH, true));
       }
@@ -2300,7 +2476,7 @@
       if (backfill) { ctx.fillStyle = backfill; ctx.fillRect(0, 0, cv.width, cv.height); }
       if (img) ctx.drawImage(img, 0, 0, cv.width, cv.height);
       const b = brand();
-      (pins || []).forEach(p => drawPin(ctx, p.nx * cv.width, p.ny * cv.height, pinH, b.pin, p.num));
+      (pins || []).forEach(p => drawPin(ctx, p.nx * cv.width, p.ny * cv.height, pinH, pinColor(), p.num));
       return cv.toDataURL("image/png");
     }
 
