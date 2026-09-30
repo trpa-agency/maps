@@ -54,8 +54,9 @@
     #appBody { flex: 1 1 auto; display: flex; min-height: 0; }
     /* Panel = scrolling body + pinned footer (Preview / Copy / Save never scroll away) */
     #sidePanel {
-      /* scales with the window: 272px on a small laptop, 352px on a wide monitor */
-      flex: 0 0 clamp(272px, 23vw, 352px); background: var(--white); border-right: 1px solid var(--gray-border);
+      /* scales with the window (272px on a small laptop, 352px on a wide monitor)
+         unless the user dragged a width (--panel-w); the phone rule below overrides both */
+      flex: 0 0 var(--panel-w, clamp(272px, 23vw, 352px)); background: var(--white); border-right: 1px solid var(--gray-border);
       display: flex; flex-direction: column; min-height: 0; overflow: hidden;
     }
     #panelScroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0.9rem 1rem 1.2rem;
@@ -70,6 +71,10 @@
       background: var(--white); cursor: pointer; color: #8A93A3; padding: 0;
     }
     #panelToggle:hover { background: var(--gray-bg); color: var(--brand-primary); }
+    /* The divider is also a drag handle (desktop): drag sets the panel width */
+    @media (min-width: 761px) { #panelToggle { cursor: col-resize; touch-action: none; } }
+    body.resizing { cursor: col-resize; user-select: none; }
+    body.resizing #viewDiv { pointer-events: none; }   /* the map must not swallow the drag */
 
     .panel-sec { display: flex; flex-direction: column; gap: 0.55rem; }
     .sec-body { display: flex; flex-direction: column; gap: 0.55rem; }
@@ -269,9 +274,6 @@
     #locChips calcite-chip[draggable="true"] { cursor: grab; }
     #locChips calcite-chip.drag-over { outline: 2px dashed var(--brand-primary); outline-offset: 1px; border-radius: 999px; }
 
-    /* Medium widths: the header link goes icon-only so the icon group fits */
-    @media (max-width: 1000px) { .link-label { display: none; } }
-
     /* Responsive: below 760px the map fills the screen and the panel becomes a
        bottom sheet beneath it, collapsed to a handle bar with the toggle. The
        sheet sits in the flex flow (not overlaid) so the map view resizes and
@@ -279,7 +281,6 @@
     @media (max-width: 760px) {
       .hdr-brand .hagency { display: none; }
       .hdr-brand img { height: 30px; }
-      .link-label { display: none; }   /* header links go icon-only on small screens */
       .hdr-sep { margin: 0 0.1rem; }
       .beta-chip a { font-size: 0.64rem; }
       #appBody { flex-direction: column; }
@@ -364,19 +365,17 @@
         <a id="feedbackLink" target="_blank" rel="noopener">Beta · Send feedback</a>
         <button id="feedbackDismiss" type="button" title="Hide" aria-label="Hide feedback button">×</button>
       </span>
-      <calcite-button id="projectsLink" href="https://trpa-agency.github.io/EIP/html/projects-map.html" target="_blank" rel="noopener"
-        icon-start="launch" appearance="transparent" kind="neutral" scale="s"
-        title="Open the EIP Projects Map in a new window"><span class="link-label">EIP Projects Map</span></calcite-button>
-      <!-- Site links for the current (first) location, wired by syncSiteLinks():
-           the parcel ones need a parcel, the map ones any location -->
-      <span class="hdr-sep" aria-hidden="true"></span>
-      <calcite-button id="lnkLtinfo" icon-start="parcel" appearance="transparent" kind="neutral" scale="s" disabled
+      <!-- Site links, wired by syncSiteLinks(): each always opens its app; with a
+           parcel or location on the map it opens there (the tooltip says which) -->
+      <calcite-button id="projectsLink" icon-start="map" appearance="transparent" kind="neutral" scale="s"
+        target="_blank" rel="noopener" label="EIP Projects Map"></calcite-button>
+      <calcite-button id="lnkLtinfo" icon-start="parcel" appearance="transparent" kind="neutral" scale="s"
         target="_blank" rel="noopener" label="Parcel details on Lake Tahoe Info"></calcite-button>
-      <calcite-button id="lnkPermit" icon-start="inspection" appearance="transparent" kind="neutral" scale="s" disabled
+      <calcite-button id="lnkPermit" icon-start="inspection" appearance="transparent" kind="neutral" scale="s"
         target="_blank" rel="noopener" label="Permit Review Map"></calcite-button>
-      <calcite-button id="lnkNearmap" icon-start="image" appearance="transparent" kind="neutral" scale="s" disabled
+      <calcite-button id="lnkNearmap" icon-start="image" appearance="transparent" kind="neutral" scale="s"
         target="_blank" rel="noopener" label="Nearmap MapBrowser"></calcite-button>
-      <calcite-button id="lnkStreet" icon-start="walking" appearance="transparent" kind="neutral" scale="s" disabled
+      <calcite-button id="lnkStreet" icon-start="walking" appearance="transparent" kind="neutral" scale="s"
         target="_blank" rel="noopener" label="Google Street View"></calcite-button>
       <span class="hdr-sep" aria-hidden="true"></span>
       <calcite-button id="shareBtn" icon-start="link" appearance="transparent" kind="neutral" scale="s"
@@ -545,7 +544,7 @@
     </div>
     </aside>
 
-    <button id="panelToggle" title="Show / hide the panel" aria-label="Show or hide the control panel">
+    <button id="panelToggle" title="Drag to resize the panel, click to show / hide it" aria-label="Show or hide the control panel; drag to resize">
       <calcite-icon icon="chevron-left" scale="s" id="panelToggleIcon"></calcite-icon>
     </button>
 
@@ -1222,7 +1221,7 @@
         const p = item.p;
         const pt = window._wm.geographicToWebMercator(
           new window._Point({ longitude: p.lon, latitude: p.lat }));
-        return { key: p.num || p.name, label: p.name,
+        return { key: p.num || p.name, kind: "project", num: p.num || "", label: p.name,
           sub: [`EIP ${p.num}`, p.stage].filter(Boolean).join("  ·  "),
           short: `EIP ${p.num}`, geometry: pt, point: pt, fitZoom: 15 };
       }
@@ -1230,7 +1229,7 @@
       const pt = window._wm.geographicToWebMercator(
         new window._Point({ longitude: item.lon, latitude: item.lat }));
       const label = `${item.lat.toFixed(5)}, ${item.lon.toFixed(5)}`;
-      return { key: label, label, sub: "Coordinates (WGS84)", short: label,
+      return { key: label, kind: "coord", label, sub: "Coordinates (WGS84)", short: label,
         geometry: pt, point: pt, fitZoom: 16 };
     }
     // opts.keepView: don't re-zoom (map clicks while selecting parcels)
@@ -1269,28 +1268,34 @@
         flyTo({ center: BASIN.center, zoom: BASIN.zoom }, 500);
       }
     }
-    // Header site links follow the first location: Nearmap and Street View take
-    // any point; Lake Tahoe Info and Permit Review need a parcel.
+    // Header site links. Every icon always opens its app; with something on the
+    // map it opens there: Nearmap and Street View at the first location, Lake
+    // Tahoe Info and Permit Review at the first parcel, the Projects Map with
+    // the EIP projects on the map selected (its #v=1&sel= hash schema).
+    const PROJECTS_MAP_URL = "https://trpa-agency.github.io/EIP/html/projects-map.html";
     function syncSiteLinks() {
       const loc = loc0();
       const geo = loc ? window._wm.webMercatorToGeographic(loc.point) : null;
       const lat = geo && geo.latitude.toFixed(6), lon = geo && geo.longitude.toFixed(6);
-      const parcel = loc && loc.kind === "parcel" ? loc : null;
+      const parcel = locations.find(l => l.kind === "parcel") || null;
+      const eips = locations.filter(l => l.kind === "project" && l.num).map(l => l.num);
       const which = locations.length > 1 ? " (location 1)" : "";
-      const set = (id, href, onTitle, offTitle) => {
-        const b = $(id); b.disabled = !href;
-        if (href) b.href = href; else { b.href = undefined; b.removeAttribute("href"); }
-        b.title = href ? onTitle + which : offTitle;
-      };
-      set("lnkNearmap", geo && `https://apps.nearmap.com/maps/#/@${lat},${lon},19.00z,0d/V?locationMarker`,
-        "Open in Nearmap MapBrowser (TRPA Nearmap account)", "Nearmap MapBrowser: add a location first");
-      set("lnkStreet", geo && `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lon}`,
-        "Google Street View at this location", "Google Street View: add a location first");
-      set("lnkLtinfo", parcel && (parcel.ltinfo || `https://parcels.laketahoeinfo.org/Parcel/Detail/${encodeURIComponent(parcel.key)}`),
-        `Parcel ${parcel && parcel.key} on Lake Tahoe Info`, "Lake Tahoe Info parcel details: needs a parcel (address or APN) location");
-      set("lnkPermit", parcel && parcel.oid != null &&
-          `${PERMIT_REVIEW_URL}#data_s=id:${PERMIT_PARCELS_DS}:${parcel.oid}&zoom_to_selection=true`,
-        `Parcel ${parcel && parcel.key} in the Permit Review Map`, "Permit Review Map: needs a parcel (address or APN) location");
+      const set = (id, href, title) => { const b = $(id); b.href = href; b.title = title; };
+      set("lnkNearmap",
+        geo ? `https://apps.nearmap.com/maps/#/@${lat},${lon},19.00z,0d/V?locationMarker` : "https://apps.nearmap.com/maps",
+        geo ? "Open this location in Nearmap MapBrowser (TRPA Nearmap account)" + which : "Open Nearmap MapBrowser (TRPA Nearmap account)");
+      set("lnkStreet",
+        geo ? `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lon}` : "https://www.google.com/maps/@39.0968,-120.0324,11z",
+        geo ? "Google Street View at this location" + which : "Google Maps at Lake Tahoe (add a location for Street View there)");
+      set("lnkLtinfo",
+        parcel ? (parcel.ltinfo || `https://parcels.laketahoeinfo.org/Parcel/Detail/${encodeURIComponent(parcel.key)}`) : "https://parcels.laketahoeinfo.org/",
+        parcel ? `Parcel ${parcel.key} on Lake Tahoe Info` : "Open Lake Tahoe Info parcels (add an address or APN to open that parcel)");
+      set("lnkPermit",
+        parcel && parcel.oid != null ? `${PERMIT_REVIEW_URL}#data_s=id:${PERMIT_PARCELS_DS}:${parcel.oid}&zoom_to_selection=true` : PERMIT_REVIEW_URL,
+        parcel ? `Parcel ${parcel.key} in the Permit Review Map` : "Open the Permit Review Map (add an address or APN to open that parcel)");
+      set("projectsLink",
+        eips.length ? `${PROJECTS_MAP_URL}#v=1&sel=${eips.map(encodeURIComponent).join(",")}` : PROJECTS_MAP_URL,
+        eips.length ? `Open the EIP Projects Map with ${eips.length === 1 ? "this project" : `these ${eips.length} projects`} selected` : "Open the EIP Projects Map (add EIP projects to open them selected)");
     }
     function refreshLocations() {
       drawResult(); updateLocCard(); renderLocationChips(); syncSiteLinks();
@@ -1312,7 +1317,6 @@
         return;
       }
       let added = 0, missing = 0, over = 0;
-      const matched = [];   // every resolved EIP # (incl. dup/over-cap), for the back-link
       for (const id of ids) {
         const digits = id.replace(/\D/g, "");
         const p = projectsCache.find(x => x.num === id) ||
@@ -1320,19 +1324,13 @@
             ? projectsCache.find(x => x.num.replace(/\D/g, "") === digits)
             : null);
         if (!p) { missing++; continue; }
-        matched.push(p.num);
         const loc = buildLoc({ kind: "project", p });
         if (!loc || locations.some(l => l.key === loc.key)) continue;
         if (locations.length >= MAX_LOCATIONS) { over++; continue; }
         locations.push(loc);
         added++;
       }
-      // Round trip: the header "EIP Projects Map" link returns the user to
-      // the same selection (matches projects-map's #v=1&sel=… hash schema)
-      if (matched.length) {
-        $("projectsLink").href = "https://trpa-agency.github.io/EIP/html/projects-map.html#v=1&sel=" +
-          matched.map(encodeURIComponent).join(",");
-      }
+      // (the header's Projects Map icon links back to these projects, via syncSiteLinks)
       if (added) { refreshLocations(); zoomToLocations(); }
       const bits = [];
       if (added)   bits.push(`Added ${added} project location${added === 1 ? "" : "s"} from the Projects Map`);
@@ -1349,8 +1347,8 @@
     function buildShareHash() {
       const locs = locations.map(l =>
         l.kind === "parcel" ? `apn:${l.key}`
-        : l.key.startsWith("geojson-") ? null
-        : /^\d+\.\d+\.\d+\.\d+$/.test(l.key) ? `eip:${l.key}`
+        : l.kind === "geojson" ? null
+        : l.kind === "project" && l.num ? `eip:${l.num}`
         : (() => { const g = window._wm.webMercatorToGeographic(l.point);
                    return `pt:${g.latitude.toFixed(6)},${g.longitude.toFixed(6)}`; })()
       );
@@ -1538,7 +1536,7 @@
         if (!geom) { skipped++; return; }
         let label = gjLabel(f.properties, i);
         if (f.properties && f.properties.__mpIndex) label += ` (${f.properties.__mpIndex})`;
-        locs.push({ key: `geojson-${++gjCounter}`, label,
+        locs.push({ key: `geojson-${++gjCounter}`, kind: "geojson", label,
           sub: `${f.geometry.type} · pasted GeoJSON`, short: label,
           geometry: geom, point: geom.centroid || (geom.extent ? geom.extent.center : geom), fitZoom: 16 });
       });
@@ -1639,8 +1637,6 @@
       $("faviconLink").href = b.favicon;
       $("brandAgency").textContent = b.agency;
       setSegActive("brandSeg", brandKey, "brand");
-      // The EIP Projects Map link only makes sense in the EIP style
-      $("projectsLink").hidden = brandKey !== "eip";
       if (locations.length) drawResult();
       applySketchSymbols();
       updateLocCard();
@@ -2771,6 +2767,40 @@
       $("panelToggleIcon").icon = collapsed ? "chevron-right" : "chevron-left";
     }
     $("panelToggle").addEventListener("click", () => setPanelCollapsed(!document.body.classList.contains("panel-collapsed")));
+
+    // ── Panel resize: drag the divider (desktop only), width remembered per browser ──
+    (function panelResize() {
+      const MIN = 240, MAX = 560, KEY = "locator-panel-width";
+      const panel = $("sidePanel"), handle = $("panelToggle");
+      const desktop = window.matchMedia("(min-width: 761px)");
+      // The width goes into a CSS variable, not an inline flex-basis, so the
+      // phone layout's own flex rule still wins without any resize listeners.
+      const setWidth = (w) => panel.style.setProperty("--panel-w", w + "px");
+      try { const w = +localStorage.getItem(KEY); if (w >= MIN && w <= MAX) setWidth(w); } catch (e) { /* ignore */ }
+      let dragging = false, moved = false, startX = 0, startW = 0;
+      handle.addEventListener("pointerdown", (e) => {
+        if (!desktop.matches || e.button !== 0) return;
+        dragging = true; moved = false; startX = e.clientX; startW = panel.getBoundingClientRect().width;
+        try { handle.setPointerCapture(e.pointerId); } catch (err) { /* synthetic events have no capture */ }
+      });
+      handle.addEventListener("pointermove", (e) => {
+        if (!dragging) return;
+        const dx = e.clientX - startX;
+        if (!moved && Math.abs(dx) < 4) return;   // a plain click still toggles
+        moved = true; document.body.classList.add("resizing");
+        if (document.body.classList.contains("panel-collapsed")) setPanelCollapsed(false);
+        setWidth(Math.max(MIN, Math.min(MAX, startW + dx)));
+      });
+      const end = () => {
+        if (!dragging) return;
+        dragging = false; document.body.classList.remove("resizing");
+        if (moved) { try { localStorage.setItem(KEY, Math.round(panel.getBoundingClientRect().width)); } catch (e) { /* ignore */ } }
+      };
+      handle.addEventListener("pointerup", end);
+      handle.addEventListener("pointercancel", end);
+      // after a drag, swallow the click so the panel doesn't also collapse
+      handle.addEventListener("click", (e) => { if (moved) { e.stopImmediatePropagation(); moved = false; } }, true);
+    })();
 
     // ── Beta-feedback chip (Survey123), shown while FEEDBACK_URL is set ──
     const FEEDBACK_HIDE_KEY = "eip-beta-feedback-hidden-locator";  // per-page: dismiss here doesn't hide the other tools' chips
