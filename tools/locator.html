@@ -49,20 +49,21 @@
     .hdr-brand .hagency { font-size: 0.58rem; font-weight: 600; letter-spacing: 0.06em;
       text-transform: uppercase; color: var(--brand-primary); }
     .hdr-brand .hname { font-size: 0.95rem; font-weight: 700; color: var(--brand-dark); }
-    /* ← Tools back-link (white header, projects-map's navy version lives there) */
-    .hdr-back {
-      font-size: 0.72rem; font-weight: 600; color: #8A93A3; text-decoration: none;
-      border-left: 1px solid var(--gray-border); padding-left: 0.7rem; white-space: nowrap;
-    }
-    .hdr-back:hover { color: var(--brand-primary); }
 
     /* ── Body: side panel + map ── */
     #appBody { flex: 1 1 auto; display: flex; min-height: 0; }
+    /* Panel = scrolling body + pinned footer (Preview / Copy / Save never scroll away) */
     #sidePanel {
-      flex: 0 0 292px; overflow-y: auto; background: var(--white);
-      border-right: 1px solid var(--gray-border); padding: 0.9rem 1rem 1.2rem;
-      display: flex; flex-direction: column; gap: 1.1rem;
+      /* scales with the window: 272px on a small laptop, 352px on a wide monitor */
+      flex: 0 0 clamp(272px, 23vw, 352px); background: var(--white); border-right: 1px solid var(--gray-border);
+      display: flex; flex-direction: column; min-height: 0; overflow: hidden;
     }
+    #panelScroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0.9rem 1rem 1.2rem;
+      display: flex; flex-direction: column; gap: 1.1rem; }
+    #panelFooter { flex: 0 0 auto; padding: 0.55rem 1rem 0.8rem; border-top: 1px solid var(--gray-border);
+      background: var(--white); display: flex; flex-direction: column; gap: 0.35rem; }
+    .foot-status { font-size: 0.68rem; color: #6B7688; min-height: 1em; }
+    .foot-status[hidden] { display: none; }
     body.panel-collapsed #sidePanel { display: none; }
     #panelToggle {
       flex: 0 0 18px; border: none; border-right: 1px solid var(--gray-border);
@@ -75,17 +76,19 @@
     /* Detail-view controls only apply to the two detail layouts: under the
        other layouts the body collapses to a one-line note saying so. */
     .panel-sec.dimmed .sec-body { display: none; }
-    .sec-note { margin: -0.2rem 0 0; font-size: 0.7rem; line-height: 1.45; color: #8A93A3; display: none; }
+    .sec-note { margin: -0.2rem 0 0; font-size: 0.7rem; line-height: 1.45; color: #6B7688; display: none; }
     .panel-sec.dimmed .sec-note { display: block; }
     /* Always-visible guidance: one line under a section title (sec-help) or
        under a control (field-help), what the choice does and when to use it. */
-    .sec-help { margin: -0.25rem 0 0; font-size: 0.7rem; line-height: 1.45; color: #8A93A3; }
-    .field-help { font-size: 0.64rem; font-weight: 400; line-height: 1.4; color: #A6AFBD; }
+    /* Help text is #6B7688 everywhere (4.6:1 on white, WCAG AA); hierarchy comes
+       from size and weight, not lighter grays (the old #8A93A3 / #A6AFBD failed). */
+    .sec-help { margin: -0.25rem 0 0; font-size: 0.7rem; line-height: 1.45; color: #6B7688; }
+    .field-help { font-size: 0.64rem; font-weight: 400; line-height: 1.4; color: #6B7688; }
     .sec-title { display: flex; align-items: center; gap: 0.45rem; margin: 0;
       font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
       color: #6B7688; }
     .sec-tool { margin-left: auto; border: none; background: transparent; cursor: pointer;
-      color: #A6AFBD; padding: 0.1rem 0.2rem; border-radius: 5px; line-height: 0; }
+      color: #6B7688; padding: 0.1rem 0.2rem; border-radius: 5px; line-height: 0; }
     .sec-tool:hover { color: var(--brand-primary); background: var(--gray-bg); }
 
     /* Paste-GeoJSON dialog */
@@ -103,7 +106,7 @@
       width: 1.15rem; height: 1.15rem; border-radius: 50%;
       background: var(--brand-primary); color: #fff; font-size: 0.66rem; }
     .field { display: flex; flex-direction: column; gap: 0.25rem;
-      font-size: 0.68rem; font-weight: 600; color: #8A93A3; }
+      font-size: 0.68rem; font-weight: 600; color: #6B7688; }
     .field-hint { font-weight: 400; text-transform: none; letter-spacing: 0; }
     .field > select, .field > .seg { width: 100%; }
     .seg-fill button { flex: 1; }
@@ -119,8 +122,8 @@
     .search-box calcite-icon { color: var(--brand-primary); flex-shrink: 0; }
     .search-box input { flex: 1; border: none; outline: none; background: transparent;
       font-family: var(--brand-font); font-size: 0.9rem; color: var(--brand-dark); padding: 0.25rem 0; }
-    .search-box input::placeholder { color: #8A93A3; }
-    .search-clear { border: none; background: transparent; cursor: pointer; color: #8A93A3;
+    .search-box input::placeholder { color: #6B7688; }
+    .search-clear { border: none; background: transparent; cursor: pointer; color: #6B7688;
       padding: 0.2rem; border-radius: 5px; display: none; }
     .search-clear:hover { background: var(--gray-border); }
     .suggest-list { position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 60;
@@ -136,7 +139,7 @@
     .suggest-item .s-apn { color: var(--brand-primary); font-weight: 700; }
     .suggest-empty { padding: 0.7rem 0.85rem; font-size: 0.8rem; color: #6B7688; }
     .suggest-group { padding: 0.4rem 0.85rem 0.15rem; font-size: 0.62rem; font-weight: 700;
-      letter-spacing: 0.07em; text-transform: uppercase; color: #8A93A3;
+      letter-spacing: 0.07em; text-transform: uppercase; color: #6B7688;
       background: #fff; border-bottom: 1px solid #eef1f5; }
     /* Parcel-service outage notice (e.g., CORS/DNS trouble on internal networks) */
     .suggest-warn { padding: 0.5rem 0.85rem; font-size: 0.74rem; line-height: 1.45;
@@ -159,7 +162,7 @@
     }
     .seg button { border: none; background: #fff; cursor: pointer; font-family: var(--brand-font);
       font-size: 0.76rem; font-weight: 600; color: #6B7688; padding: 0.35rem 0.65rem; transition: all 120ms; }
-    .seg button.active { background: var(--brand-primary); color: #fff; }
+    .seg button.active { background: var(--brand-primary); color: #fff; font-weight: 700; }  /* bold: EIP blue is 4.45:1 */
 
     /* Layout picker, vertical options with always-visible wireframe previews */
     .layout-picker { display: flex; flex-direction: column; gap: 0.4rem; }
@@ -174,8 +177,8 @@
       box-shadow: inset 0 0 0 1px var(--brand-primary); }
     .layout-picker .lp-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.25; min-width: 0; }
     .layout-picker .lp-name { font-size: 0.78rem; font-weight: 700; color: var(--brand-dark); text-transform: none; letter-spacing: 0; }
-    .lp-dims { font-size: 0.62rem; font-weight: 400; color: #A6AFBD; text-transform: none; letter-spacing: 0; margin-left: 0.2rem; }
-    .layout-picker .lp-use { font-size: 0.66rem; font-weight: 400; color: #8A93A3; text-transform: none; letter-spacing: 0; }
+    .lp-dims { font-size: 0.62rem; font-weight: 400; color: #6B7688; text-transform: none; letter-spacing: 0; margin-left: 0.2rem; }
+    .layout-picker .lp-use { font-size: 0.66rem; font-weight: 400; color: #6B7688; text-transform: none; letter-spacing: 0; }
     /* Wireframe previews of each export layout (inline SVG, shared with the intro dialog) */
     .lp-wire { flex: 0 0 48px; width: 48px; height: 27px; }
     .lp-wire svg { width: 100%; height: 100%; display: block; }
@@ -197,7 +200,7 @@
     .yr-row button:hover { border-color: var(--brand-primary); }
     .yr-row button.active { background: var(--brand-primary); border-color: var(--brand-primary); color: #fff; }
     .yr-row .yr-group { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-      color: #A6AFBD; margin-left: 0.2rem; }
+      color: #6B7688; margin-left: 0.2rem; }
 
     /* Basemap thumbnail buttons (2×2) */
     .bm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
@@ -210,8 +213,9 @@
     .bm-btn.active { border-color: var(--brand-primary); color: var(--brand-dark);
       box-shadow: inset 0 0 0 1px var(--brand-primary); }
 
-    /* Header quick-links */
+    /* Header quick-links: related map, per-location site links, help, tools home */
     .hdr-links { display: flex; align-items: center; gap: 0.15rem; }
+    .hdr-sep { width: 1px; height: 18px; background: var(--gray-border); margin: 0 0.3rem; }
 
     /* Beta-feedback chip (shown only while FEEDBACK_URL is set) */
     .beta-chip { display: inline-flex; align-items: center; gap: 0.3rem;
@@ -239,6 +243,11 @@
 
     /* Added-locations chips (stack inside the panel) */
     #locChips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    #locChips calcite-chip[draggable="true"] { cursor: grab; }
+    #locChips calcite-chip.drag-over { outline: 2px dashed var(--brand-primary); outline-offset: 1px; border-radius: 999px; }
+
+    /* Medium widths: the header link goes icon-only so the icon group fits */
+    @media (max-width: 1000px) { .link-label { display: none; } }
 
     /* Responsive: below 760px the map fills the screen and the panel becomes a
        bottom sheet beneath it, collapsed to a handle bar with the toggle. The
@@ -247,8 +256,8 @@
     @media (max-width: 760px) {
       .hdr-brand .hagency { display: none; }
       .hdr-brand img { height: 30px; }
-      .hdr-back { display: none; }     /* back-link hidden on small screens (mirrors projects-map) */
       .link-label { display: none; }   /* header links go icon-only on small screens */
+      .hdr-sep { margin: 0 0.1rem; }
       .beta-chip a { font-size: 0.64rem; }
       #appBody { flex-direction: column; }
       #mapWrap { order: 1; min-height: 0; }
@@ -256,8 +265,8 @@
         border-top: 1px solid var(--gray-border); border-bottom: 1px solid var(--gray-border); }
       /* chevron-left → down while open (sheet collapses downward), chevron-right → up when collapsed */
       #panelToggleIcon { transform: rotate(-90deg); }
-      #sidePanel { order: 3; flex: 0 0 auto; max-height: 50vh; border-right: none;
-        padding: 0.7rem 1rem 1rem; gap: 0.9rem; }
+      #sidePanel { order: 3; flex: 0 0 auto; max-height: 50vh; border-right: none; }
+      #panelScroll { padding: 0.7rem 1rem 1rem; gap: 0.9rem; }
       .layout-picker { display: grid; grid-template-columns: 1fr 1fr; }
       .layout-picker .lp-use { display: none; }   /* keeps the 2×2 grid short; the use line stays in the title and intro */
       .bm-grid { grid-template-columns: repeat(4, 1fr); }
@@ -295,8 +304,19 @@
 
     .toast { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 40;
       background: var(--brand-dark); color: #fff; padding: 0.5rem 1rem; border-radius: 8px;
-      font-size: 0.82rem; box-shadow: var(--shadow); display: none; }
-    .toast.show { display: block; }
+      font-size: 0.82rem; box-shadow: var(--shadow); display: none; max-width: min(92%, 560px);
+      align-items: center; gap: 0.8rem; }
+    .toast.show { display: flex; }
+    .toast button { border: 1px solid rgba(255,255,255,0.55); background: transparent; color: #fff;
+      font-family: var(--brand-font); font-size: 0.76rem; font-weight: 700; padding: 0.2rem 0.6rem;
+      border-radius: 6px; cursor: pointer; white-space: nowrap; }
+    .toast button:hover { background: rgba(255,255,255,0.15); }
+
+    /* Export preview dialog */
+    .pv-wrap { display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
+    .pv-wrap img { max-width: 100%; max-height: 62vh; object-fit: contain; background: #fff;
+      box-shadow: 0 2px 14px rgba(11,31,65,0.22); border: 1px solid var(--gray-border); }
+    .pv-meta { font-size: 0.74rem; color: #6B7688; }
 
     #basinDiv { position: absolute; left: -10000px; top: 0; width: 900px; height: 600px; }
   </style>
@@ -307,7 +327,6 @@
   <header id="appHeader">
     <div class="hdr-brand">
       <img id="brandLogo" src="assets/eip-logo.png" alt="Lake Tahoe EIP" />
-      <a href="index.html" class="hdr-back">← Tools</a>
       <div class="htitle">
         <span class="hagency" id="brandAgency">Environmental Improvement Program</span>
         <span class="hname">Project Locator</span>
@@ -315,24 +334,38 @@
     </div>
     <div class="hdr-links">
       <span id="feedbackChip" class="beta-chip" hidden>
-        <a id="feedbackLink" target="_blank" rel="noopener">Beta, feedback</a>
+        <a id="feedbackLink" target="_blank" rel="noopener">Beta · Send feedback</a>
         <button id="feedbackDismiss" type="button" title="Hide" aria-label="Hide feedback button">×</button>
       </span>
-      <!-- One related-map link at a time, matched to the active Style -->
       <calcite-button id="projectsLink" href="https://trpa-agency.github.io/EIP/html/projects-map.html" target="_blank" rel="noopener"
         icon-start="launch" appearance="transparent" kind="neutral" scale="s"
         title="Open the EIP Projects Map in a new window"><span class="link-label">EIP Projects Map</span></calcite-button>
-      <calcite-button id="permitLink" href="https://gis.trpa.org/PermitReview/" target="_blank" rel="noopener" hidden
-        icon-start="launch" appearance="transparent" kind="neutral" scale="s"
-        title="Open the Permit Review Map in a new window"><span class="link-label">Permit Review Map</span></calcite-button>
+      <!-- Site links for the current (first) location, wired by syncSiteLinks():
+           the parcel ones need a parcel, the map ones any location -->
+      <span class="hdr-sep" aria-hidden="true"></span>
+      <calcite-button id="lnkLtinfo" icon-start="parcel" appearance="transparent" kind="neutral" scale="s" disabled
+        target="_blank" rel="noopener" label="Parcel details on Lake Tahoe Info"></calcite-button>
+      <calcite-button id="lnkPermit" icon-start="inspection" appearance="transparent" kind="neutral" scale="s" disabled
+        target="_blank" rel="noopener" label="Permit Review Map"></calcite-button>
+      <calcite-button id="lnkNearmap" icon-start="image" appearance="transparent" kind="neutral" scale="s" disabled
+        target="_blank" rel="noopener" label="Nearmap MapBrowser"></calcite-button>
+      <calcite-button id="lnkStreet" icon-start="walking" appearance="transparent" kind="neutral" scale="s" disabled
+        target="_blank" rel="noopener" label="Google Street View"></calcite-button>
+      <span class="hdr-sep" aria-hidden="true"></span>
+      <calcite-button id="shareBtn" icon-start="link" appearance="transparent" kind="neutral" scale="s"
+        title="Copy a link that reopens this map setup (locations, style, layout, detail options)"
+        label="Copy link to this map"></calcite-button>
       <calcite-button id="infoBtn" icon-start="information" appearance="transparent" kind="neutral" scale="s"
         title="About this tool" label="About this tool"></calcite-button>
+      <calcite-button id="lnkTools" href="index.html" icon-start="apps" appearance="transparent" kind="neutral" scale="s"
+        title="All TRPA map tools" label="All TRPA map tools"></calcite-button>
     </div>
   </header>
 
   <div id="appBody">
     <!-- ── Left panel: the workflow, grouped like the help steps ── -->
     <aside id="sidePanel" aria-label="Map and export controls">
+    <div id="panelScroll">
 
       <!-- Locations first: users arrive with a place in hand, and the ?eip=
            deep link enters with locations pre-filled. Style/layout have good
@@ -357,6 +390,7 @@
                    placeholder="Address, APN, EIP project, or lat, lon…"
                    role="combobox" aria-label="Search an address, APN, EIP project, or coordinates"
                    aria-autocomplete="list" aria-expanded="false" aria-controls="suggestList" />
+            <calcite-loader id="searchBusy" inline scale="s" label="Searching" hidden></calcite-loader>
             <button class="search-clear" id="searchClear" title="Clear" aria-label="Clear search">
               <calcite-icon icon="x" scale="s"></calcite-icon>
             </button>
@@ -421,7 +455,7 @@
             leaf-on; the TRPA aerials are scanned black-and-white photos.</span>
         </label>
         <div class="yr-row" id="yearSeg" role="radiogroup" aria-label="Imagery year"></div>
-        <label class="cap-toggle" title="Place and road labels over the imagery (Esri Hybrid Reference Layer)">
+        <label class="cap-toggle" id="labelsRow" title="Place and road labels over the imagery (Esri Hybrid Reference Layer)">
           <calcite-switch id="labelsSwitch" checked scale="s"></calcite-switch> Labels
         </label>
         <label class="field">Detail zoom
@@ -456,13 +490,21 @@
             <calcite-switch id="editableSwitch" checked scale="s"></calcite-switch> Editable elements
           </label>
         </div>
-        <div class="export-row">
-          <calcite-button id="copyBtn" icon-start="copy-to-clipboard" appearance="outline" kind="brand" scale="s" disabled
-            width="full" title="Copy the image to the clipboard, then paste it into a slide or document">Copy</calcite-button>
-          <calcite-button id="exportBtn" icon-start="save" appearance="solid" kind="brand" scale="s" disabled
-            width="full" title="Download the file in the chosen format">Save</calcite-button>
-        </div>
       </section>
+    </div><!-- /panelScroll -->
+
+    <!-- Pinned footer: the primary actions stay visible however long the panel is -->
+    <div id="panelFooter">
+      <div class="export-row">
+        <calcite-button id="previewBtn" icon-start="view-visible" appearance="outline" kind="neutral" scale="s" disabled loading
+          width="full" title="Render the export and show it here before saving">Preview</calcite-button>
+        <calcite-button id="copyBtn" icon-start="copy-to-clipboard" appearance="outline" kind="brand" scale="s" disabled loading
+          width="full" title="Copy the image to the clipboard, then paste it into a slide or document">Copy</calcite-button>
+        <calcite-button id="exportBtn" icon-start="save" appearance="solid" kind="brand" scale="s" disabled loading
+          width="full" title="Download the file in the chosen format">Save</calcite-button>
+      </div>
+      <div class="foot-status" id="footStatus">Loading the map…</div>
+    </div>
     </aside>
 
     <button id="panelToggle" title="Show / hide the panel" aria-label="Show or hide the control panel">
@@ -498,6 +540,16 @@
     </calcite-button>
   </calcite-dialog>
 
+  <!-- ── Export preview ── -->
+  <calcite-dialog id="previewModal" modal heading="Export preview" width-scale="l">
+    <div class="pv-wrap">
+      <img id="previewImg" alt="Preview of the export" />
+      <div class="pv-meta" id="previewMeta"></div>
+    </div>
+    <calcite-button id="pvCopy" slot="footer-start" icon-start="copy-to-clipboard" appearance="outline" kind="brand" scale="s">Copy image</calcite-button>
+    <calcite-button id="pvSave" slot="footer-end" icon-start="save" appearance="solid" kind="brand" scale="s">Save</calcite-button>
+  </calcite-dialog>
+
   <!-- ── Info / help dialog ── -->
   <calcite-dialog id="infoModal" modal heading="Project Locator" width-scale="s">
     <div class="info-content">
@@ -512,15 +564,18 @@
       <!-- gallery rendered from LAYOUTS -->
       <div class="info-layouts" id="infoLayouts"></div>
       <ol class="info-steps" start="3">
-        <li><strong>Save or Copy.</strong> Save downloads a PNG, a PowerPoint slide, or an
-          SVG; Copy puts the image on the clipboard to paste straight into a slide. The
+        <li><strong>Preview, then Save or Copy.</strong> Preview shows the finished export
+          before you commit to it. Save downloads a PNG, a PowerPoint slide, or an SVG;
+          Copy puts the image on the clipboard to paste straight into a slide. The
           detail layouts also let you pick the basemap, an imagery year (Nearmap 2021–2026,
           TRPA aerials from 1969 and 1940), and the zoom, and draw on the map with the
           pencil tool.</li>
       </ol>
-      <p class="info-fine">Each control in the panel explains what it does. Parcel data:
-        TRPA GIS. The <strong>EIP Projects Map</strong> (link in the header) can send a
-        selection of projects here with its <em>Locator map</em> button.</p>
+      <p class="info-fine">Each control in the panel explains what it does. The header icons
+        open the current location on Lake Tahoe Info, the Permit Review Map, Nearmap, and
+        Street View, and the link icon copies a URL that reopens this map setup. Parcel
+        data: TRPA GIS. The <strong>EIP Projects Map</strong> can send a selection of
+        projects here with its <em>Locator map</em> button.</p>
     </div>
   </calcite-dialog>
 
@@ -532,6 +587,13 @@
     const FEEDBACK_URL = "https://survey123.arcgis.com/share/f4e0b38aab1d412e978b5ab0bb64702f?field:toolname=locator";
     const SVC = "https://maps.trpa.org/server/rest/services/";
     const PARCELS_URL  = SVC + "Parcels/FeatureServer/0"; // FeatureServer returns geometry
+    // OBJECTID feeds the Permit Review deep link; LTINFO_HYPERLINK is the
+    // service's own Lake Tahoe Info parcel-detail URL.
+    const PARCEL_FIELDS = ["OBJECTID","APN","APO_ADDRESS","JURISDICTION","COUNTY","LTINFO_HYPERLINK"];
+    // Permit Review (Experience Builder): the Parcels layer's data-source id in
+    // that app, selected + zoomed via the #data_s URL parameter.
+    const PERMIT_REVIEW_URL = "https://gis.trpa.org/PermitReview/";
+    const PERMIT_PARCELS_DS = "dataSource_1-18bd6d48e43-layer-73";
     const BASIN = { center: [-120.04, 39.09], zoom: 9 };
 
     const BRANDS = {
@@ -590,7 +652,7 @@
                   coverage: [-13388486, 4675910, -13340317, 4772248] },
       trpa1940: { label: "1940", group: "TRPA", kind: "mapimage", url: SVC + "1940_Imagery/MapServer",
                   credit: "TRPA, 1940s aerial photography", title: "TRPA 1940s aerial photography (South Shore only)",
-                  coverage: [-13373188, 4676193, -13343103, 4722523], note: "South Shore only" },
+                  coverage: [-13373188, 4676193, -13343103, 4722523], note: "South Shore only", chip: "1940 · South Shore" },
     };
     let basemapKey = "imagery", imageryKey = "current", imageryLabels = true;
     const BM_CACHE = {};
@@ -703,8 +765,15 @@
       return COUNTY_NAMES[loc.county] || loc.county + " County";
     }
     const $ = (id) => document.getElementById(id);
-    function toast(msg, ms = 2200) {
-      const t = $("toast"); t.textContent = msg; t.classList.add("show");
+    // toast(msg, ms, { label, onClick }) adds an action button (e.g. Undo)
+    function toast(msg, ms = 2200, action = null) {
+      const t = $("toast"); t.textContent = msg;
+      if (action) {
+        const b = document.createElement("button"); b.type = "button"; b.textContent = action.label;
+        b.addEventListener("click", () => { t.classList.remove("show"); action.onClick(); });
+        t.appendChild(b);
+      }
+      t.classList.add("show");
       clearTimeout(toast._t); if (ms) toast._t = setTimeout(() => t.classList.remove("show"), ms);
     }
     // Build the styled locator feature layers (used only by the offscreen basin view)
@@ -749,7 +818,7 @@
       // The interactive map carries a real basemap (used by the split detail
       // panel). The styled locator layers live only on the offscreen basin view.
       parcelsFL = new FeatureLayer({ url: PARCELS_URL,
-        outFields: ["APN","APO_ADDRESS","JURISDICTION","COUNTY"],
+        outFields: PARCEL_FIELDS,
         visible: false, legendEnabled: false, listMode: "hide" });
       pinLayer = new GraphicsLayer({ listMode: "hide" });      // parcel outline
       mapPinLayer = new GraphicsLayer({ listMode: "hide" });   // the pin (hidden during export so a crisp vector pin is drawn on the canvas)
@@ -772,9 +841,9 @@
           expandTooltip: "Draw / annotate", collapseTooltip: "Close draw tools" });
         view.ui.add(sketchExpand, "top-right");
         applyBrand();
-        applyEipParam();
-        $("exportBtn").disabled = false;
-        $("copyBtn").disabled = false;
+        applyEipParam().then(applyShareHash);
+        ["previewBtn", "copyBtn", "exportBtn"].forEach(id => { $(id).loading = false; $(id).disabled = false; });
+        $("footStatus").hidden = true;
       });
 
       basinCtors = { Map, MapView, FeatureLayer };
@@ -863,6 +932,11 @@
       const term = termRaw.trim();
       if (term.length < 3 || !parcelsFL) { closeSuggest(); return; }
       const seq = ++suggestSeq;   // drop stale responses that resolve out of order
+      $("searchBusy").hidden = false;   // activity indicator while the parcel query runs
+      try { await runSuggestInner(term, seq); }
+      finally { if (seq === suggestSeq) $("searchBusy").hidden = true; }
+    }
+    async function runSuggestInner(term, seq) {
       const items = [];
 
       // 1) Coordinates, exact match, shown first
@@ -879,7 +953,7 @@
       if (/^\d{4,}$/.test(term)) clauses.push(`APN LIKE '${term.split("").join("%")}%'`);
       const [parcelRes] = await Promise.all([
         parcelsFL.queryFeatures({ where: clauses.join(" OR "),
-          outFields: ["APN","APO_ADDRESS","JURISDICTION","COUNTY"], returnGeometry: true,
+          outFields: PARCEL_FIELDS, returnGeometry: true,
           outSpatialReference: view.spatialReference, num: 6, orderByFields: ["APO_ADDRESS ASC"] })
           .catch(e => { console.error(e); return { features: [], _err: true }; }),
         ensureProjects(),
@@ -979,6 +1053,9 @@
     // Detail zoom: "fit" frames the location(s); a scale value keeps that fixed
     // scale centered on them (adding/removing locations re-centers, not re-fits).
     let detailScale = "fit";
+    // view.goTo rejects with "goto-interrupted" when a newer goTo supersedes it
+    // (add two locations quickly, etc.); that's expected, not an error.
+    function flyTo(target, ms = 550) { return view.goTo(target, { duration: ms }).catch(() => {}); }
     // Aspect of the detail-map panel in the current export (split: 2/3 of the
     // slide width; detail: full width; both lose the caption strip's height).
     function exportAspect() {
@@ -999,13 +1076,13 @@
     function zoomToLocations() {
       if (!locations.length) return;
       if (detailScale !== "fit") {
-        view.goTo({ target: unionExtent().center, scale: +detailScale }, { duration: 550 });
+        flyTo({ target: unionExtent().center, scale: +detailScale });
       } else if (locations.length === 1) {
         const loc = loc0();
-        view.goTo({ target: loc.geometry.extent ? loc.geometry.extent.expand(Math.max(2.2, 1.5 * cropPad()))
-                                                : { center: loc.point, zoom: loc.fitZoom || 17 } }, { duration: 550 });
+        flyTo({ target: loc.geometry.extent ? loc.geometry.extent.expand(Math.max(2.2, 1.5 * cropPad()))
+                                            : { center: loc.point, zoom: loc.fitZoom || 17 } });
       } else {
-        view.goTo({ target: unionExtent().expand(1.3 * cropPad()) }, { duration: 550 });
+        flyTo({ target: unionExtent().expand(1.3 * cropPad()) });
       }
     }
 
@@ -1017,7 +1094,8 @@
         const a = item.g.attributes, geom = item.g.geometry;
         if (!geom) return null;
         const apn = a.APN || "N/A";
-        const loc = { key: apn, label: a.APO_ADDRESS || "(no address on file)",
+        const loc = { key: apn, kind: "parcel", oid: a.OBJECTID, ltinfo: a.LTINFO_HYPERLINK || "",
+          label: a.APO_ADDRESS || "(no address on file)",
           sub: [`APN ${apn}`, countyLabel({ county: a.COUNTY })].filter(Boolean).join("  ·  "),
           short: `APN ${apn}`, geometry: geom,
           // centroid over extent.center, the extent center of an L-shaped
@@ -1048,8 +1126,8 @@
       if (existing >= 0) {
         toast("Already added.");
         const ex = locations[existing];
-        view.goTo({ target: ex.geometry.extent ? ex.geometry.extent.expand(2.2)
-                                               : { center: ex.point, zoom: ex.fitZoom } }, { duration: 550 });
+        flyTo({ target: ex.geometry.extent ? ex.geometry.extent.expand(2.2)
+                                           : { center: ex.point, zoom: ex.fitZoom } });
         return;
       }
       if (locations.length >= MAX_LOCATIONS) {
@@ -1062,6 +1140,9 @@
       clearBtn.style.display = input.value ? "block" : "none";
       refreshLocations();
       zoomToLocations();
+      // Phone: the next step is looking at the map, so tuck the sheet away after
+      // the first location (the handle brings it back).
+      if (locations.length === 1 && window.matchMedia("(max-width: 760px)").matches) setPanelCollapsed(true);
     }
     function removeLocation(i) {
       locations.splice(i, 1);
@@ -1069,11 +1150,34 @@
       if (locations.length) zoomToLocations();
       else {
         input.value = ""; clearBtn.style.display = "none";
-        view.goTo({ center: BASIN.center, zoom: BASIN.zoom }, { duration: 500 });
+        flyTo({ center: BASIN.center, zoom: BASIN.zoom }, 500);
       }
     }
+    // Header site links follow the first location: Nearmap and Street View take
+    // any point; Lake Tahoe Info and Permit Review need a parcel.
+    function syncSiteLinks() {
+      const loc = loc0();
+      const geo = loc ? window._wm.webMercatorToGeographic(loc.point) : null;
+      const lat = geo && geo.latitude.toFixed(6), lon = geo && geo.longitude.toFixed(6);
+      const parcel = loc && loc.kind === "parcel" ? loc : null;
+      const which = locations.length > 1 ? " (location 1)" : "";
+      const set = (id, href, onTitle, offTitle) => {
+        const b = $(id); b.disabled = !href;
+        if (href) b.href = href; else { b.href = undefined; b.removeAttribute("href"); }
+        b.title = href ? onTitle + which : offTitle;
+      };
+      set("lnkNearmap", geo && `https://apps.nearmap.com/maps/#/@${lat},${lon},19.00z,0d/V?locationMarker`,
+        "Open in Nearmap MapBrowser (TRPA Nearmap account)", "Nearmap MapBrowser: add a location first");
+      set("lnkStreet", geo && `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lon}`,
+        "Google Street View at this location", "Google Street View: add a location first");
+      set("lnkLtinfo", parcel && (parcel.ltinfo || `https://parcels.laketahoeinfo.org/Parcel/Detail/${encodeURIComponent(parcel.key)}`),
+        `Parcel ${parcel && parcel.key} on Lake Tahoe Info`, "Lake Tahoe Info parcel details: needs a parcel (address or APN) location");
+      set("lnkPermit", parcel && parcel.oid != null &&
+          `${PERMIT_REVIEW_URL}#data_s=id:${PERMIT_PARCELS_DS}:${parcel.oid}&zoom_to_selection=true`,
+        `Parcel ${parcel && parcel.key} in the Permit Review Map`, "Permit Review Map: needs a parcel (address or APN) location");
+    }
     function refreshLocations() {
-      drawResult(); updateLocCard(); renderLocationChips();
+      drawResult(); updateLocCard(); renderLocationChips(); syncSiteLinks();
       const note = locations.length ? coverageNote() : "";
       if (note) toast(note, 5000);
     }
@@ -1121,6 +1225,80 @@
       if (bits.length) toast(bits.join(" · "), 5000);
     }
 
+    // ── Share link: the map setup in the URL hash ──
+    // #v=1&s=eip&l=split&bm=imagery&yr=nm2024&lb=1&z=fit&cap=1&fmt=png&ed=1
+    //   &loc=apn:027-073-009|eip:01.01.02.0022|pt:39.0968,-119.9435
+    // Parcels re-resolve by APN and projects by EIP number on open; pasted
+    // GeoJSON has no id to link, so it is skipped (the toast says so).
+    function buildShareHash() {
+      const locs = locations.map(l =>
+        l.kind === "parcel" ? `apn:${l.key}`
+        : l.key.startsWith("geojson-") ? null
+        : /^\d+\.\d+\.\d+\.\d+$/.test(l.key) ? `eip:${l.key}`
+        : (() => { const g = window._wm.webMercatorToGeographic(l.point);
+                   return `pt:${g.latitude.toFixed(6)},${g.longitude.toFixed(6)}`; })()
+      );
+      const p = new URLSearchParams({ v: "1", s: brandKey, l: exportLayout, bm: basemapKey, yr: imageryKey,
+        lb: imageryLabels ? 1 : 0, z: detailScale, cap: $("capSwitch").checked ? 1 : 0,
+        fmt: exportFormat, ed: $("editableSwitch").checked ? 1 : 0 });
+      const kept = locs.filter(Boolean);
+      if (kept.length) p.set("loc", kept.join("|"));
+      return { hash: "#" + p.toString().replace(/%7C/g, "|").replace(/%3A/g, ":").replace(/%2C/g, ","),
+               skipped: locs.length - kept.length };
+    }
+    $("shareBtn").addEventListener("click", async () => {
+      const { hash, skipped } = buildShareHash();
+      const url = location.origin + location.pathname + hash;
+      const note = skipped ? ` ${skipped} pasted GeoJSON location${skipped === 1 ? "" : "s"} can't be linked.` : "";
+      try { await navigator.clipboard.writeText(url); toast("Link copied." + note, 4000); }
+      catch (e) { window.prompt("Copy this link:", url); }
+    });
+    async function applyShareHash() {
+      const h = location.hash.replace(/^#/, "");
+      if (!/(^|&)v=1(&|$)/.test(h)) return;
+      const p = new URLSearchParams(h);
+      const has = (k, ok) => p.has(k) && ok(p.get(k));
+      if (has("s", v => BRANDS[v])) { brandKey = p.get("s"); applyBrand(); }
+      if (has("l", v => LAYOUTS.some(L => L.key === v))) {
+        exportLayout = p.get("l"); setSegActive("layoutSeg", exportLayout, "layout"); syncDetailSec(); }
+      if (has("bm", v => v === "plain" || v === "imagery" || PORTAL_BM[v])) basemapKey = p.get("bm");
+      if (has("yr", v => IMAGERY[v] && (IMAGERY[v].kind !== "wms" || NEARMAP_KEY))) imageryKey = p.get("yr");
+      if (p.has("lb")) imageryLabels = p.get("lb") === "1";
+      setSegActive("basemapSeg", basemapKey); setSegActive("yearSeg", imageryKey);
+      $("labelsSwitch").checked = imageryLabels; applyBasemap();
+      if (has("z", v => v === "fit" || /^\d+$/.test(v))) { detailScale = p.get("z"); setSegActive("scaleSeg", detailScale); }
+      if (p.has("cap")) $("capSwitch").checked = p.get("cap") === "1";
+      if (has("fmt", v => FORMAT_HELP[v])) {
+        exportFormat = p.get("fmt"); setSegActive("formatSeg", exportFormat);
+        $("editableRow").hidden = exportFormat !== "pptx"; $("fmtHelp").textContent = FORMAT_HELP[exportFormat]; }
+      if (p.has("ed")) $("editableSwitch").checked = p.get("ed") === "1";
+      const specs = (p.get("loc") || "").split("|").filter(Boolean);
+      if (!specs.length) return;
+      let missing = 0;
+      for (const spec of specs) {
+        if (locations.length >= MAX_LOCATIONS) break;
+        const [type, val] = [spec.slice(0, spec.indexOf(":")), spec.slice(spec.indexOf(":") + 1)];
+        let loc = null;
+        try {
+          if (type === "apn") {
+            const r = await parcelsFL.queryFeatures({ where: `APN = '${escSql(val)}'`, outFields: PARCEL_FIELDS,
+              returnGeometry: true, outSpatialReference: view.spatialReference, num: 1 });
+            if (r.features[0]) loc = buildLoc({ kind: "parcel", g: r.features[0] });
+          } else if (type === "eip") {
+            await ensureProjects();
+            const pr = (projectsCache || []).find(x => x.num === val);
+            if (pr) loc = buildLoc({ kind: "project", p: pr });
+          } else if (type === "pt") {
+            const c = parseCoords(val.replace(",", ", "));
+            if (c) loc = buildLoc({ kind: "coord", ...c });
+          }
+        } catch (e) { console.error("share link location failed:", spec, e); }
+        if (loc && !locations.some(l => l.key === loc.key)) locations.push(loc); else if (!loc) missing++;
+      }
+      if (locations.length) { refreshLocations(); zoomToLocations(); }
+      if (missing) toast(`${missing} linked location${missing === 1 ? "" : "s"} couldn't be found.`, 5000);
+    }
+
     function drawResult() {
       if (!pinLayer) return;
       const G = window._Graphic; pinLayer.removeAll(); mapPinLayer.removeAll();
@@ -1155,9 +1333,22 @@
         const chip = document.createElement("calcite-chip");
         chip.scale = "s"; chip.closable = true; chip.dataset.i = i;
         chip.textContent = `${locations.length > 1 ? (i + 1) + " · " : ""}${loc.label}`;
+        if (locations.length > 1) {   // drag to reorder (pin numbers follow the order)
+          chip.draggable = true; chip.title = "Drag to reorder";
+          chip.addEventListener("dragstart", (e) => { dragIdx = i; e.dataTransfer.effectAllowed = "move"; });
+          chip.addEventListener("dragover", (e) => { e.preventDefault(); chip.classList.add("drag-over"); });
+          chip.addEventListener("dragleave", () => chip.classList.remove("drag-over"));
+          chip.addEventListener("drop", (e) => {
+            e.preventDefault(); chip.classList.remove("drag-over");
+            if (dragIdx == null || dragIdx === i) return;
+            const [moved] = locations.splice(dragIdx, 1); locations.splice(i, 0, moved); dragIdx = null;
+            refreshLocations();
+          });
+        }
         row.appendChild(chip);
       });
     }
+    let dragIdx = null;
     $("locChips").addEventListener("calciteChipClose", (e) => {
       const i = +e.target.dataset.i;
       if (!Number.isNaN(i)) removeLocation(i);
@@ -1287,11 +1478,14 @@
       suggestItems = [];
     });
     $("clearAllBtn").addEventListener("click", () => {
+      const removed = locations;
       locations = [];
       input.value = ""; clearBtn.style.display = "none"; closeSuggest();
       suggestItems = [];
       refreshLocations();
-      view.goTo({ center: BASIN.center, zoom: BASIN.zoom }, { duration: 500 });
+      flyTo({ center: BASIN.center, zoom: BASIN.zoom }, 500);
+      toast(`Removed ${removed.length} location${removed.length === 1 ? "" : "s"}.`, 8000,
+        { label: "Undo", onClick: () => { locations = removed; refreshLocations(); zoomToLocations(); } });
     });
     document.addEventListener("click", (e) => { if (!e.target.closest(".hdr-search")) closeSuggest(); });
 
@@ -1306,9 +1500,8 @@
       $("faviconLink").href = b.favicon;
       $("brandAgency").textContent = b.agency;
       setSegActive("brandSeg", brandKey, "brand");
-      // Header shows the related map for the active style
+      // The EIP Projects Map link only makes sense in the EIP style
       $("projectsLink").hidden = brandKey !== "eip";
-      $("permitLink").hidden = brandKey !== "trpa";
       if (locations.length) drawResult();
       updateLocCard();
     }
@@ -1397,7 +1590,7 @@
           row.appendChild(g); lastGroup = src.group;
         }
         const b = document.createElement("button");
-        b.dataset.value = key; b.textContent = src.label; b.title = src.title;
+        b.dataset.value = key; b.textContent = src.chip || src.label; b.title = src.title;
         b.setAttribute("role", "radio"); b.setAttribute("aria-checked", key === imageryKey ? "true" : "false");
         if (key === imageryKey) b.classList.add("active");
         row.appendChild(b);
@@ -1407,6 +1600,7 @@
       if (!map) return;   // controls are live before the SDK finishes loading
       map.basemap = makeBasemap(basemapKey);
       $("yearSeg").classList.toggle("off", basemapKey !== "imagery");
+      $("labelsRow").hidden = basemapKey !== "imagery";   // labels only apply to imagery
       const note = coverageNote();
       if (note) toast(note, 5000);
     }
@@ -1425,8 +1619,8 @@
       if (!view) return;
       detailScale = v;
       if (locations.length) zoomToLocations();
-      else if (v === "fit") view.goTo({ center: BASIN.center, zoom: BASIN.zoom }, { duration: 500 });
-      else view.goTo({ target: view.center, scale: +v }, { duration: 500 });
+      else if (v === "fit") flyTo({ center: BASIN.center, zoom: BASIN.zoom }, 500);
+      else flyTo({ target: view.center, scale: +v }, 500);
     });
     let exportFormat = "png";
     const FORMAT_HELP = {
@@ -1815,6 +2009,15 @@
       a.href = url; a.download = filename;
       document.body.appendChild(a); a.click(); a.remove();
     }
+    // Plain-language failure messages (the raw error still goes to the console)
+    function friendlyExportError(e) {
+      const m = (e && e.message) || "";
+      if (m.startsWith("Basin locator")) return m;
+      if (/timed out/i.test(m)) return "The map didn't finish drawing in time. Keep this tab in front, wait a moment, and try again.";
+      if (/PptxGenJS/i.test(m)) return "Couldn't load the PowerPoint export library (network). Try again, or export a PNG.";
+      if (/img /.test(m)) return "An image (logo or map) failed to load. Check the connection and try again.";
+      return "Export failed. Try again; if it keeps failing, email GIS@trpa.gov with the browser and layout you used.";
+    }
     let exporting = false;
     async function runExport(btn, busyMsg, worker) {
       if (!view || exporting) return;
@@ -1828,9 +2031,7 @@
       if (exportLayout === "split" || exportLayout === "detail") { const n = coverageNote(); if (n) exportNote(n); }
       toast(busyMsg, 0);
       try { await worker(); }
-      catch (e) { console.error(e);
-        toast(e && e.message && e.message.startsWith("Basin locator")
-          ? e.message : "Export failed, see console.", 5000); }
+      catch (e) { console.error(e); toast(friendlyExportError(e), 7000); }
       finally {
         exporting = false; btn.loading = false;
         document.body.classList.remove("exporting");
@@ -2287,6 +2488,19 @@
       await pptx.writeFile({ fileName: `${brandKey}-${exportLayout}-${exportSlug()}-editable.pptx` });
     }
 
+    // One flattened image on a slide sized to the layout (shared with the preview's Save)
+    async function flatPptxFromCanvas(cv) {
+      const pptx = new window.PptxGenJS();
+      let w, h;
+      if (exportLayout === "locator") {           // 8.5×11 portrait letter slide
+        pptx.defineLayout({ name: "LETTER_P", width: 8.5, height: 11 });
+        pptx.layout = "LETTER_P"; w = 8.5; h = 11;
+      } else {                                     // true 16:9 widescreen
+        pptx.layout = "LAYOUT_WIDE"; w = 13.333; h = 7.5;
+      }
+      pptx.addSlide().addImage({ data: cv.toDataURL("image/png"), x: 0, y: 0, w, h });
+      await pptx.writeFile({ fileName: `${brandKey}-${exportLayout}-${exportSlug()}.pptx` });
+    }
     function exportPptx() {
       return runExport($("exportBtn"), "Rendering PPTX…", async () => {
         await ensurePptx();
@@ -2296,19 +2510,53 @@
           return;
         }
         const cv = await composeCurrent();
-        const pptx = new window.PptxGenJS();
-        let w, h;
-        if (exportLayout === "locator") {           // 8.5×11 portrait letter slide
-          pptx.defineLayout({ name: "LETTER_P", width: 8.5, height: 11 });
-          pptx.layout = "LETTER_P"; w = 8.5; h = 11;
-        } else {                                     // true 16:9 widescreen
-          pptx.layout = "LAYOUT_WIDE"; w = 13.333; h = 7.5;
-        }
-        pptx.addSlide().addImage({ data: cv.toDataURL("image/png"), x: 0, y: 0, w, h });
-        await pptx.writeFile({ fileName: `${brandKey}-${exportLayout}-${exportSlug()}.pptx` });
+        await flatPptxFromCanvas(cv);
         exportDone("PPTX downloaded.");
       });
     }
+
+    // ── Preview: render the export into a dialog before committing to a file ──
+    // PNG, Copy, and flat PPTX reuse the previewed canvas (no second render);
+    // SVG and editable PPTX build their own output and re-render.
+    let previewCache = null;   // { cv, blob, url }
+    function previewExport() {
+      return runExport($("previewBtn"), "Rendering preview…", async () => {
+        const cv = await composeCurrent();
+        const blob = await new Promise(res => cv.toBlob(res, "image/png"));
+        if (previewCache) URL.revokeObjectURL(previewCache.url);
+        previewCache = { cv, blob, url: URL.createObjectURL(blob) };
+        $("previewImg").src = previewCache.url;
+        const L = LAYOUTS.find(x => x.key === exportLayout);
+        const fmt = exportFormat.toUpperCase() + (exportFormat === "pptx" && $("editableSwitch").checked ? ", editable elements" : "");
+        $("previewMeta").textContent = `${L.name} · ${cv.width} × ${cv.height} px · ${fmt}`
+          + (exportNotes.length ? ` · Note: ${exportNotes.join(" ")}` : "");
+        $("pvSave").innerHTML = `Save ${exportFormat.toUpperCase()}`;
+        $("pvCopy").hidden = !CLIPBOARD_OK;
+        $("previewModal").open = true;
+      });
+    }
+    $("previewBtn").addEventListener("click", previewExport);
+    $("pvCopy").addEventListener("click", async () => {
+      if (!previewCache) return;
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": previewCache.blob })]);
+        toast("Image copied, paste into PowerPoint.");
+      } catch (e) { console.error(e); toast("Copy failed, use Save instead."); }
+    });
+    $("pvSave").addEventListener("click", async () => {
+      if (!previewCache) return;
+      if (exportFormat === "png") {
+        downloadUrl(previewCache.url, `${brandKey}-${exportLayout}-${exportSlug()}.png`);
+        toast("PNG downloaded.");
+      } else if (exportFormat === "pptx" && !$("editableSwitch").checked) {
+        await runExport($("pvSave"), "Building PPTX…", async () => {
+          await ensurePptx(); await flatPptxFromCanvas(previewCache.cv); toast("PPTX downloaded.");
+        });
+      } else {   // SVG / editable PPTX compose their own output
+        $("previewModal").open = false;
+        exportFormat === "svg" ? exportSvg() : exportPptx();
+      }
+    });
 
     // ── Copy to clipboard ──
     // ClipboardItem gets a *promise* value and clipboard.write is called inside
@@ -2342,10 +2590,11 @@
     if (!CLIPBOARD_OK) $("copyBtn").hidden = true;
 
     // ── Panel collapse ──
-    $("panelToggle").addEventListener("click", () => {
-      const collapsed = document.body.classList.toggle("panel-collapsed");
+    function setPanelCollapsed(collapsed) {
+      document.body.classList.toggle("panel-collapsed", collapsed);
       $("panelToggleIcon").icon = collapsed ? "chevron-right" : "chevron-left";
-    });
+    }
+    $("panelToggle").addEventListener("click", () => setPanelCollapsed(!document.body.classList.contains("panel-collapsed")));
 
     // ── Beta-feedback chip (Survey123), shown while FEEDBACK_URL is set ──
     const FEEDBACK_HIDE_KEY = "eip-beta-feedback-hidden-locator";  // per-page: dismiss here doesn't hide the other tools' chips
@@ -2371,6 +2620,10 @@
 
     // Brand the header immediately (view.when re-applies once the map is up).
     applyBrand();
+    syncSiteLinks();   // disabled with "add a location first" titles until a location exists
+    // If the map hasn't come up after a while, say so instead of leaving the buttons spinning
+    setTimeout(() => { if (!view || !view.ready)
+      $("footStatus").textContent = "The map is taking a while to load. Check the network connection, then reload the page."; }, 25000);
   </script>
 </body>
 </html>
