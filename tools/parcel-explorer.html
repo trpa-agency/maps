@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parcel Change Explorer - TRPA Maps</title>
+  <meta name="description" content="Explore how every parcel in the Lake Tahoe Region has changed since 2012: residential units, tourist units, commercial floor area, zoning, and land use, with a downloadable change table." />
+  <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
+
+  <!-- Open Sans (trpa-brand) -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Calcite Design System -->
+  <script type="module" src="https://js.arcgis.com/calcite-components/5.0"></script>
+  <link rel="stylesheet" href="https://js.arcgis.com/calcite-components/5.0/calcite.css" />
+
+  <!-- Plotly and AG Grid load BEFORE the ArcGIS SDK. Loading Plotly after Dojo
+       throws multipleDefine and the map silently never initializes. -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@33.3.2/dist/ag-grid-community.min.js"></script>
+
+  <!-- ArcGIS Maps SDK for JavaScript -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.31/"></script>
+
+  <style>
+    :root {
+      --trpa-blue:   #0072CE;
+      --trpa-navy:   #003B71;
+      --trpa-orange: #E87722;
+      --trpa-forest: #4A6118;
+      --trpa-earth:  #B47E00;
+      --trpa-brick:  #9C3E27;
+      --trpa-olive:  #B5A64C;
+      --trpa-purple: #7B6A8A;
+      --trpa-ice:    #B4CBE8;
+      --gray-bg: #F5F7FA; --gray-border: #E2E6EC; --gray-text: #6B7688; --gray-muted: #8A93A3;
+      --white: #FFFFFF;
+      --shadow: 0 2px 10px rgba(0,59,113,0.16);
+      --font: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --calcite-color-brand: var(--trpa-blue);
+      --calcite-color-brand-hover: var(--trpa-navy);
+      --calcite-color-brand-press: var(--trpa-navy);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; font-family: var(--font); color: var(--trpa-navy); background: var(--gray-bg); overflow: hidden; }
+    body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; font-size: 14px; }
+    a { color: var(--trpa-blue); }
+
+    /* ── Header ── */
+    #appHeader {
+      flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 0.45rem 1rem; background: var(--white); border-bottom: 1px solid var(--gray-border);
+      box-shadow: 0 1px 4px rgba(0,59,113,0.06); z-index: 20;
+    }
+    .hdr-brand { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+    .hdr-brand img { height: 36px; width: auto; }
+    .htitle { display: flex; flex-direction: column; line-height: 1.15; }
+    .hagency { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--trpa-blue); }
+    .hname { font-size: 0.98rem; font-weight: 700; color: var(--trpa-navy); }
+    .hdr-back { font-size: 0.72rem; font-weight: 600; color: var(--gray-muted); text-decoration: none;
+      border-left: 1px solid var(--gray-border); padding-left: 0.7rem; white-space: nowrap; }
+    .hdr-back:hover { color: var(--trpa-blue); }
+    .hdr-links { display: flex; align-items: center; gap: 0.2rem; }
+    .beta-chip { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--trpa-orange); border: 1px solid var(--trpa-orange); border-radius: 999px; padding: 0.1rem 0.5rem; margin-right: 0.4rem; }
+
+    /* ── Body ── */
+    #appBody { flex: 1 1 auto; display: flex; min-height: 0; }
+    #sidePanel { flex: 0 0 400px; width: 400px; min-width: 0; display: flex; flex-direction: column; min-height: 0; background: var(--white);
+      border-right: 1px solid var(--gray-border); overflow: hidden; }
+    #panelToggle { flex: 0 0 18px; border: none; border-right: 1px solid var(--gray-border); background: var(--white);
+      cursor: pointer; color: var(--gray-muted); padding: 0; }
+    #panelToggle:hover { background: var(--gray-bg); color: var(--trpa-blue); }
+    body.panel-collapsed #sidePanel { display: none; }
+
+    .search-wrap { padding: 0.75rem 0.9rem 0.4rem; position: relative; }
+    .search-box { display: flex; align-items: center; gap: 0.5rem; background: var(--gray-bg);
+      border: 1.5px solid var(--gray-border); border-radius: 8px; padding: 0.3rem 0.7rem; }
+    .search-box:focus-within { border-color: var(--trpa-blue); background: #fff; }
+    .search-box calcite-icon { color: var(--trpa-blue); flex-shrink: 0; }
+    .search-box input { flex: 1; border: none; outline: none; background: transparent; font-family: var(--font);
+      font-size: 0.9rem; color: var(--trpa-navy); padding: 0.25rem 0; min-width: 0; }
+    .search-box input::placeholder { color: var(--gray-muted); }
+    .search-clear { border: none; background: transparent; cursor: pointer; color: var(--gray-muted); padding: 0.2rem; border-radius: 5px; display: none; }
+    .suggest-list { position: absolute; top: calc(100% - 2px); left: 0.9rem; right: 0.9rem; z-index: 60; background: #fff;
+      border-radius: 8px; box-shadow: var(--shadow); max-height: 320px; overflow-y: auto; display: none; }
+    .suggest-list.open { display: block; }
+    .suggest-item { padding: 0.5rem 0.85rem; cursor: pointer; border-bottom: 1px solid #eef1f5; display: flex; flex-direction: column; gap: 2px; }
+    .suggest-item:last-child { border-bottom: none; }
+    .suggest-item:hover, .suggest-item.active { background: var(--gray-bg); }
+    .s-primary { font-size: 0.85rem; font-weight: 600; }
+    .s-secondary { font-size: 0.72rem; color: var(--gray-text); }
+    .s-apn { color: var(--trpa-blue); font-weight: 700; }
+    .suggest-empty { padding: 0.7rem 0.85rem; font-size: 0.8rem; color: var(--gray-text); }
+
+    calcite-tabs { flex: 1 1 auto; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+    calcite-tab { overflow-y: auto; overflow-x: hidden; padding: 0.85rem 0.95rem 1.4rem; min-width: 0; }
+    .chart { min-width: 0; overflow: hidden; }
+    .sec { display: flex; flex-direction: column; gap: 0.55rem; margin-bottom: 1.1rem; }
+    .sec-title { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray-text);
+      display: flex; align-items: center; gap: 0.4rem; }
+    .sec-help { font-size: 0.74rem; line-height: 1.45; color: var(--gray-muted); }
+    .empty { font-size: 0.85rem; line-height: 1.55; color: var(--gray-text); padding: 0.4rem 0.2rem; }
+    .empty strong { color: var(--trpa-navy); }
+    .empty ul { padding-left: 1.1rem; margin-top: 0.4rem; }
+    .row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .row > * { flex: 1 1 auto; }
+    .field { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.68rem; font-weight: 600; color: var(--gray-muted); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    calcite-select { width: 100%; }
+
+    /* Parcel detail */
+    .pd-apn { font-size: 1.25rem; font-weight: 700; color: var(--trpa-navy); letter-spacing: 0.01em; }
+    .pd-addr { font-size: 0.9rem; font-weight: 600; }
+    .pd-sub { font-size: 0.74rem; color: var(--gray-text); line-height: 1.45; }
+    .pd-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .chip { font-size: 0.68rem; font-weight: 600; border-radius: 999px; padding: 0.15rem 0.55rem; background: var(--gray-bg);
+      border: 1px solid var(--gray-border); color: var(--trpa-navy); white-space: nowrap; }
+    .chip.lu { background: #E8F1F8; border-color: #C7DBEE; color: var(--trpa-navy); }
+    .chip.link { cursor: pointer; color: var(--trpa-blue); }
+    .chip.link:hover { border-color: var(--trpa-blue); }
+    dl.kv { display: grid; grid-template-columns: max-content 1fr; gap: 0.2rem 0.7rem; font-size: 0.78rem; }
+    dl.kv dt { color: var(--gray-text); }
+    dl.kv dd { font-weight: 600; }
+    .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
+    .tile { background: var(--gray-bg); border-radius: 8px; padding: 0.45rem 0.55rem 0.3rem; border-top: 3px solid var(--trpa-blue); min-width: 0; }
+    .tile.tau { border-top-color: var(--trpa-orange); }
+    .tile.cfa { border-top-color: var(--trpa-purple); }
+    .t-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--gray-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .t-val { font-size: 1.15rem; font-weight: 700; color: var(--trpa-navy); line-height: 1.2; }
+    .t-delta { font-size: 0.64rem; color: var(--gray-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .t-delta.up { color: var(--trpa-forest); font-weight: 600; }
+    .t-delta.down { color: var(--trpa-brick); font-weight: 600; }
+    .spark { width: 100%; height: 40px; margin-top: 0.15rem; }
+    .changes { list-style: none; display: flex; flex-direction: column; gap: 0.3rem; }
+    .changes li { display: flex; gap: 0.55rem; align-items: flex-start; font-size: 0.78rem; line-height: 1.4; }
+    .yr { flex: 0 0 auto; font-size: 0.66rem; font-weight: 700; color: #fff; background: var(--trpa-blue); border-radius: 4px; padding: 0.1rem 0.35rem; margin-top: 0.15rem; }
+    .yr.gene { background: var(--trpa-purple); }
+    .yr.gap { background: var(--gray-muted); }
+    .yr.apn { background: var(--trpa-earth); }
+    .none { font-size: 0.78rem; color: var(--gray-muted); font-style: italic; }
+
+    /* KPI tiles */
+    .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
+    .kpi { background: var(--gray-bg); border-radius: 8px; padding: 0.5rem 0.6rem; border-top: 3px solid var(--trpa-blue); }
+    .kpi .v { font-size: 1.15rem; font-weight: 700; color: var(--trpa-navy); line-height: 1.2; }
+    .kpi .v.up { color: var(--trpa-forest); } .kpi .v.down { color: var(--trpa-brick); }
+    .kpi .l { font-size: 0.62rem; color: var(--gray-text); margin-top: 0.1rem; }
+    .kpi.new { border-top-color: var(--trpa-forest); } .kpi.ret { border-top-color: var(--trpa-brick); } .kpi.chg { border-top-color: var(--trpa-orange); }
+    .chart { width: 100%; height: 240px; }
+    .chart.tall { height: 300px; }
+    .note { font-size: 0.72rem; color: var(--gray-text); line-height: 1.45; }
+    .progress-wrap { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.72rem; color: var(--gray-text); }
+
+    /* ── Map ── */
+    #mapWrap { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    #viewDiv { flex: 1 1 auto; min-height: 0; }
+    .map-card { background: var(--white); border-radius: 8px; box-shadow: var(--shadow); padding: 0.6rem 0.8rem 0.5rem; width: 280px; font-family: var(--font); }
+    .yc-row { display: flex; align-items: baseline; justify-content: space-between; }
+    .yc-label { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--gray-text); }
+    .yc-year { font-size: 1.3rem; font-weight: 700; color: var(--trpa-blue); }
+    .yc-note { font-size: 0.66rem; color: var(--gray-muted); margin-top: 0.3rem; line-height: 1.4; }
+    .yc-note.warn { color: var(--trpa-orange); font-weight: 600; }
+    .esri-ui .map-card calcite-slider { width: 100%; }
+    .esri-view .esri-popup__main-container { width: 380px; max-width: calc(100vw - 32px); }
+    .esri-popup__header-title { font-family: var(--font); }
+
+    /* Popup content */
+    .pp { font-family: var(--font); color: var(--trpa-navy); display: flex; flex-direction: column; gap: 0.5rem; width: 100%; min-width: 0; }
+    .pp-addr { font-size: 0.9rem; font-weight: 700; }
+    .pp-meta { font-size: 0.72rem; color: var(--gray-text); line-height: 1.4; }
+    .pp .tiles { grid-template-columns: repeat(3, 1fr); }
+    .pp-now { font-size: 0.74rem; line-height: 1.45; background: #E8F1F8; border-radius: 6px; padding: 0.4rem 0.55rem; }
+    .pp-now strong { font-weight: 700; }
+    .pp-changes { font-size: 0.74rem; line-height: 1.4; }
+    .pp-changes .more { color: var(--trpa-blue); font-weight: 600; }
+    .pp .changes li { font-size: 0.72rem; }
+
+    /* ── Table drawer ── */
+    #drawer { flex: 0 0 320px; display: flex; flex-direction: column; background: var(--white); border-top: 1px solid var(--gray-border); min-height: 0; }
+    .dr-head { display: flex; align-items: center; gap: 0.55rem; padding: 0.35rem 0.8rem; border-bottom: 1px solid var(--gray-border); flex-wrap: wrap; }
+    .dr-title { font-size: 0.82rem; font-weight: 700; }
+    .dr-count { font-size: 0.72rem; color: var(--gray-text); }
+    .dr-spacer { flex: 1 1 auto; }
+    .dr-head input { font-family: var(--font); font-size: 0.78rem; border: 1.5px solid var(--gray-border); border-radius: 6px; padding: 0.25rem 0.5rem; width: 170px; }
+    .dr-head input:focus { outline: none; border-color: var(--trpa-blue); }
+    .dr-head calcite-label { --calcite-label-margin-bottom: 0; font-size: 0.74rem; }
+    #grid { flex: 1 1 auto; min-height: 0; }
+
+    /* About dialog */
+    .about p, .about li { font-size: 0.86rem; line-height: 1.55; }
+    .about ul { padding-left: 1.2rem; }
+    .about h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gray-text); margin: 0.9rem 0 0.3rem; }
+
+    @media (max-width: 860px) {
+      #appBody { flex-direction: column; }
+      #sidePanel { flex: 0 0 46%; border-right: none; border-bottom: 1px solid var(--gray-border); order: 2; }
+      #panelToggle { display: none; }
+      #mapWrap { order: 1; }
+      #drawer { flex-basis: 260px; }
+      .hdr-back, .link-label, .hagency { display: none; }
+      #appHeader { padding: 0.35rem 0.7rem; }
+      .hdr-brand img { height: 30px; }
+      .hname { font-size: 0.88rem; }
+      .map-card { width: 220px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header id="appHeader">
+    <div class="hdr-brand">
+      <img src="../assets/TRPALogo_COLOR.png" alt="Tahoe Regional Planning Agency" />
+      <a href="index.html" class="hdr-back">&larr; Tools</a>
+      <div class="htitle">
+        <span class="hagency">Tahoe Regional Planning Agency</span>
+        <span class="hname">Parcel Change Explorer</span>
+      </div>
+    </div>
+    <div class="hdr-links">
+      <span class="beta-chip">Beta</span>
+      <calcite-button href="https://parcels.laketahoeinfo.org" target="_blank" rel="noopener" icon-start="launch"
+        appearance="transparent" kind="neutral" scale="s" title="Parcel and permit records on Lake Tahoe Info">
+        <span class="link-label">LT Info Parcels</span></calcite-button>
+      <calcite-button id="aboutBtn" icon-start="information" appearance="transparent" kind="neutral" scale="s"
+        title="About this tool" label="About this tool"></calcite-button>
+    </div>
+  </header>
+
+  <div id="appBody">
+    <aside id="sidePanel" aria-label="Parcel history controls">
+      <div class="search-wrap">
+        <div class="search-box">
+          <calcite-icon icon="search" scale="s"></calcite-icon>
+          <input id="searchInput" type="text" autocomplete="off" spellcheck="false" placeholder="Search an address or APN"
+                 role="combobox" aria-label="Search an address or APN" aria-autocomplete="list" aria-expanded="false" aria-controls="suggestList" />
+          <button class="search-clear" id="searchClear" title="Clear" aria-label="Clear search"><calcite-icon icon="x" scale="s"></calcite-icon></button>
+        </div>
+        <div class="suggest-list" id="suggestList" role="listbox" aria-label="Parcel suggestions"></div>
+      </div>
+
+      <calcite-tabs id="tabs" layout="center" scale="m">
+        <calcite-tab-nav slot="title-group" id="tabNav">
+          <calcite-tab-title selected data-tab="parcel" icon-start="home">Parcel</calcite-tab-title>
+          <calcite-tab-title data-tab="compare" icon-start="compare">Compare</calcite-tab-title>
+          <calcite-tab-title data-tab="trends" icon-start="graph-time-series">Trends</calcite-tab-title>
+        </calcite-tab-nav>
+
+        <!-- ── Parcel tab ── -->
+        <calcite-tab selected id="tabParcel">
+          <div id="parcelEmpty" class="empty">
+            <strong>Pick a parcel</strong> to see how it has changed since 2012.
+            <ul>
+              <li>Search an address or APN above, or click a parcel on the map (zoom in until parcels draw).</li>
+              <li>The map popup shows units, floor area, zoning, and land use for the selected year, with a sparkline of the full record.</li>
+              <li>This tab lists the current assessor record, a change log, and related parcels from splits and merges.</li>
+              <li>Use <strong>Compare</strong> to build a parcel-level change table between any two years and download it.</li>
+            </ul>
+          </div>
+          <div id="parcelDetail" hidden>
+            <div class="sec">
+              <div class="pd-apn" id="pdApn"></div>
+              <div class="pd-addr" id="pdAddr"></div>
+              <div class="pd-sub" id="pdSub"></div>
+              <div class="chips" id="pdChips"></div>
+              <div class="pd-actions">
+                <calcite-button id="pdZoom" icon-start="zoom-to-object" scale="s" appearance="outline">Zoom</calcite-button>
+                <calcite-button id="pdTable" icon-start="table" scale="s" appearance="outline">History table</calcite-button>
+                <calcite-button id="pdCsv" icon-start="download" scale="s" appearance="outline">CSV</calcite-button>
+                <calcite-button id="pdLtinfo" icon-start="launch" scale="s" appearance="outline" target="_blank" rel="noopener">LT Info</calcite-button>
+              </div>
+            </div>
+            <div class="sec">
+              <div class="sec-title">Development over time</div>
+              <div class="tiles" id="pdTiles"></div>
+            </div>
+            <div class="sec">
+              <div class="sec-title">Change log</div>
+              <ul class="changes" id="pdChanges"></ul>
+            </div>
+            <div class="sec" id="pdRelatedSec" hidden>
+              <div class="sec-title">Related parcels</div>
+              <div class="sec-help">Splits, merges, and renumbering from the Tahoe APN Genealogy table. Click one to load it.</div>
+              <div class="chips" id="pdRelated"></div>
+            </div>
+            <div class="sec">
+              <div class="sec-title">Current assessor record</div>
+              <dl class="kv" id="pdNow"></dl>
+              <div class="note">From the live Parcels layer (county assessor rolls). Values are the latest roll only, the history layer does not carry assessed values.</div>
+            </div>
+          </div>
+        </calcite-tab>
+
+        <!-- ── Compare tab ── -->
+        <calcite-tab id="tabCompare">
+          <div class="sec">
+            <div class="sec-title">Compare two years</div>
+            <div class="sec-help">Builds a parcel-by-parcel table of what changed between two snapshot years: units, floor area, zoning, plan, land use, and town center location. Filter to an area first for a faster run.</div>
+            <div class="grid2">
+              <label class="field">From year <calcite-select id="cmpFrom" scale="s"></calcite-select></label>
+              <label class="field">To year <calcite-select id="cmpTo" scale="s"></calcite-select></label>
+            </div>
+            <label class="field">Jurisdiction <calcite-select id="cmpJuris" scale="s"></calcite-select></label>
+            <div class="grid2">
+              <label class="field">Regional land use <calcite-select id="cmpLu" scale="s"></calcite-select></label>
+              <label class="field">Town center location <calcite-select id="cmpLoc" scale="s"></calcite-select></label>
+            </div>
+            <calcite-label layout="inline" scale="s"><calcite-switch id="cmpBndy" scale="s"></calcite-switch> Within TRPA boundary only</calcite-label>
+            <calcite-button id="cmpRun" icon-start="play" width="full" scale="m">Run comparison</calcite-button>
+            <div class="progress-wrap" id="cmpProgressWrap" hidden>
+              <span id="cmpProgressText">Loading</span>
+              <calcite-progress id="cmpProgress" type="determinate" value="0"></calcite-progress>
+            </div>
+            <calcite-notice id="cmpError" kind="danger" icon="exclamation-mark-triangle" scale="s"><span slot="message" id="cmpErrorMsg"></span></calcite-notice>
+          </div>
+          <div id="cmpResults" hidden>
+            <div class="sec">
+              <div class="sec-title" id="cmpTitle">Results</div>
+              <div class="kpis" id="cmpKpis"></div>
+              <div class="note" id="cmpNote"></div>
+            </div>
+            <div class="sec">
+              <div class="row">
+                <calcite-button id="cmpTable" icon-start="table" scale="s">Open change table</calcite-button>
+                <calcite-button id="cmpCsv" icon-start="download" scale="s" appearance="outline">Download CSV</calcite-button>
+              </div>
+              <calcite-label layout="inline" scale="s"><calcite-switch id="cmpHighlight" scale="s"></calcite-switch> Show only changed parcels on the map</calcite-label>
+              <div class="note">Switches the map to the "to" year and hides parcels with no change. Retired parcels draw in brick outline from the "from" year.</div>
+            </div>
+            <div class="sec">
+              <div class="sec-title">Net change by
+                <calcite-select id="cmpGroup" scale="s" style="width:auto; margin-left:0.3rem">
+                  <calcite-option value="JURISDICTION" selected>jurisdiction</calcite-option>
+                  <calcite-option value="LU_to">land use</calcite-option>
+                  <calcite-option value="LOC_to">town center location</calcite-option>
+                </calcite-select>
+              </div>
+              <calcite-select id="cmpMetric" scale="s">
+                <calcite-option value="RU" selected>Residential units</calcite-option>
+                <calcite-option value="TAU">Tourist accommodation units</calcite-option>
+                <calcite-option value="CFA">Commercial floor area (sq ft)</calcite-option>
+                <calcite-option value="N">Parcels changed</calcite-option>
+              </calcite-select>
+              <div class="chart" id="cmpChart"></div>
+            </div>
+          </div>
+          <div class="sec">
+            <div class="sec-title">Download a year snapshot</div>
+            <div class="sec-help">Every parcel record for one year, using the area filters above.</div>
+            <div class="row">
+              <calcite-select id="snapYear" scale="s"></calcite-select>
+              <calcite-button id="snapCsv" icon-start="download" scale="s" appearance="outline">Download CSV</calcite-button>
+            </div>
+            <div class="progress-wrap" id="snapProgressWrap" hidden>
+              <span id="snapProgressText">Loading</span>
+              <calcite-progress id="snapProgress" type="determinate" value="0"></calcite-progress>
+            </div>
+          </div>
+        </calcite-tab>
+
+        <!-- ── Trends tab ── -->
+        <calcite-tab id="tabTrends">
+          <div class="sec">
+            <div class="sec-title">Region totals by year</div>
+            <div class="sec-help">Sums of the annual parcel snapshots. Small year-to-year wobble reflects assessor roll updates and parcel splits and merges, not only construction.</div>
+            <div class="grid2">
+              <label class="field">Metric
+                <calcite-select id="trMetric" scale="s">
+                  <calcite-option value="RU" selected>Residential units</calcite-option>
+                  <calcite-option value="TAU">Tourist accommodation units</calcite-option>
+                  <calcite-option value="CFA">Commercial floor area (sq ft)</calcite-option>
+                  <calcite-option value="N">Parcel count</calcite-option>
+                </calcite-select>
+              </label>
+              <label class="field">Group by
+                <calcite-select id="trGroup" scale="s">
+                  <calcite-option value="" selected>Region total</calcite-option>
+                  <calcite-option value="JURISDICTION">Jurisdiction</calcite-option>
+                  <calcite-option value="REGIONAL_LANDUSE">Regional land use</calcite-option>
+                  <calcite-option value="LOCATION_TO_TOWNCENTER">Town center location</calcite-option>
+                </calcite-select>
+              </label>
+            </div>
+            <label class="field">Jurisdiction <calcite-select id="trJuris" scale="s"></calcite-select></label>
+            <div class="kpis" id="trKpis"></div>
+            <div class="chart tall" id="trChart"></div>
+            <div class="note" id="trNote"></div>
+          </div>
+        </calcite-tab>
+      </calcite-tabs>
+    </aside>
+    <button id="panelToggle" title="Show or hide the panel" aria-label="Show or hide the panel">
+      <calcite-icon id="panelToggleIcon" icon="chevron-left" scale="s"></calcite-icon>
+    </button>
+
+    <div id="mapWrap">
+      <div id="viewDiv"></div>
+      <div id="drawer" hidden>
+        <div class="dr-head">
+          <span class="dr-title" id="drTitle">Table</span>
+          <span class="dr-count" id="drCount"></span>
+          <span class="dr-spacer"></span>
+          <calcite-label layout="inline" scale="s" id="drChangedWrap" hidden><calcite-switch id="drChanged" scale="s" checked></calcite-switch> Changed only</calcite-label>
+          <input id="drFilter" type="text" placeholder="Filter rows" aria-label="Filter rows" />
+          <calcite-button id="drCsv" icon-start="download" scale="s" appearance="outline">CSV</calcite-button>
+          <calcite-button id="drClose" icon-start="x" scale="s" appearance="transparent" kind="neutral" label="Close table"></calcite-button>
+        </div>
+        <div id="grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Year and theme control, moved into the map UI on load -->
+  <div id="yearCard" class="map-card" hidden>
+    <div class="yc-row"><span class="yc-label">Snapshot year</span><span class="yc-year" id="yearVal">2025</span></div>
+    <calcite-slider id="yearSlider" min="2012" max="2025" step="1" value="2025" snap ticks="1" scale="s" min-label="2012" max-label="2025"></calcite-slider>
+    <label class="field" style="margin-top:0.35rem">Color parcels by
+      <calcite-select id="themeSel" scale="s">
+        <calcite-option value="landuse" selected>Regional land use</calcite-option>
+        <calcite-option value="ru">Residential units</calcite-option>
+        <calcite-option value="tau">Tourist accommodation units</calcite-option>
+        <calcite-option value="cfa">Commercial floor area</calcite-option>
+        <calcite-option value="location">Town center location</calcite-option>
+        <calcite-option value="outline">Outline only</calcite-option>
+      </calcite-select>
+    </label>
+    <div class="yc-note" id="yearNote"></div>
+  </div>
+
+  <calcite-dialog id="aboutDialog" modal heading="About the Parcel Change Explorer" width-scale="m">
+    <div class="about">
+      <p>Each year TRPA snapshots every parcel in the Lake Tahoe Region with its development, zoning, and land use attributes. Stacked together, those snapshots let you follow one parcel, or thousands, across the years of the 2012 Regional Plan.</p>
+      <h3>Data</h3>
+      <ul>
+        <li><a href="https://maps.trpa.org/server/rest/services/Cumulative_Accounting/MapServer/0" target="_blank" rel="noopener">Parcel Development History</a> (Cumulative Accounting service): one polygon per parcel per year, 2012 to present, with residential units, tourist accommodation units, commercial floor area, regional land use, plan and zoning, and town center location.</li>
+        <li><a href="https://maps.trpa.org/server/rest/services/Cumulative_Accounting/MapServer/1" target="_blank" rel="noopener">Tahoe APN Genealogy</a>: splits, merges, and renumbering events that link old and new parcel numbers.</li>
+        <li><a href="https://maps.trpa.org/server/rest/services/Parcels/FeatureServer/0" target="_blank" rel="noopener">Parcels</a>: the live parcel layer, used for address search and the current assessor record (assessed and taxable values, year built, ownership, existing land use).</li>
+      </ul>
+      <h3>Notes</h3>
+      <ul>
+        <li>El Dorado County renumbered every parcel in 2018, adding a leading zero to the last segment (023-141-11 became 023-141-011). This tool joins the two formats so a South Shore parcel reads as one record.</li>
+        <li>The history layer carries no assessed values, addresses, or year built for any year, so those come from the current Parcels layer only.</li>
+        <li>Change tables are built in the browser from two full snapshots. A region-wide comparison loads about 120,000 records and takes 10 to 20 seconds.</li>
+        <li>A parcel that appears in only one of the two years is flagged New or Retired. Most of these are splits, merges, and renumbering rather than development.</li>
+      </ul>
+    </div>
+  </calcite-dialog>
+
+  <script>
+    // ───────────────────────── Constants ─────────────────────────
+    const SVC = "https://maps.trpa.org/server/rest/services/";
+    const HIST_URL = SVC + "Cumulative_Accounting/MapServer/0";
+    const GENE_URL = SVC + "Cumulative_Accounting/MapServer/1";
+    const PARCELS_URL = SVC + "Parcels/FeatureServer/0";
+    const PAGE = 2000;
+
+    const HIST_FIELDS = ["OBJECTID","YEAR","APN","JURISDICTION","COUNTY","Residential_Units","TouristAccommodation_Units",
+      "CommercialFloorArea_SqFt","REGIONAL_LANDUSE","ZONING_ID","ZONING_DESCRIPTION","PLAN_ID","PLAN_NAME","TOWN_CENTER",
+      "LOCATION_TO_TOWNCENTER","TAZ","PARCEL_ACRES","WITHIN_TRPA_BNDY","WITHIN_BONUSUNIT_BNDY"];
+    const CUR_FIELDS = ["APN","APO_ADDRESS","PSTL_TOWN","OWNERSHIP_TYPE","COUNTY_LANDUSE_DESCRIPTION","EXISTING_LANDUSE",
+      "AS_LANDVALUE","AS_IMPROVALUE","AS_SUM","TAX_LANDVALUE","TAX_IMPROVALUE","TAX_SUM","TAX_YEAR","YEAR_BUILT","UNITS",
+      "BEDROOMS","BATHROOMS","BUILDING_SQFT","ESTIMATED_COVERAGE_ALLOWED","IMPERVIOUS_SURFACE_SQFT","IPES_SCORE",
+      "LTINFO_HYPERLINK","LOCAL_PLAN_HYPERLINK","PLAN_TYPE","JURISDICTION","COUNTY","PARCEL_ACRES","STATUS"];
+
+    const LU = { RES: "Residential", TOR: "Tourist", "COM/PS": "Commercial / Public Service", REC: "Recreation", CONS: "Conservation" };
+    const LU_COLOR = { RES: "#0072CE", TOR: "#E87722", "COM/PS": "#7B6A8A", REC: "#4A6118", CONS: "#B5A64C" };
+    const JURIS = { CSLT: "City of South Lake Tahoe", EL: "El Dorado County", PL: "Placer County", WA: "Washoe County", DG: "Douglas County", CC: "Carson City" };
+    const LOCS = ["Within Town Center", "Within Quarter Mile of Town Center", "Further than Quarter Mile from Town Center"];
+    const TRPA_COLORS = ['#0072CE', '#003B71', '#E87722', '#4A6118', '#9C3E27', '#B5A64C', '#7B6A8A', '#B4CBE8'];
+    const PLOT_LAYOUT = {
+      font: { family: "Open Sans, system-ui, sans-serif", color: "#003B71", size: 12 },
+      paper_bgcolor: "transparent", plot_bgcolor: "transparent",
+      margin: { t: 10, r: 10, b: 36, l: 54 },
+      xaxis: { gridcolor: "#e8e8e8", linecolor: "#DDDDDD" }, yaxis: { gridcolor: "#e8e8e8", linecolor: "#DDDDDD" },
+      colorway: TRPA_COLORS, hoverlabel: { font: { family: "Open Sans, sans-serif" } },
+    };
+    const PLOT_CONFIG = { displayModeBar: false, responsive: true };
+
+    // ───────────────────────── Helpers ─────────────────────────
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+    const escSql = (s) => String(s).replace(/'/g, "''");
+    const escLike = (s) => escSql(s).replace(/([\\%_])/g, "\\$1");
+    const fmtInt = (n) => (n == null || isNaN(n)) ? "—" : Math.round(n).toLocaleString("en-US");
+    const fmtMoney = (n) => (n == null || isNaN(n)) ? "—" : "$" + Math.round(n).toLocaleString("en-US");
+    const fmtAc = (n) => (n == null || isNaN(n)) ? "—" : (n < 10 ? n.toFixed(2) : n.toFixed(1)) + " ac";
+    const signed = (n) => (n > 0 ? "+" : "") + Math.round(n).toLocaleString("en-US");
+    const luLabel = (v) => { const k = (v || "").trim(); return LU[k] || (k ? k : "Unknown"); };
+    const jurisLabel = (v) => JURIS[v] || v || "Unknown";
+    const clean = (v) => (v == null ? "" : String(v).trim());
+    const num = (v) => (v == null || v === "" ? 0 : +v);
+
+    // El Dorado County renumbered in 2018: XXX-XXX-XX became XXX-XXX-0XX.
+    const isLegacyEl = (apn) => /^\d{3}-\d{3}-\d{2}$/.test(apn);
+    const padApn = (apn) => isLegacyEl(apn) ? apn.replace(/-(\d{2})$/, "-0$1") : apn;
+    const stripApn = (apn) => /^\d{3}-\d{3}-0\d{2}$/.test(apn) ? apn.replace(/-0(\d{2})$/, "-$1") : apn;
+    const canonApn = (apn, county) => (county === "EL" ? padApn(apn) : apn);
+    // All APN spellings to query for one parcel (EL parcels have two).
+    function apnVariants(apn, county) {
+      const set = new Set([apn]);
+      if (county === "EL" || county == null) { set.add(padApn(apn)); set.add(stripApn(apn)); }
+      return [...set];
+    }
+    const inList = (arr) => arr.map((a) => `'${escSql(a)}'`).join(",");
+
+    async function rest(url, params) {
+      const p = new URLSearchParams({ f: "json", ...params });
+      const resp = await fetch(`${url}/query?${p}`);
+      if (!resp.ok) throw new Error(`${resp.status} from ${url}`);
+      const j = await resp.json();
+      if (j.error) throw new Error(j.error.message || "Query error");
+      return j;
+    }
+    // Paginated attribute fetch, 6 pages in flight, with progress callback.
+    async function fetchAll(url, where, outFields, onProgress) {
+      const cnt = (await rest(url, { where, returnCountOnly: true })).count;
+      const pages = Math.ceil(cnt / PAGE);
+      const out = new Array(pages).fill(null);
+      let next = 0, done = 0;
+      onProgress?.(0, pages, cnt);
+      async function worker() {
+        while (next < pages) {
+          const i = next++;
+          const j = await rest(url, { where, outFields: outFields.join(","), returnGeometry: false,
+            orderByFields: "OBJECTID", resultOffset: i * PAGE, resultRecordCount: PAGE });
+          out[i] = j.features.map((f) => f.attributes);
+          done++; onProgress?.(done, pages, cnt);
+        }
+      }
+      await Promise.all(Array.from({ length: Math.min(6, pages) }, worker));
+      return out.flat();
+    }
+    function toCsv(rows, cols) {
+      const q = (v) => { if (v == null) return ""; const s = String(v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+      return [cols.map((c) => q(c.header)).join(","), ...rows.map((r) => cols.map((c) => q(typeof c.get === "function" ? c.get(r) : r[c.field])).join(","))].join("\r\n");
+    }
+    function downloadText(text, name) {
+      const blob = new Blob(["﻿" + text], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }
+    function whenConnected(el, cb) {
+      let tries = 0;
+      (function tick() { if (el.isConnected) cb(); else if (tries++ < 60) setTimeout(tick, 50); })();
+    }
+    function fillSelect(sel, options, value) {
+      sel.innerHTML = options.map((o) => `<calcite-option value="${esc(o.value)}"${o.value === value ? " selected" : ""}>${esc(o.label)}</calcite-option>`).join("");
+    }
+    function selectTab(name) {
+      document.querySelectorAll("#tabNav calcite-tab-title").forEach((t) => { t.selected = t.dataset.tab === name; });
+      const map = { parcel: "tabParcel", compare: "tabCompare", trends: "tabTrends" };
+      Object.entries(map).forEach(([k, id]) => { $(id).selected = k === name; });
+    }
+
+    // ───────────────────────── State ─────────────────────────
+    let YEARS = [], yearCounts = {}, curYear = 2025;
+    let view, histLayer, histLV, retiredLayer, retiredLV, parcelsFL, selLayer, reactiveUtils, Graphic;
+    const parcelCache = new Map();
+    let currentBundle = null;
+    let cmp = null;            // last comparison result
+    let renamesLoad = null;    // promise for genealogy renames
+    let gridApi = null, gridMode = null;
+
+    // ───────────────────────── Parcel bundle ─────────────────────────
+    async function loadParcel(apn, county) {
+      const key = canonApn(apn, county || (isLegacyEl(apn) ? "EL" : null));
+      if (parcelCache.has(key)) return parcelCache.get(key);
+      const p = (async () => {
+        const variants = apnVariants(apn, county);
+        const list = inList(variants);
+        const [hist, gene, cur] = await Promise.all([
+          rest(HIST_URL, { where: `APN IN (${list})`, outFields: HIST_FIELDS.join(","), returnGeometry: false, orderByFields: "YEAR ASC" }),
+          rest(GENE_URL, { where: `(apn_old IN (${list}) OR apn_new IN (${list})) AND apn_old <> apn_new`,
+            outFields: "apn_old,apn_new,change_year,event_type,confidence,source,notes", orderByFields: "change_year ASC" }).catch(() => ({ features: [] })),
+          rest(PARCELS_URL, { where: `APN IN (${list})`, outFields: CUR_FIELDS.join(","), returnGeometry: false }).catch(() => ({ features: [] })),
+        ]);
+        const rows = hist.features.map((f) => f.attributes).sort((a, b) => a.YEAR - b.YEAR);
+        // Keep one row per year (defensive: duplicates would double-count).
+        const byYear = new Map(); rows.forEach((r) => { if (!byYear.has(r.YEAR)) byYear.set(r.YEAR, r); });
+        const history = [...byYear.values()];
+        const latest = history[history.length - 1] || null;
+        const current = cur.features.map((f) => f.attributes).find((a) => a.APN === (latest?.APN || apn)) || cur.features[0]?.attributes || null;
+        const events = gene.features.map((f) => f.attributes);
+        const bundle = { key, apn: latest?.APN || current?.APN || apn, county: latest?.COUNTY || county || current?.COUNTY || null,
+          history, latest, current, events, changes: computeChanges(history, events) };
+        return bundle;
+      })();
+      parcelCache.set(key, p);
+      p.catch(() => parcelCache.delete(key));
+      return p;
+    }
+
+    function computeChanges(rows, events) {
+      const ev = [];
+      for (let i = 1; i < rows.length; i++) {
+        const a = rows[i - 1], b = rows[i];
+        if (b.YEAR - a.YEAR > 1) ev.push({ year: a.YEAR + 1, kind: "gap", text: `No record for ${a.YEAR + 1}${b.YEAR - 1 > a.YEAR + 1 ? " to " + (b.YEAR - 1) : ""}` });
+        if (a.APN !== b.APN) ev.push({ year: b.YEAR, kind: "apn", text: padApn(a.APN) === b.APN ? `El Dorado County renumbering: ${a.APN} became ${b.APN}` : `APN renumbered ${a.APN} to ${b.APN}` });
+        const numeric = [["Residential_Units", "residential unit", "residential units"], ["TouristAccommodation_Units", "tourist accommodation unit", "tourist accommodation units"], ["CommercialFloorArea_SqFt", "sq ft of commercial floor area", "sq ft of commercial floor area"]];
+        numeric.forEach(([f, one, many]) => {
+          const d = num(b[f]) - num(a[f]);
+          if (d !== 0) ev.push({ year: b.YEAR, kind: "dev", text: `${signed(d)} ${Math.abs(d) === 1 ? one : many} (${fmtInt(a[f])} to ${fmtInt(b[f])})` });
+        });
+        if (clean(a.ZONING_ID) !== clean(b.ZONING_ID)) ev.push({ year: b.YEAR, kind: "zone", text: `Zoning ${clean(a.ZONING_ID) || "none"} to ${clean(b.ZONING_ID) || "none"}${clean(b.ZONING_DESCRIPTION) ? " (" + clean(b.ZONING_DESCRIPTION) + ")" : ""}` });
+        if (clean(a.PLAN_NAME) !== clean(b.PLAN_NAME)) ev.push({ year: b.YEAR, kind: "zone", text: `Plan ${clean(a.PLAN_NAME) || "none"} to ${clean(b.PLAN_NAME) || "none"}` });
+        if (clean(a.REGIONAL_LANDUSE) !== clean(b.REGIONAL_LANDUSE)) ev.push({ year: b.YEAR, kind: "zone", text: `Regional land use ${luLabel(a.REGIONAL_LANDUSE)} to ${luLabel(b.REGIONAL_LANDUSE)}` });
+        if (clean(a.LOCATION_TO_TOWNCENTER) !== clean(b.LOCATION_TO_TOWNCENTER)) ev.push({ year: b.YEAR, kind: "zone", text: `Town center location now "${clean(b.LOCATION_TO_TOWNCENTER) || "unknown"}"` });
+        if (clean(a.JURISDICTION) !== clean(b.JURISDICTION)) ev.push({ year: b.YEAR, kind: "zone", text: `Jurisdiction ${jurisLabel(a.JURISDICTION)} to ${jurisLabel(b.JURISDICTION)}` });
+        const ac0 = num(a.PARCEL_ACRES), ac1 = num(b.PARCEL_ACRES);
+        if (ac0 > 0 && Math.abs(ac1 - ac0) / ac0 > 0.02) ev.push({ year: b.YEAR, kind: "dev", text: `Parcel area ${fmtAc(ac0)} to ${fmtAc(ac1)}` });
+      }
+      (events || []).forEach((e) => {
+        const t = (e.event_type || "link").toLowerCase();
+        const text = t === "split" ? `Split: ${e.apn_old} to ${e.apn_new}` : t === "merge" ? `Merge: ${e.apn_old} into ${e.apn_new}` :
+          t === "rename" ? `Renumbered ${e.apn_old} to ${e.apn_new}` : `Linked ${e.apn_old} and ${e.apn_new}`;
+        ev.push({ year: e.change_year ? Math.round(e.change_year) : null, kind: "gene", text: text + (e.confidence && e.confidence !== "HIGH" ? ` (${e.confidence.toLowerCase()} confidence)` : "") });
+      });
+      return ev.sort((x, y) => (x.year ?? 9999) - (y.year ?? 9999));
+    }
+
+    // Three stat tiles with sparklines, shared by popup and panel.
+    function tilesHtml(b, uid) {
+      const h = b.history, first = h[0], last = b.latest;
+      const defs = [["ru", "Residential_Units", "Res. units", "#0072CE"], ["tau", "TouristAccommodation_Units", "Tourist units", "#E87722"], ["cfa", "CommercialFloorArea_SqFt", "Comm. sq ft", "#7B6A8A"]];
+      return defs.map(([k, f, label]) => {
+        const v = last ? num(last[f]) : null, d = (first && last) ? num(last[f]) - num(first[f]) : 0;
+        const cls = d > 0 ? "up" : d < 0 ? "down" : "";
+        const dtxt = !first ? "" : d === 0 ? `no change` : `${signed(d)} since ${first.YEAR}`;
+        return `<div class="tile ${k}"><div class="t-label">${label}</div><div class="t-val">${fmtInt(v)}</div><div class="t-delta ${cls}">${dtxt}</div><div class="spark" id="${uid}-${k}"></div></div>`;
+      }).join("");
+    }
+    function drawSparks(b, uid) {
+      const defs = [["ru", "Residential_Units", "#0072CE"], ["tau", "TouristAccommodation_Units", "#E87722"], ["cfa", "CommercialFloorArea_SqFt", "#7B6A8A"]];
+      defs.forEach(([k, f, color]) => {
+        const el = $(`${uid}-${k}`); if (!el) return;
+        const x = b.history.map((r) => r.YEAR), y = b.history.map((r) => num(r[f]));
+        const flat = y.every((v) => v === y[0]);
+        Plotly.newPlot(el, [{ x, y, mode: "lines+markers", line: { color, width: 2, shape: "hv" }, marker: { size: 3, color },
+          hovertemplate: "%{x}: %{y:,}<extra></extra>" }],
+          { height: 40, margin: { t: 4, r: 4, b: 4, l: 4 }, xaxis: { visible: false, fixedrange: true },
+            yaxis: { visible: false, fixedrange: true, range: flat ? [y[0] - 1, y[0] + 1] : undefined },
+            paper_bgcolor: "transparent", plot_bgcolor: "transparent", showlegend: false, font: PLOT_LAYOUT.font,
+            hoverlabel: PLOT_LAYOUT.hoverlabel, hovermode: "x" }, PLOT_CONFIG);
+      });
+    }
+    function chipsHtml(b) {
+      const l = b.latest; if (!l) return "";
+      const out = [];
+      const lu = clean(l.REGIONAL_LANDUSE);
+      out.push(`<span class="chip lu" style="border-color:${LU_COLOR[lu] || "#C9CED6"}; color:${LU_COLOR[lu] || "#6B7688"}">${esc(luLabel(lu))}</span>`);
+      if (clean(l.ZONING_ID)) out.push(`<span class="chip" title="${esc(l.ZONING_DESCRIPTION || "")}">Zoning ${esc(l.ZONING_ID)}</span>`);
+      if (clean(l.PLAN_NAME)) out.push(`<span class="chip">${esc(titleCase(l.PLAN_NAME))}</span>`);
+      if (clean(l.LOCATION_TO_TOWNCENTER)) out.push(`<span class="chip">${esc(l.TOWN_CENTER ? l.TOWN_CENTER : l.LOCATION_TO_TOWNCENTER.replace("Further than Quarter Mile from Town Center", "Outside town centers").replace("Within Quarter Mile of Town Center", "Within 1/4 mile of a town center"))}</span>`);
+      return out.join("");
+    }
+    const titleCase = (s) => String(s || "").toLowerCase().replace(/\b([a-z])/g, (m) => m.toUpperCase());
+    function changesHtml(list, limit) {
+      if (!list.length) return `<li class="none">No changes on record. Attributes are the same in every year.</li>`;
+      const shown = limit ? list.slice(0, limit) : list;
+      return shown.map((e) => `<li><span class="yr ${e.kind === "gene" ? "gene" : e.kind === "gap" ? "gap" : e.kind === "apn" ? "apn" : ""}">${e.year ?? "n/a"}</span><span>${esc(e.text)}</span></li>`).join("")
+        + (limit && list.length > limit ? `<li><span class="yr" style="visibility:hidden">0</span><span class="more">${list.length - limit} more in the Parcel tab</span></li>` : "");
+    }
+
+    // ───────────────────────── Popup ─────────────────────────
+    async function popupContent(graphic) {
+      const a = graphic.attributes;
+      const b = await loadParcel(a.APN, a.COUNTY);
+      renderDetail(b);
+      const uid = "pp" + Date.now().toString(36);
+      const c = b.current, l = b.latest;
+      const yearRow = b.history.find((r) => r.YEAR === a.YEAR) || l;
+      const el = document.createElement("div");
+      el.className = "pp";
+      el.innerHTML = `
+        <div class="pp-addr">${esc(c?.APO_ADDRESS && !/NO SITE ADDRESS/i.test(c.APO_ADDRESS) ? c.APO_ADDRESS + (c.PSTL_TOWN ? ", " + c.PSTL_TOWN : "") : "No site address")}</div>
+        <div class="pp-meta">${esc(jurisLabel(yearRow?.JURISDICTION))} &middot; ${fmtAc(num(yearRow?.PARCEL_ACRES))} &middot; record ${b.history[0]?.YEAR ?? "?"} to ${l?.YEAR ?? "?"}${a.YEAR !== l?.YEAR ? ` &middot; showing ${a.YEAR}` : ""}</div>
+        <div class="tiles">${tilesHtml(b, uid)}</div>
+        <div class="chips">${chipsHtml(b)}</div>
+        ${c ? `<div class="pp-now">Assessed <strong>${fmtMoney(c.AS_SUM)}</strong>${c.TAX_YEAR ? ` (${c.TAX_YEAR} roll)` : ""}${c.YEAR_BUILT ? ` &middot; built ${esc(c.YEAR_BUILT)}` : ""}${c.OWNERSHIP_TYPE ? ` &middot; ${esc(c.OWNERSHIP_TYPE)}` : ""}${c.EXISTING_LANDUSE ? ` &middot; ${esc(c.EXISTING_LANDUSE)}` : ""}</div>` : `<div class="pp-now">Not in the current Parcels layer (retired or renumbered).</div>`}
+        <div class="pp-changes"><ul class="changes">${changesHtml(b.changes, 4)}</ul></div>`;
+      whenConnected(el, () => drawSparks(b, uid));
+      return el;
+    }
+
+    // ───────────────────────── Panel detail ─────────────────────────
+    function renderDetail(b) {
+      currentBundle = b;
+      $("parcelEmpty").hidden = true; $("parcelDetail").hidden = false;
+      const c = b.current, l = b.latest;
+      $("pdApn").textContent = b.apn;
+      $("pdAddr").textContent = c?.APO_ADDRESS && !/NO SITE ADDRESS/i.test(c.APO_ADDRESS) ? c.APO_ADDRESS + (c.PSTL_TOWN ? ", " + c.PSTL_TOWN : "") : "No site address on file";
+      const span = b.history.length ? `${b.history[0].YEAR} to ${l.YEAR}, ${b.history.length} annual record${b.history.length === 1 ? "" : "s"}` : "No history records";
+      $("pdSub").textContent = `${jurisLabel(l?.JURISDICTION || c?.JURISDICTION)} · ${fmtAc(num(l?.PARCEL_ACRES ?? c?.PARCEL_ACRES))} · ${span}`;
+      $("pdChips").innerHTML = chipsHtml(b);
+      $("pdTiles").innerHTML = tilesHtml(b, "pd");
+      whenConnected($("pdTiles"), () => drawSparks(b, "pd"));
+      $("pdChanges").innerHTML = changesHtml(b.changes);
+      // Related parcels from genealogy
+      const related = new Set();
+      b.events.forEach((e) => { [e.apn_old, e.apn_new].forEach((x) => { if (x && padApn(x) !== b.key && x !== b.apn) related.add(x); }); });
+      $("pdRelatedSec").hidden = related.size === 0;
+      $("pdRelated").innerHTML = [...related].map((x) => `<span class="chip link" data-apn="${esc(x)}">${esc(x)}</span>`).join("");
+      // Current record
+      const kv = [];
+      if (c) {
+        kv.push(["Assessed value", `${fmtMoney(c.AS_SUM)}${c.AS_LANDVALUE != null ? ` (land ${fmtMoney(c.AS_LANDVALUE)}, improvements ${fmtMoney(c.AS_IMPROVALUE)})` : ""}`]);
+        kv.push(["Taxable value", `${fmtMoney(c.TAX_SUM)}${c.TAX_YEAR ? ` (${c.TAX_YEAR} roll)` : ""}`]);
+        kv.push(["Year built", c.YEAR_BUILT || "—"]);
+        kv.push(["Ownership", c.OWNERSHIP_TYPE || "—"]);
+        kv.push(["Existing land use", c.EXISTING_LANDUSE || "—"]);
+        kv.push(["County land use", c.COUNTY_LANDUSE_DESCRIPTION || "—"]);
+        kv.push(["Assessor units", `${c.UNITS || "—"}${c.BEDROOMS && c.BEDROOMS !== "0" ? ` · ${c.BEDROOMS} bd / ${c.BATHROOMS} ba` : ""}`]);
+        kv.push(["Building sq ft", fmtInt(c.BUILDING_SQFT)]);
+        kv.push(["Impervious sq ft", fmtInt(c.IMPERVIOUS_SURFACE_SQFT)]);
+        kv.push(["Coverage allowed", c.ESTIMATED_COVERAGE_ALLOWED != null ? fmtInt(c.ESTIMATED_COVERAGE_ALLOWED) + " sq ft (est.)" : "—"]);
+        if (c.IPES_SCORE != null) kv.push(["IPES score", c.IPES_SCORE]);
+        if (c.PLAN_TYPE) kv.push(["Plan type", titleCase(c.PLAN_TYPE)]);
+      } else {
+        kv.push(["Status", "Not in the current Parcels layer (retired or renumbered)"]);
+      }
+      $("pdNow").innerHTML = kv.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+      $("pdLtinfo").href = c?.LTINFO_HYPERLINK || `https://parcels.laketahoeinfo.org/Parcel/Detail/${encodeURIComponent(b.apn)}`;
+      if (gridMode === "history" && !$("drawer").hidden) showHistoryTable(b);
+    }
+
+    // ───────────────────────── Selection ─────────────────────────
+    async function openParcelByApn(apn, county, geometry) {
+      try {
+        const b = await loadParcel(apn, county);
+        if (!b.history.length && !b.current) { renderDetail(b); return; }
+        selectTab("parcel");
+        renderDetail(b);
+        // Feature for the popup: the slider year if the parcel exists then, else its latest year.
+        let year = b.history.some((r) => r.YEAR === curYear) ? curYear : b.latest?.YEAR;
+        if (year == null) return;
+        if (year !== curYear) setYear(year);
+        const row = b.history.find((r) => r.YEAR === year);
+        const q = await histLayer.queryFeatures({ where: `OBJECTID = ${row.OBJECTID}`, outFields: ["*"], returnGeometry: true, outSpatialReference: view.spatialReference });
+        const g = q.features[0]; if (!g) return;
+        await view.goTo({ target: g.geometry, scale: Math.min(view.scale, 4000) }, { duration: 600 }).catch(() => {});
+        view.openPopup({ features: [g], location: g.geometry.extent.center });
+      } catch (e) { console.error(e); }
+    }
+    function setYear(y) {
+      curYear = y;
+      $("yearSlider").value = y; $("yearVal").textContent = y;
+      histLayer.definitionExpression = `YEAR = ${y}`;
+      updateYearNote();
+      if (histLV && cmp && $("cmpHighlight").checked && y !== cmp.toYear) { $("cmpHighlight").checked = false; applyHighlight(false); }
+    }
+    function updateYearNote() {
+      const n = yearCounts[curYear];
+      const zoomedOut = view && view.scale > histLayer.minScale;
+      $("yearNote").textContent = `${n ? fmtInt(n) + " parcels in " + curYear + ". " : ""}${zoomedOut ? "Zoom in to draw parcels." : "Click a parcel for its history."}`;
+      $("yearNote").classList.toggle("warn", !!zoomedOut);
+    }
+
+    // ───────────────────────── Renderers ─────────────────────────
+    const fillSym = (c) => ({ type: "simple-fill", color: c, outline: { color: [255, 255, 255, 0.7], width: 0.4 } });
+    const breaks = (field, arr) => ({ type: "class-breaks", field, defaultSymbol: fillSym("#E3E7EE"), defaultLabel: "No data",
+      classBreakInfos: arr.map(([min, max, label, color]) => ({ minValue: min, maxValue: max, label, symbol: fillSym(color) })) });
+    const RENDERERS = {
+      landuse: { type: "unique-value", field: "REGIONAL_LANDUSE", defaultSymbol: fillSym("#C9CED6"), defaultLabel: "Unknown",
+        uniqueValueInfos: Object.keys(LU).map((k) => ({ value: k, label: LU[k], symbol: fillSym(LU_COLOR[k]) })) },
+      ru: breaks("Residential_Units", [[0, 0, "0", "#EEF2F7"], [1, 1, "1", "#B4CBE8"], [2, 4, "2 to 4", "#6FA3DB"], [5, 19, "5 to 19", "#0072CE"], [20, 1e9, "20 or more", "#003B71"]]),
+      tau: breaks("TouristAccommodation_Units", [[0, 0, "0", "#EEF2F7"], [1, 9, "1 to 9", "#F7CBA6"], [10, 49, "10 to 49", "#F0A264"], [50, 199, "50 to 199", "#E87722"], [200, 1e9, "200 or more", "#A34F0E"]]),
+      cfa: breaks("CommercialFloorArea_SqFt", [[0, 0, "0", "#EEF2F7"], [1, 4999, "1 to 4,999", "#D2CBDA"], [5000, 19999, "5,000 to 19,999", "#A99CB5"], [20000, 99999, "20,000 to 99,999", "#7B6A8A"], [100000, 1e12, "100,000 or more", "#4A3D57"]]),
+      location: { type: "unique-value", field: "LOCATION_TO_TOWNCENTER", defaultSymbol: fillSym("#E3E7EE"), defaultLabel: "Unknown",
+        uniqueValueInfos: [{ value: LOCS[0], label: "Within a town center", symbol: fillSym("#E87722") }, { value: LOCS[1], label: "Within 1/4 mile of a town center", symbol: fillSym("#B47E00") }, { value: LOCS[2], label: "Outside town centers", symbol: fillSym("#B4CBE8") }] },
+      outline: { type: "simple", symbol: { type: "simple-fill", color: [0, 0, 0, 0], outline: { color: "#003B71", width: 0.6 } } },
+    };
+
+    // ───────────────────────── Map ─────────────────────────
+    require(["esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/layers/GraphicsLayer", "esri/Graphic",
+      "esri/widgets/Home", "esri/widgets/Legend", "esri/widgets/Expand", "esri/widgets/BasemapToggle", "esri/core/reactiveUtils"],
+    function (Map, MapView, FeatureLayer, GraphicsLayer, GraphicCls, Home, Legend, Expand, BasemapToggle, ru) {
+      reactiveUtils = ru; Graphic = GraphicCls;
+      histLayer = new FeatureLayer({ url: HIST_URL, title: "Parcel Development History", outFields: HIST_FIELDS,
+        definitionExpression: `YEAR = ${curYear}`, minScale: 300000, opacity: 0.8, renderer: RENDERERS.landuse,
+        popupTemplate: { title: "APN {APN}", outFields: ["*"], content: (ev) => popupContent(ev.graphic),
+          actions: [{ id: "full", title: "Full history", icon: "list" }, { id: "table", title: "History table", icon: "table" }] } });
+      retiredLayer = new FeatureLayer({ url: HIST_URL, title: "Retired parcels (from year)", outFields: ["OBJECTID", "APN", "COUNTY", "YEAR"],
+        definitionExpression: "1 = 0", minScale: 300000, visible: false, legendEnabled: false, popupEnabled: false,
+        renderer: { type: "simple", symbol: { type: "simple-fill", color: [156, 62, 39, 0.25], outline: { color: "#9C3E27", width: 1.4 } } } });
+      parcelsFL = new FeatureLayer({ url: PARCELS_URL, outFields: ["APN", "APO_ADDRESS", "JURISDICTION", "COUNTY"], visible: false, legendEnabled: false, listMode: "hide", popupEnabled: false });
+      selLayer = new GraphicsLayer({ listMode: "hide" });
+
+      const map = new Map({ basemap: "gray-vector", layers: [retiredLayer, histLayer, parcelsFL, selLayer] });
+      view = new MapView({ container: "viewDiv", map, center: [-120.02, 39.07], zoom: 10,
+        highlightOptions: { color: "#E87722", fillOpacity: 0.2, haloOpacity: 1 },
+        popup: { dockEnabled: false, dockOptions: { buttonEnabled: true, breakpoint: { width: 600 }, position: "bottom-right" } } });
+      view.ui.add(new Home({ view }), "top-left");
+      view.ui.add($("yearCard"), "top-right"); $("yearCard").hidden = false;
+      view.ui.add(new Expand({ view, content: new Legend({ view, layerInfos: [{ layer: histLayer }] }), expanded: false, expandIcon: "legend", expandTooltip: "Legend", group: "bl" }), "bottom-left");
+      view.ui.add(new BasemapToggle({ view, nextBasemap: "hybrid" }), "bottom-right");
+
+      view.whenLayerView(histLayer).then((lv) => { histLV = lv; });
+      view.whenLayerView(retiredLayer).then((lv) => { retiredLV = lv; });
+      reactiveUtils.watch(() => view.scale, () => updateYearNote());
+      reactiveUtils.on(() => view.popup, "trigger-action", (e) => {
+        if (e.action.id === "full") { selectTab("parcel"); if (document.body.classList.contains("panel-collapsed")) togglePanel(); }
+        if (e.action.id === "table" && currentBundle) showHistoryTable(currentBundle);
+      });
+      reactiveUtils.watch(() => view.popup?.selectedFeature, (g) => {
+        selLayer.removeAll();
+        if (g?.geometry) selLayer.add(new Graphic({ geometry: g.geometry, symbol: { type: "simple-fill", color: [0, 0, 0, 0], outline: { color: "#E87722", width: 2.5 } } }));
+      });
+
+      view.when(() => { init().catch((e) => console.error(e)); });
+    });
+
+    // ───────────────────────── Init ─────────────────────────
+    async function init() {
+      // Years and per-year parcel counts from one statistics query
+      try {
+        const st = [{ statisticType: "count", onStatisticField: "OBJECTID", outStatisticFieldName: "n" }];
+        const j = await rest(HIST_URL, { where: "1=1", groupByFieldsForStatistics: "YEAR", outStatistics: JSON.stringify(st), orderByFields: "YEAR" });
+        YEARS = j.features.map((f) => f.attributes.YEAR).filter((y) => y != null);
+        j.features.forEach((f) => { yearCounts[f.attributes.YEAR] = f.attributes.n; });
+      } catch (e) { console.error("Year list unavailable, using defaults", e); }
+      if (!YEARS.length) YEARS = Array.from({ length: 14 }, (_, i) => 2012 + i);
+      const minY = YEARS[0], maxY = YEARS[YEARS.length - 1];
+      const sl = $("yearSlider"); sl.min = minY; sl.max = maxY;
+      const params = new URLSearchParams(location.search);
+      const py = +params.get("year");
+      curYear = YEARS.includes(py) ? py : maxY;
+      sl.value = curYear; $("yearVal").textContent = curYear;
+      histLayer.definitionExpression = `YEAR = ${curYear}`;
+      updateYearNote();
+
+      const yopts = YEARS.map((y) => ({ value: String(y), label: String(y) }));
+      fillSelect($("cmpFrom"), yopts, String(minY)); fillSelect($("cmpTo"), yopts, String(maxY)); fillSelect($("snapYear"), yopts, String(curYear));
+      const jopts = [{ value: "", label: "All jurisdictions" }, ...Object.keys(JURIS).map((k) => ({ value: k, label: JURIS[k] }))];
+      fillSelect($("cmpJuris"), jopts, ""); fillSelect($("trJuris"), jopts, "");
+      fillSelect($("cmpLu"), [{ value: "", label: "All land uses" }, ...Object.keys(LU).map((k) => ({ value: k, label: LU[k] })), { value: "__none", label: "Unknown" }], "");
+      fillSelect($("cmpLoc"), [{ value: "", label: "All locations" }, ...LOCS.map((l) => ({ value: l, label: l }))], "");
+
+      // Deep link ?apn=
+      const apn = params.get("apn");
+      if (apn) {
+        try {
+          const q = await parcelsFL.queryFeatures({ where: `APN IN (${inList(apnVariants(apn.trim(), null))})`, outFields: ["APN", "COUNTY"], returnGeometry: true, outSpatialReference: view.spatialReference });
+          const g = q.features[0];
+          if (g) { await view.goTo({ target: g.geometry, scale: 4000 }).catch(() => {}); openParcelByApn(g.attributes.APN, g.attributes.COUNTY); }
+          else openParcelByApn(apn.trim(), null);
+        } catch (e) { console.error(e); }
+      }
+    }
+
+    // ───────────────────────── Map controls ─────────────────────────
+    $("yearSlider").addEventListener("calciteSliderInput", (e) => { $("yearVal").textContent = e.target.value; });
+    $("yearSlider").addEventListener("calciteSliderChange", (e) => { setYear(+e.target.value); });
+    $("themeSel").addEventListener("calciteSelectChange", (e) => { histLayer.renderer = RENDERERS[e.target.value]; });
+    function togglePanel() {
+      const c = document.body.classList.toggle("panel-collapsed");
+      $("panelToggleIcon").icon = c ? "chevron-right" : "chevron-left";
+    }
+    $("panelToggle").addEventListener("click", togglePanel);
+    $("aboutBtn").addEventListener("click", () => { $("aboutDialog").open = true; });
+    $("pdRelated").addEventListener("click", (e) => {
+      const el = e.target.closest(".chip.link"); if (!el) return;
+      const apn = el.dataset.apn;
+      parcelsFL.queryFeatures({ where: `APN IN (${inList(apnVariants(apn, null))})`, outFields: ["APN", "COUNTY"], returnGeometry: false })
+        .then((q) => openParcelByApn(apn, q.features[0]?.attributes.COUNTY || currentBundle?.county || null))
+        .catch(() => openParcelByApn(apn, currentBundle?.county || null));
+    });
+    $("pdZoom").addEventListener("click", () => { if (currentBundle) openParcelByApn(currentBundle.apn, currentBundle.county); });
+    $("pdTable").addEventListener("click", () => { if (currentBundle) showHistoryTable(currentBundle); });
+    $("pdCsv").addEventListener("click", () => {
+      if (!currentBundle) return;
+      const cols = HIST_FIELDS.filter((f) => f !== "OBJECTID").map((f) => ({ header: f, field: f }));
+      downloadText(toCsv(currentBundle.history, cols), `parcel-history-${currentBundle.apn}.csv`);
+    });
+
+    // ───────────────────────── Search ─────────────────────────
+    (function initSearch() {
+      const input = $("searchInput"), list = $("suggestList"), clearBtn = $("searchClear");
+      let items = [], t = null, active = -1, seq = 0;
+      async function run(raw) {
+        const term = raw.trim();
+        if (term.length < 3 || !parcelsFL) { close(); return; }
+        const s = ++seq;
+        const up = escLike(term.toUpperCase());
+        const clauses = [`UPPER(APO_ADDRESS) LIKE '%${up}%' ESCAPE '\\'`, `UPPER(APN) LIKE '${up}%' ESCAPE '\\'`];
+        if (/^\d{4,}$/.test(term)) clauses.push(`APN LIKE '${term.split("").join("%")}%'`);
+        let res;
+        try {
+          res = await parcelsFL.queryFeatures({ where: clauses.join(" OR "), outFields: ["APN", "APO_ADDRESS", "JURISDICTION", "COUNTY"],
+            returnGeometry: true, outSpatialReference: view.spatialReference, num: 8, orderByFields: ["APO_ADDRESS ASC"] });
+        } catch (e) { console.error(e); list.innerHTML = `<div class="suggest-empty">Parcel search is unavailable, check the network connection and try again.</div>`; open(); return; }
+        if (s !== seq) return;
+        items = res.features;
+        active = -1;
+        if (!items.length) { list.innerHTML = `<div class="suggest-empty">No parcels match "${esc(term)}". Try an address or APN.</div>`; open(); return; }
+        list.innerHTML = items.map((g, i) => { const a = g.attributes;
+          return `<div class="suggest-item" role="option" id="sugg-${i}" data-i="${i}"><span class="s-primary">${esc(a.APO_ADDRESS || "(no address on file)")}</span><span class="s-secondary">APN <span class="s-apn">${esc(a.APN)}</span> &middot; ${esc(jurisLabel(a.JURISDICTION))}</span></div>`; }).join("");
+        open();
+      }
+      function open() { list.classList.add("open"); input.setAttribute("aria-expanded", "true"); }
+      function close() { list.classList.remove("open"); list.innerHTML = ""; active = -1; input.setAttribute("aria-expanded", "false"); }
+      function pick(g) {
+        close(); input.value = g.attributes.APO_ADDRESS && !/NO SITE ADDRESS/i.test(g.attributes.APO_ADDRESS) ? g.attributes.APO_ADDRESS : g.attributes.APN; clearBtn.style.display = "block";
+        view.goTo({ target: g.geometry, scale: 4000 }, { duration: 700 }).catch(() => {}).then(() => openParcelByApn(g.attributes.APN, g.attributes.COUNTY));
+      }
+      function setActive(i) {
+        const els = list.querySelectorAll(".suggest-item"); if (!els.length) return;
+        active = (i + els.length) % els.length;
+        els.forEach((el, k) => el.classList.toggle("active", k === active));
+        els[active].scrollIntoView({ block: "nearest" });
+      }
+      input.addEventListener("input", () => { clearBtn.style.display = input.value ? "block" : "none"; clearTimeout(t); t = setTimeout(() => run(input.value), 280); });
+      input.addEventListener("keydown", (e) => {
+        const isOpen = list.classList.contains("open");
+        if (e.key === "ArrowDown" && isOpen) { e.preventDefault(); setActive(active + 1); }
+        else if (e.key === "ArrowUp" && isOpen) { e.preventDefault(); setActive(active - 1); }
+        else if (e.key === "Enter") { e.preventDefault(); if (isOpen && items.length) pick(items[active >= 0 ? active : 0]); else run(input.value); }
+        else if (e.key === "Escape") close();
+      });
+      input.addEventListener("focus", () => { if (input.value.trim().length >= 3 && !list.classList.contains("open")) run(input.value); });
+      list.addEventListener("mousedown", (e) => { const el = e.target.closest(".suggest-item"); if (el) { e.preventDefault(); pick(items[+el.dataset.i]); } });
+      document.addEventListener("click", (e) => { if (!e.target.closest(".search-wrap")) close(); });
+      clearBtn.addEventListener("click", () => { input.value = ""; clearBtn.style.display = "none"; close(); input.focus(); });
+    })();
+
+    // ───────────────────────── Table drawer (AG Grid) ─────────────────────────
+    const gridTheme = (window.agGrid && agGrid.themeQuartz) ? agGrid.themeQuartz.withParams({ accentColor: "#0072CE", fontFamily: "Open Sans, system-ui, sans-serif",
+      fontSize: 12, headerFontWeight: 600, headerBackgroundColor: "#F3F6FA", spacing: 5, rowHeight: 30, headerHeight: 32, foregroundColor: "#003B71" }) : undefined;
+    function ensureGrid() {
+      if (gridApi) return gridApi;
+      gridApi = agGrid.createGrid($("grid"), { theme: gridTheme, columnDefs: [], rowData: [],
+        defaultColDef: { sortable: true, filter: true, resizable: true, minWidth: 80 },
+        pagination: true, paginationPageSize: 50, paginationPageSizeSelector: [25, 50, 100, 500], suppressCellFocus: true, animateRows: false,
+        onRowClicked: (e) => { const r = e.data; if (!r) return;
+          if (gridMode === "compare") openParcelByApn(r.APN, r.COUNTY);
+          else if (gridMode === "history" && currentBundle) { const yr = r.YEAR; if (YEARS.includes(yr)) setYear(yr); openParcelByApn(currentBundle.apn, currentBundle.county); } } });
+      return gridApi;
+    }
+    const numCol = (field, headerName, extra = {}) => ({ field, headerName, type: "rightAligned", filter: "agNumberColumnFilter", valueFormatter: (p) => p.value == null ? "" : fmtInt(p.value), ...extra });
+    const deltaCol = (field, headerName) => numCol(field, headerName, { valueFormatter: (p) => p.value == null ? "" : (p.value === 0 ? "0" : signed(p.value)),
+      cellStyle: (p) => p.value > 0 ? { color: "#4A6118", fontWeight: 600 } : p.value < 0 ? { color: "#9C3E27", fontWeight: 600 } : null });
+    const HISTORY_COLS = [
+      { field: "YEAR", headerName: "Year", width: 80, pinned: "left" }, { field: "APN", headerName: "APN", width: 130 },
+      numCol("Residential_Units", "Res. units"), numCol("TouristAccommodation_Units", "Tourist units"), numCol("CommercialFloorArea_SqFt", "Commercial sq ft"),
+      { field: "REGIONAL_LANDUSE", headerName: "Land use", valueFormatter: (p) => luLabel(p.value) }, { field: "ZONING_ID", headerName: "Zoning" }, { field: "ZONING_DESCRIPTION", headerName: "Zoning description", width: 220 },
+      { field: "PLAN_NAME", headerName: "Plan", width: 200 }, { field: "TOWN_CENTER", headerName: "Town center" }, { field: "LOCATION_TO_TOWNCENTER", headerName: "Location to town center", width: 200 },
+      { field: "JURISDICTION", headerName: "Jurisdiction", valueFormatter: (p) => jurisLabel(p.value) }, { field: "PARCEL_ACRES", headerName: "Acres", type: "rightAligned", valueFormatter: (p) => p.value == null ? "" : (+p.value).toFixed(3) },
+      { field: "TAZ", headerName: "TAZ", width: 80 }, { field: "WITHIN_BONUSUNIT_BNDY", headerName: "Bonus unit bndy", width: 120 },
+    ];
+    const fromTo = (f, headerName, fmt = (v) => v ?? "") => ({ headerName, colId: f, valueGetter: (p) => { const a = fmt(p.data[f + "_from"]), b = fmt(p.data[f + "_to"]); return a === b ? (b || "") : `${a || "none"} → ${b || "none"}`; },
+      cellStyle: (p) => (p.data[f + "_from"] ?? "") !== (p.data[f + "_to"] ?? "") ? { color: "#E87722", fontWeight: 600 } : null, width: 180 });
+    const COMPARE_COLS = [
+      { field: "APN", headerName: "APN", width: 130, pinned: "left" },
+      { field: "status", headerName: "Status", width: 100, cellStyle: (p) => ({ fontWeight: 600, color: { Changed: "#E87722", New: "#4A6118", Retired: "#9C3E27", Unchanged: "#8A93A3" }[p.value] || null }) },
+      { field: "changes", headerName: "What changed", width: 200 },
+      { field: "JURISDICTION", headerName: "Jurisdiction", valueFormatter: (p) => jurisLabel(p.value), width: 150 },
+      numCol("RU_from", "Res. from", { width: 95 }), numCol("RU_to", "Res. to", { width: 90 }), deltaCol("RU_delta", "Δ Res."),
+      numCol("TAU_from", "Tourist from", { width: 105 }), numCol("TAU_to", "Tourist to", { width: 100 }), deltaCol("TAU_delta", "Δ Tourist"),
+      numCol("CFA_from", "Comm. sq ft from", { width: 130 }), numCol("CFA_to", "Comm. sq ft to", { width: 120 }), deltaCol("CFA_delta", "Δ Comm. sq ft"),
+      fromTo("LU", "Land use", (v) => (v == null ? "" : luLabel(v))), fromTo("ZONING", "Zoning"), fromTo("PLAN", "Plan", (v) => titleCase(v || "")), fromTo("LOC", "Town center location"),
+      { field: "ACRES_to", headerName: "Acres", type: "rightAligned", width: 90, valueFormatter: (p) => p.value == null ? "" : (+p.value).toFixed(3) },
+      { field: "APN_from", headerName: "APN (from year)", width: 130 },
+    ];
+    function openDrawer() { $("drawer").hidden = false; }
+    function showHistoryTable(b) {
+      gridMode = "history"; openDrawer();
+      const api = ensureGrid();
+      $("drTitle").textContent = `History for APN ${b.apn}`;
+      $("drCount").textContent = `${b.history.length} year${b.history.length === 1 ? "" : "s"}`;
+      $("drChangedWrap").hidden = true;
+      api.setGridOption("columnDefs", HISTORY_COLS); api.setGridOption("rowData", b.history);
+    }
+    function showCompareTable() {
+      if (!cmp) return;
+      gridMode = "compare"; openDrawer();
+      const api = ensureGrid();
+      $("drTitle").textContent = `Changes ${cmp.fromYear} to ${cmp.toYear}`;
+      $("drChangedWrap").hidden = false;
+      api.setGridOption("columnDefs", COMPARE_COLS);
+      applyCompareRows();
+    }
+    function applyCompareRows() {
+      const only = $("drChanged").checked;
+      const rows = only ? cmp.rows.filter((r) => r.status !== "Unchanged") : cmp.rows;
+      gridApi.setGridOption("rowData", rows);
+      $("drCount").textContent = `${fmtInt(rows.length)} of ${fmtInt(cmp.rows.length)} parcels`;
+    }
+    $("drChanged").addEventListener("calciteSwitchChange", () => { if (gridMode === "compare" && cmp) applyCompareRows(); });
+    $("drFilter").addEventListener("input", (e) => { if (gridApi) gridApi.setGridOption("quickFilterText", e.target.value); });
+    $("drClose").addEventListener("click", () => { $("drawer").hidden = true; });
+    $("drCsv").addEventListener("click", () => {
+      if (!gridApi) return;
+      const name = gridMode === "compare" ? `parcel-changes-${cmp.fromYear}-${cmp.toYear}.csv` : `parcel-history-${currentBundle?.apn || "parcel"}.csv`;
+      gridApi.exportDataAsCsv({ fileName: name, allColumns: true });
+    });
+
+    // ───────────────────────── Compare ─────────────────────────
+    function areaWhere() {
+      const w = [];
+      const j = $("cmpJuris").value, lu = $("cmpLu").value, loc = $("cmpLoc").value;
+      if (j) w.push(`JURISDICTION = '${escSql(j)}'`);
+      if (lu === "__none") w.push(`(REGIONAL_LANDUSE IS NULL OR REGIONAL_LANDUSE IN ('', ' '))`); else if (lu) w.push(`REGIONAL_LANDUSE = '${escSql(lu)}'`);
+      if (loc) w.push(`LOCATION_TO_TOWNCENTER = '${escSql(loc)}'`);
+      if ($("cmpBndy").checked) w.push("WITHIN_TRPA_BNDY = 1");
+      return w;
+    }
+    function areaLabel() {
+      const parts = [];
+      if ($("cmpJuris").value) parts.push(jurisLabel($("cmpJuris").value));
+      if ($("cmpLu").value) parts.push($("cmpLu").value === "__none" ? "unknown land use" : LU[$("cmpLu").value]);
+      if ($("cmpLoc").value) parts.push($("cmpLoc").value.toLowerCase());
+      if ($("cmpBndy").checked) parts.push("within TRPA boundary");
+      return parts.length ? parts.join(", ") : "whole region";
+    }
+    function ensureRenames() {
+      if (!renamesLoad) renamesLoad = fetchAll(GENE_URL, "event_type = 'rename' AND apn_old <> apn_new", ["OBJECTID", "apn_old", "apn_new", "change_year"])
+        .then((rows) => { const m = new Map(); rows.forEach((r) => { [r.apn_old, padApn(r.apn_old)].forEach((k) => { if (!m.has(k)) m.set(k, []); m.get(k).push(r); }); }); return m; })
+        .catch((e) => { console.error("Renames unavailable", e); return new Map(); });
+      return renamesLoad;
+    }
+    const CMP_FIELDS = ["OBJECTID", "APN", "COUNTY", "JURISDICTION", "Residential_Units", "TouristAccommodation_Units", "CommercialFloorArea_SqFt", "REGIONAL_LANDUSE", "ZONING_ID", "PLAN_NAME", "LOCATION_TO_TOWNCENTER", "PARCEL_ACRES"];
+
+    $("cmpRun").addEventListener("click", runCompare);
+    async function runCompare() {
+      const fromYear = +$("cmpFrom").value, toYear = +$("cmpTo").value;
+      $("cmpError").open = false;
+      if (fromYear === toYear) { $("cmpErrorMsg").textContent = "Pick two different years."; $("cmpError").open = true; return; }
+      const a = Math.min(fromYear, toYear), b = Math.max(fromYear, toYear);
+      const btn = $("cmpRun"); btn.loading = true; btn.disabled = true;
+      $("cmpProgressWrap").hidden = false; $("cmpResults").hidden = true;
+      const prog = { a: [0, 1], b: [0, 1] };
+      const upd = () => { const done = prog.a[0] + prog.b[0], tot = prog.a[1] + prog.b[1]; $("cmpProgress").value = tot ? done / tot : 0;
+        $("cmpProgressText").textContent = `Loading ${a} and ${b} snapshots, ${done} of ${tot} pages`; };
+      try {
+        const where = areaWhere();
+        const w = (y) => [`YEAR = ${y}`, ...where].join(" AND ");
+        const [rowsA, rowsB, renames] = await Promise.all([
+          fetchAll(HIST_URL, w(a), CMP_FIELDS, (d, p) => { prog.a = [d, p]; upd(); }),
+          fetchAll(HIST_URL, w(b), CMP_FIELDS, (d, p) => { prog.b = [d, p]; upd(); }),
+          ensureRenames(),
+        ]);
+        $("cmpProgressText").textContent = "Matching parcels";
+        await new Promise((r) => setTimeout(r, 20));
+        cmp = buildComparison(rowsA, rowsB, a, b, renames);
+        cmp.area = areaLabel();
+        renderCompare();
+        if (gridMode === "compare" && !$("drawer").hidden) showCompareTable();
+      } catch (e) {
+        console.error(e); $("cmpErrorMsg").textContent = "Comparison failed: " + (e.message || e); $("cmpError").open = true;
+      } finally { btn.loading = false; btn.disabled = false; $("cmpProgressWrap").hidden = true; }
+    }
+    function buildComparison(rowsA, rowsB, fromYear, toYear, renames) {
+      const key = (r) => canonApn(r.APN, r.COUNTY);
+      const fromMap = new Map(rowsA.map((r) => [key(r), r]));
+      const toMap = new Map(rowsB.map((r) => [key(r), r]));
+      const used = new Set();
+      // Follow tracked renames (up to 3 hops) for a from-parcel missing in the to-year.
+      function viaRename(k) {
+        let cur = k;
+        for (let hop = 0; hop < 3; hop++) {
+          const cands = [...(renames.get(cur) || []), ...(renames.get(stripApn(cur)) || [])].filter((r) => !r.change_year || (r.change_year > fromYear && r.change_year <= toYear + 1));
+          let next = null;
+          for (const c of cands) { const t = padApn(c.apn_new); if (toMap.has(t) && !used.has(t)) return t; if (!next) next = t; }
+          if (!next) return null; cur = next;
+        }
+        return null;
+      }
+      const rows = [];
+      const mk = (f, t, status) => {
+        const r = {
+          APN: t?.APN || f?.APN, APN_from: f?.APN || null, COUNTY: t?.COUNTY || f?.COUNTY, JURISDICTION: t?.JURISDICTION || f?.JURISDICTION, status,
+          RU_from: f ? num(f.Residential_Units) : null, RU_to: t ? num(t.Residential_Units) : null,
+          TAU_from: f ? num(f.TouristAccommodation_Units) : null, TAU_to: t ? num(t.TouristAccommodation_Units) : null,
+          CFA_from: f ? num(f.CommercialFloorArea_SqFt) : null, CFA_to: t ? num(t.CommercialFloorArea_SqFt) : null,
+          LU_from: f ? clean(f.REGIONAL_LANDUSE) : null, LU_to: t ? clean(t.REGIONAL_LANDUSE) : null,
+          ZONING_from: f ? clean(f.ZONING_ID) : null, ZONING_to: t ? clean(t.ZONING_ID) : null,
+          PLAN_from: f ? clean(f.PLAN_NAME) : null, PLAN_to: t ? clean(t.PLAN_NAME) : null,
+          LOC_from: f ? clean(f.LOCATION_TO_TOWNCENTER) : null, LOC_to: t ? clean(t.LOCATION_TO_TOWNCENTER) : null,
+          ACRES_from: f ? num(f.PARCEL_ACRES) : null, ACRES_to: t ? num(t.PARCEL_ACRES) : null,
+          OID_from: f?.OBJECTID ?? null, OID_to: t?.OBJECTID ?? null,
+        };
+        r.RU_delta = (r.RU_to ?? 0) - (r.RU_from ?? 0); r.TAU_delta = (r.TAU_to ?? 0) - (r.TAU_from ?? 0); r.CFA_delta = (r.CFA_to ?? 0) - (r.CFA_from ?? 0);
+        const ch = [];
+        if (f && t) {
+          if (r.RU_delta) ch.push("Res. units"); if (r.TAU_delta) ch.push("Tourist units"); if (r.CFA_delta) ch.push("Commercial sq ft");
+          if (r.LU_from !== r.LU_to) ch.push("Land use"); if (r.ZONING_from !== r.ZONING_to) ch.push("Zoning"); if (r.PLAN_from !== r.PLAN_to) ch.push("Plan");
+          if (r.LOC_from !== r.LOC_to) ch.push("Town center location"); if (clean(f.JURISDICTION) !== clean(t.JURISDICTION)) ch.push("Jurisdiction");
+          if (r.ACRES_from > 0 && Math.abs(r.ACRES_to - r.ACRES_from) / r.ACRES_from > 0.02) ch.push("Area");
+          if (key(f) !== key(t)) ch.push("APN");
+          r.status = ch.length ? "Changed" : "Unchanged";
+        } else if (t) ch.push("Not in " + fromYear); else ch.push("Not in " + toYear);
+        r.changes = ch.join(", ");
+        return r;
+      };
+      for (const [k, f] of fromMap) {
+        let t = toMap.get(k), tk = k;
+        if (!t) { tk = viaRename(k); t = tk ? toMap.get(tk) : null; }
+        if (t) { used.add(tk); rows.push(mk(f, t)); } else rows.push(mk(f, null, "Retired"));
+      }
+      for (const [k, t] of toMap) if (!used.has(k)) rows.push(mk(null, t, "New"));
+      const sum = (arr, f) => arr.reduce((s, r) => s + (r[f] || 0), 0);
+      const stats = { compared: rows.length, changed: rows.filter((r) => r.status === "Changed").length, added: rows.filter((r) => r.status === "New").length,
+        retired: rows.filter((r) => r.status === "Retired").length, ru: sum(rows, "RU_delta"), tau: sum(rows, "TAU_delta"), cfa: sum(rows, "CFA_delta"),
+        ruFrom: sum(rowsA.map((r) => ({ v: num(r.Residential_Units) })), "v"), ruTo: sum(rowsB.map((r) => ({ v: num(r.Residential_Units) })), "v") };
+      rows.sort((x, y) => (x.status === "Unchanged") - (y.status === "Unchanged") || Math.abs(y.RU_delta) + Math.abs(y.TAU_delta) - Math.abs(x.RU_delta) - Math.abs(x.TAU_delta));
+      return { fromYear, toYear, rows, stats };
+    }
+    function renderCompare() {
+      const s = cmp.stats;
+      $("cmpResults").hidden = false;
+      $("cmpTitle").textContent = `${cmp.fromYear} to ${cmp.toYear}: ${cmp.area}`;
+      const tile = (v, l, cls = "", vcls = "") => `<div class="kpi ${cls}"><div class="v ${vcls}">${v}</div><div class="l">${l}</div></div>`;
+      const sgn = (n) => n > 0 ? "up" : n < 0 ? "down" : "";
+      $("cmpKpis").innerHTML = tile(fmtInt(s.compared), "parcels compared") + tile(fmtInt(s.changed), "changed", "chg") + tile(fmtInt(s.added) + " / " + fmtInt(s.retired), "new / retired", "new")
+        + tile(signed(s.ru), "net residential units", "", sgn(s.ru)) + tile(signed(s.tau), "net tourist units", "", sgn(s.tau)) + tile(signed(s.cfa), "net commercial sq ft", "", sgn(s.cfa));
+      $("cmpNote").textContent = `Net change sums every parcel's difference, including parcels only in one year. Residential units total ${fmtInt(s.ruFrom)} in ${cmp.fromYear} and ${fmtInt(s.ruTo)} in ${cmp.toYear}.`;
+      drawCompareChart();
+      if ($("cmpHighlight").checked) applyHighlight(true);
+    }
+    function drawCompareChart() {
+      if (!cmp) return;
+      const g = $("cmpGroup").value, m = $("cmpMetric").value;
+      const agg = new Map();
+      cmp.rows.forEach((r) => {
+        const k = g === "JURISDICTION" ? jurisLabel(r.JURISDICTION) : g === "LU_to" ? luLabel(r.LU_to ?? r.LU_from) : (r.LOC_to || r.LOC_from || "Unknown").replace("Further than Quarter Mile from Town Center", "Outside town centers").replace("Within Quarter Mile of Town Center", "Within 1/4 mile");
+        const v = m === "N" ? (r.status === "Changed" ? 1 : 0) : r[m + "_delta"];
+        agg.set(k, (agg.get(k) || 0) + v);
+      });
+      const entries = [...agg.entries()].sort((a, b) => a[1] - b[1]);
+      Plotly.react("cmpChart", [{ type: "bar", orientation: "h", y: entries.map((e) => e[0]), x: entries.map((e) => e[1]),
+        marker: { color: entries.map((e) => e[1] < 0 ? "#9C3E27" : "#0072CE") }, hovertemplate: "%{y}: %{x:,}<extra></extra>" }],
+        { ...PLOT_LAYOUT, margin: { t: 6, r: 12, b: 34, l: 150 }, xaxis: { ...PLOT_LAYOUT.xaxis, title: { text: m === "N" ? "parcels changed" : "net change", font: { size: 11 } }, tickformat: "," , zeroline: true, zerolinecolor: "#CCD3DC" }, yaxis: { ...PLOT_LAYOUT.yaxis, automargin: true, tickfont: { size: 11 } }, height: 240 }, PLOT_CONFIG);
+    }
+    $("cmpGroup").addEventListener("calciteSelectChange", drawCompareChart);
+    $("cmpMetric").addEventListener("calciteSelectChange", drawCompareChart);
+    $("cmpTable").addEventListener("click", showCompareTable);
+    $("cmpCsv").addEventListener("click", () => {
+      if (!cmp) return;
+      const cols = ["APN", "APN_from", "status", "changes", "JURISDICTION", "RU_from", "RU_to", "RU_delta", "TAU_from", "TAU_to", "TAU_delta", "CFA_from", "CFA_to", "CFA_delta",
+        "LU_from", "LU_to", "ZONING_from", "ZONING_to", "PLAN_from", "PLAN_to", "LOC_from", "LOC_to", "ACRES_from", "ACRES_to"].map((f) => ({ header: f, field: f }));
+      downloadText(toCsv(cmp.rows, cols), `parcel-changes-${cmp.fromYear}-${cmp.toYear}.csv`);
+    });
+    $("cmpHighlight").addEventListener("calciteSwitchChange", (e) => applyHighlight(e.target.checked));
+    function applyHighlight(on) {
+      if (!histLV) return;
+      if (!on || !cmp) { histLV.filter = null; retiredLayer.visible = false; if (retiredLV) retiredLV.filter = null; return; }
+      if (curYear !== cmp.toYear) setYear(cmp.toYear);
+      const ids = cmp.rows.filter((r) => r.status === "Changed" || r.status === "New").map((r) => r.OID_to).filter((x) => x != null);
+      histLV.filter = { objectIds: ids.length ? ids : [-1] };
+      const retired = cmp.rows.filter((r) => r.status === "Retired").map((r) => r.OID_from).filter((x) => x != null);
+      retiredLayer.definitionExpression = `YEAR = ${cmp.fromYear}`;
+      retiredLayer.visible = retired.length > 0;
+      if (retiredLV) retiredLV.filter = { objectIds: retired.length ? retired : [-1] };
+      else view.whenLayerView(retiredLayer).then((lv) => { retiredLV = lv; lv.filter = { objectIds: retired.length ? retired : [-1] }; });
+    }
+
+    // Year snapshot download
+    $("snapCsv").addEventListener("click", async () => {
+      const y = +$("snapYear").value, btn = $("snapCsv");
+      btn.loading = true; btn.disabled = true; $("snapProgressWrap").hidden = false;
+      try {
+        const rows = await fetchAll(HIST_URL, [`YEAR = ${y}`, ...areaWhere()].join(" AND "), HIST_FIELDS,
+          (d, p, n) => { $("snapProgress").value = p ? d / p : 0; $("snapProgressText").textContent = `Loading ${fmtInt(n)} records, ${d} of ${p} pages`; });
+        const cols = HIST_FIELDS.filter((f) => f !== "OBJECTID").map((f) => ({ header: f, field: f }));
+        downloadText(toCsv(rows, cols), `parcel-snapshot-${y}.csv`);
+      } catch (e) { console.error(e); alert("Download failed: " + (e.message || e)); }
+      finally { btn.loading = false; btn.disabled = false; $("snapProgressWrap").hidden = true; }
+    });
+
+    // ───────────────────────── Trends ─────────────────────────
+    const trendCache = new Map();
+    async function loadTrends() {
+      const m = $("trMetric").value, g = $("trGroup").value, j = $("trJuris").value;
+      const where = j ? `JURISDICTION = '${escSql(j)}'` : "1=1";
+      const ck = g + "|" + where;
+      try {
+        if (!trendCache.has(ck)) {
+          const st = [{ statisticType: "sum", onStatisticField: "Residential_Units", outStatisticFieldName: "RU" }, { statisticType: "sum", onStatisticField: "TouristAccommodation_Units", outStatisticFieldName: "TAU" },
+            { statisticType: "sum", onStatisticField: "CommercialFloorArea_SqFt", outStatisticFieldName: "CFA" }, { statisticType: "count", onStatisticField: "OBJECTID", outStatisticFieldName: "N" }];
+          trendCache.set(ck, rest(HIST_URL, { where, groupByFieldsForStatistics: g ? `YEAR,${g}` : "YEAR", outStatistics: JSON.stringify(st), orderByFields: "YEAR" }).then((r) => r.features.map((f) => f.attributes)));
+        }
+        const data = await trendCache.get(ck);
+        const label = (v) => g === "JURISDICTION" ? jurisLabel(v) : g === "REGIONAL_LANDUSE" ? luLabel(v) : g === "LOCATION_TO_TOWNCENTER" ? (v || "Unknown").replace("Further than Quarter Mile from Town Center", "Outside town centers").replace("Within Quarter Mile of Town Center", "Within 1/4 mile of a town center") : "Region";
+        const series = new Map();
+        data.forEach((r) => { const k = g ? label(r[g]) : "Region"; if (!series.has(k)) series.set(k, new Map()); const s = series.get(k); s.set(r.YEAR, (s.get(r.YEAR) || 0) + num(r[m])); });
+        const years = [...new Set(data.map((r) => r.YEAR))].sort();
+        const traces = [...series.entries()].sort((a, b) => (b[1].get(years[years.length - 1]) || 0) - (a[1].get(years[years.length - 1]) || 0)).map(([name, s]) => ({
+          name, x: years, y: years.map((y) => s.get(y) ?? null), mode: "lines+markers", marker: { size: 5 }, line: { width: 2 }, hovertemplate: `${name}: %{y:,}<extra>%{x}</extra>` }));
+        const mlabel = { RU: "Residential units", TAU: "Tourist accommodation units", CFA: "Commercial floor area (sq ft)", N: "Parcels" }[m];
+        Plotly.react("trChart", traces, { ...PLOT_LAYOUT, height: 300, showlegend: !!g, legend: { orientation: "h", y: -0.18, font: { size: 10 } },
+          yaxis: { ...PLOT_LAYOUT.yaxis, title: { text: mlabel, font: { size: 11 } }, tickformat: ",", rangemode: "tozero" }, xaxis: { ...PLOT_LAYOUT.xaxis, dtick: 1, tickfont: { size: 10 } }, hovermode: "x unified" }, PLOT_CONFIG);
+        // KPIs: first vs last year totals
+        const tot = new Map(); data.forEach((r) => tot.set(r.YEAR, (tot.get(r.YEAR) || 0) + num(r[m])));
+        const y0 = years[0], y1 = years[years.length - 1], v0 = tot.get(y0) || 0, v1 = tot.get(y1) || 0, d = v1 - v0;
+        const tile = (v, l, vcls = "") => `<div class="kpi"><div class="v ${vcls}">${v}</div><div class="l">${l}</div></div>`;
+        $("trKpis").innerHTML = tile(fmtInt(v0), `${mlabel.toLowerCase()}, ${y0}`) + tile(fmtInt(v1), `${mlabel.toLowerCase()}, ${y1}`) + tile(signed(d), `change ${y0} to ${y1}`, d > 0 ? "up" : d < 0 ? "down" : "");
+        $("trNote").textContent = `${j ? jurisLabel(j) : "Whole region"}. ${v0 ? ((d / v0) * 100).toFixed(1) + " percent change" : ""}`;
+      } catch (e) { console.error(e); $("trNote").textContent = "Trend data is unavailable right now."; }
+    }
+    ["trMetric", "trGroup", "trJuris"].forEach((id) => $(id).addEventListener("calciteSelectChange", loadTrends));
+    // Plotly sizes to the container it can see, so charts drawn in a hidden tab get redrawn on first show.
+    let trendsShown = false;
+    $("tabNav").addEventListener("calciteTabChange", () => {
+      if ($("tabTrends").selected) { if (!trendsShown) { trendsShown = true; setTimeout(loadTrends, 50); } else setTimeout(() => Plotly.Plots.resize("trChart"), 50); }
+      if ($("tabCompare").selected && cmp) setTimeout(() => Plotly.Plots.resize("cmpChart"), 50);
+    });
+  </script>
+</body>
+</html>

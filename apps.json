@@ -25,9 +25,15 @@
     },
     {
       "slug": "tools",
-      "name": "Data and Tools",
+      "name": "Tools",
       "color": "#7B6A8A",
-      "description": "General map viewers, open data, and resources for GIS users and developers."
+      "description": "Interactive mapping and analysis apps built by TRPA."
+    },
+    {
+      "slug": "data",
+      "name": "Data & Developers",
+      "color": "#B47E00",
+      "description": "Open data, service directories, and resources for GIS users and developers."
     }
   ],
   "apps": [
@@ -113,19 +119,6 @@
       "beta": true
     },
     {
-      "id": "eiplocator",
-      "title": "Project Locator",
-      "category": "tools",
-      "url": "tools/locator.html",
-      "thumbnail": "assets/thumbs/eip-locator.png",
-      "description": "Make consistent, branded locator maps for presentations and reports. Search an address, APN, or EIP project, pick a style and layout, and export a PowerPoint slide or PNG.",
-      "tags": [
-        "EIP",
-        "Locator"
-      ],
-      "beta": true
-    },
-    {
       "id": "bmp",
       "title": "BMP Mapping Tool",
       "category": "eip",
@@ -177,6 +170,33 @@
       "beta": true
     },
     {
+      "id": "parcelexplorer",
+      "title": "Parcel Change Explorer",
+      "category": "tools",
+      "url": "tools/parcel-explorer.html",
+      "thumbnail": "assets/thumbs/parcel-explorer.svg",
+      "description": "Follow any parcel from 2012 to today: residential units, tourist accommodation units, commercial floor area, zoning, and land use by year, with the current assessor record. Compare two years to build and download a parcel-level change table.",
+      "tags": [
+        "Parcels",
+        "Development Rights",
+        "Zoning"
+      ],
+      "beta": true
+    },
+    {
+      "id": "eiplocator",
+      "title": "Project Locator",
+      "category": "tools",
+      "url": "tools/locator.html",
+      "thumbnail": "assets/thumbs/eip-locator.png",
+      "description": "Make consistent, branded locator maps for presentations and reports. Search an address, APN, or EIP project, pick a style and layout, and export a PowerPoint slide or PNG.",
+      "tags": [
+        "EIP",
+        "Locator"
+      ],
+      "beta": true
+    },
+    {
       "id": "mapmaker",
       "title": "Map Maker",
       "category": "tools",
@@ -200,32 +220,6 @@
       "beta": true
     },
     {
-      "id": "datainventory",
-      "title": "Tahoe Data Inventory",
-      "category": "tools",
-      "url": "tools/data-inventory.html",
-      "thumbnail": "assets/thumbs/data-inventory.png",
-      "description": "Searchable inventory of every data asset across Tahoe Open Data, LT Info, TRPA REST services, and eight partner agencies. Rebuilt automatically each month.",
-      "tags": [
-        "Open Data",
-        "Inventory"
-      ],
-      "beta": true
-    },
-    {
-      "id": "opendatapolicy",
-      "title": "Open Data Policy and Developer Guide",
-      "category": "tools",
-      "url": "tools/open-data-policy.html",
-      "thumbnail": "assets/thumbs/open-data-policy.png",
-      "description": "How to use and access data published on tahoeopendata.org, including attribution, delivery channels, and developer examples.",
-      "tags": [
-        "Open Data",
-        "Developers"
-      ],
-      "beta": true
-    },
-    {
       "id": "nearmap",
       "title": "Nearmap Imagery",
       "category": "tools",
@@ -238,9 +232,35 @@
       "external": true
     },
     {
+      "id": "datainventory",
+      "title": "Tahoe Data Inventory",
+      "category": "data",
+      "url": "tools/data-inventory.html",
+      "thumbnail": "assets/thumbs/data-inventory.png",
+      "description": "Searchable inventory of every data asset across Tahoe Open Data, LT Info, TRPA REST services, and eight partner agencies. Rebuilt automatically each month.",
+      "tags": [
+        "Open Data",
+        "Inventory"
+      ],
+      "beta": true
+    },
+    {
+      "id": "opendatapolicy",
+      "title": "Open Data Policy and Developer Guide",
+      "category": "data",
+      "url": "tools/open-data-policy.html",
+      "thumbnail": "assets/thumbs/open-data-policy.png",
+      "description": "How to use and access data published on tahoeopendata.org, including attribution, delivery channels, and developer examples.",
+      "tags": [
+        "Open Data",
+        "Developers"
+      ],
+      "beta": true
+    },
+    {
       "id": "opendata",
       "title": "Tahoe Open Data",
-      "category": "tools",
+      "category": "data",
       "url": "https://www.tahoeopendata.org",
       "thumbnail": "assets/thumbs/opendata.png",
       "description": "Regional geographic data warehouse for the Tahoe Basin. Download GIS data and connect to shared services.",
@@ -252,7 +272,7 @@
     {
       "id": "rest",
       "title": "ArcGIS REST Services",
-      "category": "tools",
+      "category": "data",
       "url": "https://maps.trpa.org/server/rest/services",
       "description": "ArcGIS Server REST services directory for developers building on TRPA data.",
       "tags": [

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 266" width="400" height="266" role="img"
+     aria-label="Parcel development history: a parcel map colored by land use with a sparkline of units by year">
+  <!-- Basemap -->
+  <rect width="400" height="266" fill="#EEF1F5"/>
+
+  <!-- Parcel blocks colored by regional land use (trpa-brand palette) -->
+  <g stroke="#FFFFFF" stroke-width="2">
+    <rect x="18"  y="22"  width="70" height="52" fill="#0072CE"/>
+    <rect x="92"  y="22"  width="58" height="52" fill="#0072CE"/>
+    <rect x="154" y="22"  width="64" height="52" fill="#B4CBE8"/>
+    <rect x="18"  y="78"  width="46" height="60" fill="#0072CE"/>
+    <rect x="68"  y="78"  width="82" height="60" fill="#E87722"/>
+    <rect x="154" y="78"  width="64" height="60" fill="#7B6A8A"/>
+    <rect x="18"  y="142" width="70" height="46" fill="#4A6118"/>
+    <rect x="92"  y="142" width="58" height="46" fill="#0072CE"/>
+    <rect x="154" y="142" width="64" height="46" fill="#B5A64C"/>
+    <rect x="18"  y="192" width="200" height="52" fill="#0072CE" opacity="0.55"/>
+  </g>
+  <!-- Streets -->
+  <g stroke="#FFFFFF" stroke-width="6" fill="none" stroke-linecap="round">
+    <path d="M10 76 H226 M10 140 H226 M151 14 V250"/>
+  </g>
+  <!-- Selected parcel outline -->
+  <rect x="68" y="78" width="82" height="60" fill="none" stroke="#E87722" stroke-width="4"/>
+
+  <!-- Popup card with sparklines -->
+  <rect x="238" y="30" width="146" height="206" rx="10" fill="#FFFFFF" stroke="#DCE2EA"/>
+  <rect x="238" y="30" width="146" height="34" rx="10" fill="#003B71"/>
+  <rect x="238" y="54" width="146" height="10" fill="#003B71"/>
+  <text x="250" y="52" font-family="Open Sans, Arial, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">APN 032-291-028</text>
+
+  <g font-family="Open Sans, Arial, sans-serif">
+    <text x="250" y="84"  font-size="8"  font-weight="700" fill="#6B7688">RES. UNITS</text>
+    <text x="250" y="104" font-size="18" font-weight="700" fill="#003B71">91</text>
+    <text x="300" y="104" font-size="9"  font-weight="600" fill="#4A6118">+91 since 2012</text>
+    <polyline points="250,130 280,130 300,130 316,112 340,112 372,112" fill="none" stroke="#0072CE" stroke-width="2.5"/>
+
+    <text x="250" y="152" font-size="8"  font-weight="700" fill="#6B7688">TOURIST UNITS</text>
+    <text x="250" y="172" font-size="18" font-weight="700" fill="#003B71">0</text>
+    <polyline points="250,190 372,190" fill="none" stroke="#E87722" stroke-width="2.5"/>
+
+    <text x="250" y="212" font-size="8"  font-weight="700" fill="#6B7688">COMM. SQ FT</text>
+    <text x="250" y="230" font-size="14" font-weight="700" fill="#003B71">12,400</text>
+    <polyline points="300,232 330,232 344,222 372,222" fill="none" stroke="#7B6A8A" stroke-width="2.5"/>
+  </g>
+
+  <!-- Year axis -->
+  <g font-family="Open Sans, Arial, sans-serif" font-size="9" fill="#8A93A3">
+    <line x1="238" y1="250" x2="384" y2="250" stroke="#DCE2EA"/>
+    <text x="238" y="262">2012</text>
+    <text x="360" y="262">2025</text>
+  </g>
+</svg>
