@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EIP Funding Priorities - TRPA Maps</title>
+  <meta name="description" content="Rank Environmental Improvement Program projects against weighted criteria, test a funding envelope, collect panel scores across agencies, and export the ranked list." />
+  <link rel="icon" type="image/png" href="../tools/assets/favicon.png" />
+
+  <!-- Calcite Design System -->
+  <script type="module" src="https://js.arcgis.com/calcite-components/5.0"></script>
+  <link rel="stylesheet" href="https://js.arcgis.com/calcite-components/5.0/calcite.css" />
+
+  <!-- Plotly and AG Grid load BEFORE the ArcGIS SDK: once Dojo defines an AMD
+       loader, UMD bundles register as anonymous modules instead of globals. -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@33.3.2/dist/ag-grid-community.min.js"></script>
+
+  <!-- ArcGIS Maps SDK for JavaScript -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.31/"></script>
+
+  <!-- Brand fonts, self-hosted (Lexend Deca for the EIP shell) -->
+  <link href="../tools/assets/fonts/fonts.css" rel="stylesheet" />
+
+  <style>
+    :root {
+      --eip-green: #6EBE44; --eip-blue: #007DC3; --eip-orange: #F16022; --eip-navy: #0B1F41;
+      --eip-green-light: #E8F5E0; --eip-blue-light: #E0F0FA; --eip-orange-light: #FDE8DC;
+      --gray-bg: #F4F6F9; --gray-border: #E1E5EC; --gray-text: #5F6B7E; --gray-muted: #8A93A3;
+      --white: #FFFFFF;
+      --shadow: 0 2px 10px rgba(11,31,65,0.16);
+      --font: 'Lexend Deca', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      --calcite-color-brand: var(--eip-blue);
+      --calcite-color-brand-hover: var(--eip-navy);
+      --calcite-color-brand-press: var(--eip-navy);
+      --calcite-font-family: var(--font);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; font-family: var(--font); color: var(--eip-navy); background: var(--gray-bg); overflow: hidden; }
+    body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; font-size: 14px; }
+    a { color: var(--eip-blue); }
+    calcite-button { border-radius: 999px; --calcite-button-corner-radius: 999px; }
+
+    /* ── Header ── */
+    #appHeader {
+      flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 0.45rem 1rem; background: var(--white); border-bottom: 1px solid var(--gray-border);
+      box-shadow: 0 1px 4px rgba(11,31,65,0.06); z-index: 20;
+    }
+    .hdr-brand { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+    .hdr-brand img { height: 38px; width: auto; }
+    .htitle { display: flex; flex-direction: column; line-height: 1.15; }
+    .hagency { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--eip-blue); }
+    .hname { font-size: 0.98rem; font-weight: 700; color: var(--eip-navy); }
+    .hdr-back { font-size: 0.72rem; font-weight: 600; color: var(--gray-muted); text-decoration: none;
+      border-left: 1px solid var(--gray-border); padding-left: 0.7rem; white-space: nowrap; }
+    .hdr-back:hover { color: var(--eip-blue); }
+    .hdr-links { display: flex; align-items: center; gap: 0.2rem; }
+    .hdr-sep { width: 1px; height: 18px; background: var(--gray-border); margin: 0 0.3rem; }
+    .beta-chip { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--eip-orange); border: 1px solid var(--eip-orange); border-radius: 999px; padding: 0.1rem 0.5rem; margin-right: 0.4rem; }
+
+    /* ── Body: side panel + map ── */
+    #appBody { flex: 1 1 auto; display: flex; min-height: 0; }
+    #sidePanel { flex: 0 0 clamp(310px, 26vw, 400px); background: var(--white); border-right: 1px solid var(--gray-border);
+      display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    #panelScroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0.9rem 1rem 1.2rem;
+      display: flex; flex-direction: column; gap: 1.15rem; }
+    #panelFooter { flex: 0 0 auto; padding: 0.55rem 1rem 0.8rem; border-top: 1px solid var(--gray-border);
+      background: var(--white); display: flex; flex-direction: column; gap: 0.35rem; }
+    .foot-status { font-size: 0.7rem; color: var(--gray-text); min-height: 1em; line-height: 1.4; }
+    body.panel-collapsed #sidePanel { display: none; }
+    #panelToggle { flex: 0 0 18px; border: none; border-right: 1px solid var(--gray-border);
+      background: var(--white); cursor: pointer; color: var(--gray-muted); padding: 0; }
+    #panelToggle:hover { background: var(--gray-bg); color: var(--eip-blue); }
+
+    .panel-sec { display: flex; flex-direction: column; gap: 0.55rem; }
+    .sec-title { display: flex; align-items: center; gap: 0.45rem; margin: 0;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--gray-text); }
+    .sec-num { display: inline-flex; align-items: center; justify-content: center; width: 1.15rem; height: 1.15rem;
+      border-radius: 50%; background: var(--eip-blue); color: #fff; font-size: 0.66rem; }
+    .sec-tool { margin-left: auto; border: none; background: transparent; cursor: pointer; color: var(--gray-text);
+      padding: 0.1rem 0.3rem; border-radius: 999px; line-height: 0; font-family: var(--font); font-size: 0.66rem; display: inline-flex; align-items: center; gap: 0.2rem; }
+    .sec-tool:hover { color: var(--eip-blue); background: var(--gray-bg); }
+    .sec-help { margin: -0.25rem 0 0; font-size: 0.7rem; line-height: 1.45; color: var(--gray-text); }
+    .field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.68rem; font-weight: 600; color: var(--gray-text); }
+    .field-help { font-size: 0.64rem; font-weight: 400; line-height: 1.4; color: var(--gray-text); }
+    .row { display: flex; gap: 0.45rem; align-items: center; }
+    .row > * { min-width: 0; }
+    select, input[type="number"], input[type="text"].plain {
+      font-family: var(--font); font-size: 0.8rem; color: var(--eip-navy); background: #fff;
+      border: 1.5px solid var(--gray-border); border-radius: 999px; padding: 0.3rem 0.7rem; width: 100%;
+    }
+    select:focus, input:focus { outline: none; border-color: var(--eip-blue); }
+    .seg { display: flex; border-radius: 999px; overflow: hidden; border: 1px solid var(--gray-border); }
+    .seg button { flex: 1; border: none; background: #fff; cursor: pointer; font-family: var(--font);
+      font-size: 0.72rem; font-weight: 600; color: var(--gray-text); padding: 0.35rem 0.4rem; transition: all 120ms; }
+    .seg button.active { background: var(--eip-blue); color: #fff; font-weight: 700; }
+    .toggle { display: flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; color: var(--eip-navy); font-weight: 400; }
+    .toggle .t-help { font-size: 0.64rem; color: var(--gray-text); }
+
+    /* multi-toggle chips (stage, focus area) */
+    .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .chips button { border: 1.5px solid var(--gray-border); background: #fff; color: var(--gray-text); cursor: pointer;
+      font-family: var(--font); font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 999px;
+      display: inline-flex; align-items: center; gap: 0.35rem; transition: all 120ms; }
+    .chips button i { width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--gray-muted)); display: inline-block; opacity: 0.4; }
+    .chips button.on { border-color: var(--c, var(--eip-blue)); color: var(--eip-navy); background: color-mix(in srgb, var(--c, var(--eip-blue)) 10%, #fff); }
+    .chips button.on i { opacity: 1; }
+
+    /* search */
+    .search-box { display: flex; align-items: center; gap: 0.5rem; background: var(--gray-bg);
+      border: 1.5px solid var(--gray-border); border-radius: 999px; padding: 0.25rem 0.75rem; }
+    .search-box:focus-within { border-color: var(--eip-blue); background: #fff; }
+    .search-box calcite-icon { color: var(--eip-blue); flex-shrink: 0; }
+    .search-box input { flex: 1; border: none; outline: none; background: transparent; font-family: var(--font);
+      font-size: 0.84rem; color: var(--eip-navy); padding: 0.2rem 0; min-width: 0; }
+    .search-box input::placeholder { color: var(--gray-text); }
+
+    /* weight sliders */
+    .wrow { display: grid; grid-template-columns: 1fr 92px 1.6rem; align-items: center; gap: 0.45rem; font-size: 0.74rem; }
+    .wrow .wl { display: flex; flex-direction: column; min-width: 0; }
+    .wrow .wl b { font-weight: 600; color: var(--eip-navy); font-size: 0.74rem; }
+    .wrow .wl span { font-size: 0.62rem; color: var(--gray-text); line-height: 1.3; }
+    .wrow .wv { font-size: 0.72rem; font-weight: 700; text-align: right; color: var(--eip-blue); }
+    .wrow.off .wl b, .wrow.off .wv { color: var(--gray-muted); }
+    .wrow.na::after { content: attr(data-na); grid-column: 1 / -1; margin-top: -0.3rem; font-size: 0.6rem; color: var(--eip-orange); }
+    input[type="range"] { width: 100%; accent-color: var(--eip-blue); height: 1.1rem; }
+    .fw-grid { display: grid; grid-template-columns: 1fr; gap: 0.25rem; }
+    .fw-row { display: grid; grid-template-columns: 10px 1fr 92px 1.2rem; align-items: center; gap: 0.4rem; font-size: 0.7rem; }
+    .fw-row i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .fw-row .wv { font-size: 0.7rem; font-weight: 700; text-align: right; color: var(--eip-blue); }
+    .sub-title { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--gray-text); margin-top: 0.3rem; display: flex; align-items: center; gap: 0.4rem; }
+    .sub-title .sec-tool { margin-left: auto; }
+
+    .pill-input { position: relative; }
+    .pill-input .pre { position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: var(--gray-text); }
+    .pill-input input { padding-left: 1.4rem; }
+    .pill-input .post { position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); font-size: 0.72rem; color: var(--gray-text); }
+    .env-presets { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+    .env-presets button { border: 1px solid var(--gray-border); background: #fff; border-radius: 999px; font-family: var(--font);
+      font-size: 0.66rem; font-weight: 600; color: var(--gray-text); padding: 0.12rem 0.5rem; cursor: pointer; }
+    .env-presets button:hover { border-color: var(--eip-blue); color: var(--eip-blue); }
+
+    #reviewerChips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+    /* Map tool buttons */
+    .map-btn calcite-icon { color: inherit; }
+    .map-btn.active { background: var(--eip-blue) !important; color: #fff !important; }
+
+    /* ── Map + drawer ── */
+    #mapWrap { flex: 1 1 auto; position: relative; display: flex; flex-direction: column; min-width: 0; }
+    #viewDiv { flex: 1 1 auto; min-height: 0; position: relative; }
+    #drawer { flex: 0 0 auto; height: 48%; min-height: 180px; display: flex; flex-direction: column;
+      background: var(--white); border-top: 1px solid var(--gray-border); box-shadow: 0 -2px 8px rgba(11,31,65,0.08); z-index: 10; }
+    body.drawer-collapsed #drawer { height: auto; min-height: 0; }
+    body.drawer-collapsed #drawerBody, body.drawer-collapsed #drawerTools { display: none; }
+    .drawer-head { display: flex; align-items: center; gap: 0.6rem; padding: 0.3rem 0.8rem; border-bottom: 1px solid var(--gray-border); flex-wrap: wrap; }
+    .dtabs { display: flex; gap: 0.1rem; }
+    .dtabs button { border: none; background: transparent; cursor: pointer; font-family: var(--font); font-size: 0.74rem; font-weight: 700;
+      letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray-text); padding: 0.35rem 0.7rem; border-bottom: 2px solid transparent; }
+    .dtabs button.active { color: var(--eip-blue); border-bottom-color: var(--eip-blue); }
+    .drawer-head .d-count { font-size: 0.74rem; color: var(--eip-navy); font-weight: 600; }
+    .drawer-head .spacer { flex: 1; }
+    #drawerTools { display: flex; align-items: center; gap: 0.4rem; }
+    #quickFilter { width: 170px; font-family: var(--font); font-size: 0.76rem; border: 1.5px solid var(--gray-border); border-radius: 999px; padding: 0.22rem 0.7rem; }
+    #quickFilter:focus { outline: none; border-color: var(--eip-blue); }
+    .d-btn { border: none; background: transparent; cursor: pointer; color: var(--gray-text); padding: 0.15rem 0.3rem; border-radius: 999px; line-height: 0; }
+    .d-btn:hover { color: var(--eip-blue); background: var(--gray-bg); }
+    #drawerBody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    #gridWrap { flex: 1 1 auto; min-height: 0; }
+    #grid { height: 100%; width: 100%; }
+    #chartsWrap { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 0.6rem 0.8rem; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 0.45rem; margin-bottom: 0.6rem; }
+    .tile { background: var(--gray-bg); border-radius: 10px; padding: 0.45rem 0.6rem; display: flex; flex-direction: column; gap: 0.1rem; }
+    .tile b { font-size: 1.05rem; font-weight: 700; color: var(--eip-navy); line-height: 1.1; }
+    .tile span { font-size: 0.62rem; color: var(--gray-text); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+    .tile.hi b { color: var(--eip-green); }
+    .charts-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 0.6rem; min-height: 260px; }
+    .chart-card { background: #fff; border: 1px solid var(--gray-border); border-radius: 10px; padding: 0.4rem 0.5rem 0.2rem; display: flex; flex-direction: column; min-width: 0; }
+    .chart-card h4 { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--gray-text); padding: 0 0.3rem; }
+    .chart-card .plot { flex: 1 1 auto; min-height: 220px; }
+
+    /* grid cell bits */
+    .sbar { display: flex; align-items: center; gap: 0.4rem; height: 100%; }
+    .sbar .bar { flex: 1; height: 8px; background: var(--gray-bg); border-radius: 999px; overflow: hidden; }
+    .sbar .bar i { display: block; height: 100%; background: var(--eip-blue); border-radius: 999px; }
+    .sbar b { width: 2rem; text-align: right; font-weight: 700; font-size: 0.78rem; }
+    .fdot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 0.35rem; vertical-align: middle; }
+    .badge { display: inline-block; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      border-radius: 999px; padding: 0 0.5rem; line-height: 1.6; vertical-align: middle; }
+    .badge.funded { background: var(--eip-green-light); color: #2F6B13; }
+    .badge.cut { background: var(--eip-orange-light); color: #B5430E; }
+    .badge.unpriced { background: var(--gray-bg); color: var(--gray-text); border: 1px solid var(--gray-border); }
+    .badge.pinned { background: var(--eip-blue-light); color: var(--eip-blue); }
+    .flag-btn { border: none; background: transparent; cursor: pointer; color: #B8C0CC; padding: 0 0.15rem; line-height: 0; vertical-align: middle; border-radius: 999px; }
+    .flag-btn:hover { color: var(--eip-blue); background: var(--gray-bg); }
+    .flag-btn.on.pin { color: var(--eip-blue); }
+    .flag-btn.on.ex { color: var(--eip-orange); }
+    .ag-row.row-excluded { color: var(--gray-muted); }
+    .ag-row.row-excluded .ag-cell:not([col-id="flags"]) { text-decoration: line-through; text-decoration-color: rgba(107,118,136,0.45); }
+    .ag-row.row-pinned-proj { background: rgba(0,125,195,0.06); }
+    .ag-row.row-selected-proj { background: rgba(241,96,34,0.10) !important; }
+    .delta.up { color: #2F6B13; font-weight: 700; } .delta.down { color: #B5430E; font-weight: 700; } .delta.flat { color: var(--gray-muted); }
+    .cov { font-size: 0.7rem; color: var(--gray-text); }
+
+    .toast { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 40;
+      background: var(--eip-navy); color: #fff; padding: 0.5rem 1rem; border-radius: 999px; font-size: 0.82rem;
+      box-shadow: var(--shadow); display: none; max-width: min(92%, 560px); align-items: center; gap: 0.8rem; }
+    .toast.show { display: flex; }
+
+    /* Legend and detail card */
+    .legend { position: absolute; top: 12px; right: 56px; z-index: 15; background: rgba(255,255,255,0.95); border-radius: 10px;
+      box-shadow: var(--shadow); padding: 0.45rem 0.75rem; font-size: 0.68rem; color: var(--eip-navy); display: flex; gap: 0.22rem; flex-direction: column; }
+    .legend span { display: flex; align-items: center; gap: 0.45rem; }
+    .legend i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); }
+    .legend .lg-size { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.15rem; color: var(--gray-text); }
+    .legend .lg-size i { background: var(--gray-muted); }
+    .legend .lg-note { color: var(--gray-text); margin-top: 0.15rem; }
+    #detailCard { position: absolute; left: 12px; bottom: 28px; z-index: 16; width: min(380px, calc(100% - 24px)); max-height: calc(100% - 60px);
+      overflow: auto; background: rgba(255,255,255,0.98); border-radius: 12px; box-shadow: var(--shadow); padding: 0.7rem 0.85rem 0.8rem; font-size: 0.76rem; }
+    #detailCard .dc-head { display: flex; align-items: flex-start; gap: 0.5rem; }
+    #detailCard .dc-head h3 { font-size: 0.9rem; font-weight: 700; line-height: 1.25; flex: 1; }
+    #detailCard .dc-sub { font-size: 0.68rem; color: var(--gray-text); margin: 0.15rem 0 0.45rem; line-height: 1.45; }
+    #detailCard .dc-grid { display: grid; grid-template-columns: auto 1fr; gap: 0.15rem 0.6rem; font-size: 0.7rem; margin-bottom: 0.45rem; }
+    #detailCard .dc-grid dt { color: var(--gray-text); font-weight: 600; white-space: nowrap; }
+    #detailCard .dc-grid dd { color: var(--eip-navy); }
+    #detailCard .dc-desc { font-size: 0.7rem; line-height: 1.45; color: var(--eip-navy); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.45rem; }
+    #detailCard .dc-desc.open { -webkit-line-clamp: unset; }
+    #detailCard .dc-score { display: flex; align-items: baseline; gap: 0.4rem; margin: 0.3rem 0 0.3rem; }
+    #detailCard .dc-score b { font-size: 1.4rem; color: var(--eip-blue); }
+    #detailCard .dc-score span { font-size: 0.66rem; color: var(--gray-text); }
+    .brk { display: grid; grid-template-columns: 1fr 90px 2.2rem 2rem; gap: 0.15rem 0.5rem; align-items: center; font-size: 0.66rem; }
+    .brk .bl { color: var(--eip-navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brk .bb { height: 6px; background: var(--gray-bg); border-radius: 999px; overflow: hidden; }
+    .brk .bb i { display: block; height: 100%; background: var(--eip-green); }
+    .brk .bv { text-align: right; font-weight: 700; } .brk .bw { text-align: right; color: var(--gray-text); }
+    .brk .na { color: var(--gray-muted); font-style: italic; grid-column: 2 / span 3; }
+    .dc-links { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .dc-close { border: none; background: transparent; cursor: pointer; color: var(--gray-text); line-height: 0; padding: 0.1rem; border-radius: 999px; }
+    .dc-close:hover { background: var(--gray-bg); color: var(--eip-blue); }
+
+    /* About dialog */
+    .dlg { font-size: 0.86rem; line-height: 1.6; color: var(--eip-navy); }
+    .dlg p { margin: 0 0 0.6rem; }
+    .dlg h3 { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--gray-text); margin: 0.8rem 0 0.3rem; }
+    .dlg ul, .dlg ol { margin: 0 0 0.6rem; padding-left: 1.2rem; }
+    .dlg li { margin-bottom: 0.3rem; }
+    .dlg table { border-collapse: collapse; font-size: 0.76rem; width: 100%; margin-bottom: 0.6rem; }
+    .dlg th, .dlg td { text-align: left; padding: 0.25rem 0.4rem; border-bottom: 1px solid var(--gray-border); vertical-align: top; }
+    .dlg th { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gray-text); }
+
+    @media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr 1fr; } .charts-grid .chart-card:first-child { grid-column: 1 / -1; } }
+    @media (max-width: 760px) {
+      .hdr-back, .link-label, .hagency, .hdr-sep { display: none; }
+      .hdr-brand img { height: 30px; }
+      #appBody { flex-direction: column; }
+      #mapWrap { order: 1; min-height: 0; }
+      #panelToggle { order: 2; flex: 0 0 28px; width: 100%; height: 28px; border-right: none;
+        border-top: 1px solid var(--gray-border); border-bottom: 1px solid var(--gray-border); }
+      #panelToggleIcon { transform: rotate(-90deg); }
+      #sidePanel { order: 3; flex: 0 0 auto; max-height: 50vh; border-right: none; }
+      #drawer { height: 46%; }
+      .hname { font-size: 0.86rem; white-space: nowrap; }
+      .legend, #detailCard { display: none !important; }
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 400px) { .beta-chip { display: none; } }
+  </style>
+</head>
+<body>
+
+  <header id="appHeader">
+    <div class="hdr-brand">
+      <img src="../tools/assets/eip-logo.png" alt="Lake Tahoe Environmental Improvement Program" />
+      <a href="index.html" class="hdr-back">&larr; EIP maps</a>
+      <div class="htitle">
+        <span class="hagency">Environmental Improvement Program</span>
+        <span class="hname">Funding Priorities</span>
+      </div>
+    </div>
+    <div class="hdr-links">
+      <span class="beta-chip">Beta</span>
+      <calcite-button href="https://eip.laketahoeinfo.org/projects/five-year" target="_blank" rel="noopener" icon-start="list"
+        appearance="transparent" kind="neutral" scale="s" title="EIP 5-Year Project List on the Project Tracker" label="EIP 5-Year Project List"></calcite-button>
+      <calcite-button href="https://trpa-agency.github.io/EIP/html/projects-map.html" target="_blank" rel="noopener" icon-start="map"
+        appearance="transparent" kind="neutral" scale="s" title="EIP Projects Map" label="EIP Projects Map"></calcite-button>
+      <span class="hdr-sep" aria-hidden="true"></span>
+      <calcite-button id="shareBtn" icon-start="link" appearance="transparent" kind="neutral" scale="s"
+        title="Copy a link that reopens this scenario (filters, weights, envelope, pins)" label="Copy link"></calcite-button>
+      <calcite-button id="aboutBtn" icon-start="information" appearance="transparent" kind="neutral" scale="s"
+        title="About this tool and how the score works" label="About this tool"></calcite-button>
+      <calcite-button href="../index.html" icon-start="apps" appearance="transparent" kind="neutral" scale="s"
+        title="All TRPA maps" label="All TRPA maps"></calcite-button>
+    </div>
+  </header>
+
+  <div id="appBody">
+    <aside id="sidePanel" aria-label="Prioritization controls">
+    <div id="panelScroll">
+
+      <section class="panel-sec">
+        <h2 class="sec-title"><span class="sec-num">1</span> Candidate pool
+          <button id="resetFiltersBtn" class="sec-tool" title="Reset the pool to the default: EIP projects in planning or implementation">Reset</button>
+        </h2>
+        <p class="sec-help">Which projects compete. The default is the forward-looking set: EIP projects in planning or implementation,
+          roughly the Project Tracker's 5-Year List.</p>
+        <div class="search-box">
+          <calcite-icon icon="search" scale="s"></calcite-icon>
+          <input id="searchInput" type="text" autocomplete="off" spellcheck="false" placeholder="Project name, number, or implementer…" aria-label="Search projects" />
+        </div>
+        <label class="field">Stage
+          <div class="chips" id="stageChips">
+            <button data-v="Planning/Design" class="on">Planning / Design</button>
+            <button data-v="Implementation" class="on">Implementation</button>
+            <button data-v="Post-Implementation">Post-Implementation</button>
+            <button data-v="Completed">Completed</button>
+          </div>
+        </label>
+        <label class="field">Focus area
+          <div class="chips" id="focusChips"></div>
+        </label>
+        <label class="field">EIP program
+          <calcite-combobox id="programSel" selection-mode="multiple" scale="s" placeholder="Any program" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+        </label>
+        <label class="field">Lead implementer
+          <calcite-combobox id="leadSel" selection-mode="multiple" scale="s" placeholder="Any implementer" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+        </label>
+        <label class="field">Funding source already on the project
+          <calcite-combobox id="fundSel" selection-mode="multiple" scale="s" placeholder="Any source" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+        </label>
+        <label class="field">State
+          <div class="seg" id="stateSeg" role="radiogroup">
+            <button data-v="" class="active">All</button>
+            <button data-v="CA">California</button>
+            <button data-v="NV">Nevada</button>
+          </div>
+        </label>
+        <label class="toggle">
+          <calcite-switch id="pricedOnly" scale="s"></calcite-switch>
+          <span>Only projects with a cost estimate <span class="t-help">(the ones an envelope can count)</span></span>
+        </label>
+        <label class="toggle">
+          <calcite-switch id="nonEip" scale="s"></calcite-switch>
+          <span>Include non-EIP projects tracked on Lake Tahoe Info</span>
+        </label>
+      </section>
+
+      <section class="panel-sec">
+        <h2 class="sec-title"><span class="sec-num">2</span> Priorities
+          <button id="resetWeightsBtn" class="sec-tool" title="Back to the Balanced preset">Reset</button>
+        </h2>
+        <p class="sec-help">Weight each criterion 0 to 5. The score is the weighted average of the criteria that have data for a project, on a 0 to 100 scale.
+          Start from a preset, then adjust.</p>
+        <label class="field">Preset
+          <select id="presetSel"></select>
+        </label>
+        <div id="weightRows"></div>
+
+        <div class="sub-title">Focus area emphasis</div>
+        <div class="fw-grid" id="focusWeights"></div>
+
+        <div class="sub-title">Action priority emphasis</div>
+        <calcite-combobox id="actionSel" selection-mode="multiple" scale="s" placeholder="Pick action priorities to favor" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+
+        <div class="sub-title">Geographic emphasis
+          <button id="drawAreaBtn" class="sec-tool" title="Draw an area on the map; projects inside it score full on geography"><calcite-icon icon="polygon" scale="s"></calcite-icon> Draw area</button>
+          <button id="clearAreaBtn" class="sec-tool" title="Remove the drawn area" hidden><calcite-icon icon="trash" scale="s"></calcite-icon></button>
+        </div>
+        <calcite-combobox id="jurisSel" selection-mode="multiple" scale="s" placeholder="Pick jurisdictions to favor" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+        <span class="field-help">Basin-wide projects score half under geographic emphasis. Projects with no mapped location can only match by jurisdiction.</span>
+      </section>
+
+      <section class="panel-sec">
+        <h2 class="sec-title"><span class="sec-num">3</span> Funding envelope</h2>
+        <p class="sec-help">How much is on the table this round. Projects are funded in rank order by their remaining need
+          (estimated cost minus expenditures to date). Pinned projects are funded first.</p>
+        <div class="pill-input">
+          <span class="pre">$</span>
+          <input id="envInput" type="number" min="0" step="1" placeholder="0" aria-label="Funding envelope in millions of dollars" />
+          <span class="post">million</span>
+        </div>
+        <div class="env-presets" id="envPresets">
+          <button data-v="10">$10M</button><button data-v="25">$25M</button><button data-v="50">$50M</button>
+          <button data-v="100">$100M</button><button data-v="250">$250M</button><button data-v="">Clear</button>
+        </div>
+        <label class="field">When the next project does not fit
+          <div class="seg" id="modeSeg" role="radiogroup">
+            <button data-v="skip" class="active" title="Skip it and keep filling with smaller projects further down the list">Keep filling</button>
+            <button data-v="strict" title="Stop there: a strict cut line in rank order">Stop at the cut line</button>
+          </div>
+        </label>
+      </section>
+
+      <section class="panel-sec">
+        <h2 class="sec-title"><span class="sec-num">4</span> Panel review
+          <button id="clearReviewBtn" class="sec-tool" title="Clear your scores and any imported reviewer files from this browser">Clear</button>
+        </h2>
+        <p class="sec-help">Each reviewer scores projects 1 to 5 in the table (the <em>My score</em> and <em>Note</em> columns) and exports a scores file.
+          Whoever runs the meeting imports everyone's files here. The average feeds the <em>Panel review</em> criterion.</p>
+        <label class="field">Your name or agency
+          <input id="reviewerName" type="text" class="plain" placeholder="e.g. Conservancy, USFS, TRPA" />
+        </label>
+        <div class="row">
+          <calcite-button id="exportScoresBtn" icon-start="file-csv" appearance="outline" kind="brand" scale="s" width="full" title="Download your scores and notes as a CSV">My scores</calcite-button>
+          <calcite-button id="importScoresBtn" icon-start="upload" appearance="outline" kind="brand" scale="s" width="full" title="Import one or more reviewer score files">Import</calcite-button>
+          <input id="importFile" type="file" accept=".csv,text/csv" multiple hidden />
+        </div>
+        <div id="reviewerChips" aria-label="Imported reviewers"></div>
+      </section>
+    </div><!-- /panelScroll -->
+
+    <div id="panelFooter">
+      <div class="row">
+        <calcite-button id="csvBtn" icon-start="file-csv" appearance="solid" kind="brand" scale="s" width="full" disabled title="Download the ranked list with scores, criteria values, costs, and funding status">Ranked list CSV</calcite-button>
+      </div>
+      <div class="foot-status" id="footStatus">Loading EIP projects…</div>
+    </div>
+    </aside>
+
+    <button id="panelToggle" title="Show / hide the control panel" aria-label="Show or hide the control panel">
+      <calcite-icon icon="chevron-left" scale="s" id="panelToggleIcon"></calcite-icon>
+    </button>
+
+    <div id="mapWrap">
+      <div id="viewDiv">
+        <div class="legend" id="legend"></div>
+        <div id="detailCard" hidden></div>
+        <div class="toast" id="toast"></div>
+      </div>
+      <div id="drawer">
+        <div class="drawer-head">
+          <div class="dtabs" role="tablist">
+            <button data-tab="list" class="active" role="tab">Ranked list</button>
+            <button data-tab="charts" role="tab">Envelope and charts</button>
+          </div>
+          <span class="d-count" id="drawerCount"></span>
+          <span class="spacer"></span>
+          <div id="drawerTools">
+            <input id="quickFilter" type="text" placeholder="Filter rows…" aria-label="Filter rows" />
+          </div>
+          <button class="d-btn" id="drawerToggle" title="Collapse / expand"><calcite-icon icon="chevron-down" scale="s" id="drawerToggleIcon"></calcite-icon></button>
+        </div>
+        <div id="drawerBody">
+          <div id="gridWrap"><div id="grid"></div></div>
+          <div id="chartsWrap" hidden>
+            <div class="tiles" id="tiles"></div>
+            <div class="charts-grid">
+              <div class="chart-card"><h4>Where the envelope runs out</h4><div class="plot" id="chartCum"></div></div>
+              <div class="chart-card"><h4>Remaining need by focus area</h4><div class="plot" id="chartFocus"></div></div>
+              <div class="chart-card"><h4>Remaining need by lead implementer</h4><div class="plot" id="chartLead"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /appBody -->
+
+  <calcite-dialog id="aboutDialog" modal heading="About EIP Funding Priorities" width-scale="m">
+    <div class="dlg">
+      <p>A shared workbench for deciding what gets funded next in the Environmental Improvement Program. It reads the same project
+        records the <a href="https://eip.laketahoeinfo.org/" target="_blank" rel="noopener">EIP Project Tracker</a> publishes, scores them against
+        criteria you weight, tests a funding envelope, and collects panel scores from partner agencies.</p>
+      <ol>
+        <li><strong>Candidate pool.</strong> Filter to the projects that compete. The default is EIP projects in planning or implementation.</li>
+        <li><strong>Priorities.</strong> Weight the criteria. Each is scored 0 to 1 per project from Tracker data; the project score is the weighted
+          average of the criteria that have data, times 100. Criteria without data for a project are left out of its average, and the
+          <em>Data</em> column shows how much of the active weight had data.</li>
+        <li><strong>Funding envelope.</strong> Enter a dollar amount. Projects are funded in rank order by remaining need (estimated cost minus
+          expenditures to date). Pinned projects go first; excluded projects leave the pool.</li>
+        <li><strong>Panel review.</strong> Reviewers score 1 to 5 in the table and export a file. Import the files to average them into the score.
+          Scores and notes are kept in this browser only.</li>
+      </ol>
+      <h3>Criteria</h3>
+      <table id="aboutCriteria"><thead><tr><th>Criterion</th><th>How it is scored</th></tr></thead><tbody></tbody></table>
+      <h3>Data</h3>
+      <ul>
+        <li><a href="https://eip.laketahoeinfo.org/" target="_blank" rel="noopener">EIP Project Tracker</a> (Lake Tahoe Info), via the nightly snapshot in
+          <a href="https://github.com/trpa-agency/EIP" target="_blank" rel="noopener">trpa-agency/EIP</a>. <span id="aboutData"></span></li>
+      </ul>
+      <h3>Caveats</h3>
+      <ul id="aboutCaveats">
+        <li>Estimated total cost is reported for only part of the pool, so the envelope can only count those projects. The rest are ranked but marked
+          <em>Unpriced</em>. Turn on <em>Only projects with a cost estimate</em> to see the envelope against priced projects alone.</li>
+        <li>Remaining need is cost minus expenditures reported to the Tracker. It is not the same as unfunded need: committed but unspent
+          funding is not in the data.</li>
+        <li>The Tracker assigns each project one action priority for reporting, so multi-benefit projects may not match the action priority you pick.</li>
+        <li>This tool does not write to the Tracker. Export the ranked list and panel scores to carry results forward.</li>
+      </ul>
+    </div>
+  </calcite-dialog>
+
+  <script>
+    // ───────────────────────── Config ─────────────────────────
+    const DATA_BASE = "https://trpa-agency.github.io/EIP/data/";
+    const BASIN = { center: [-120.02, 39.09], zoom: 9.6 };
+    const YEAR = new Date().getFullYear();
+    const C = { blue: "#007DC3", green: "#6EBE44", orange: "#F16022", navy: "#0B1F41", gray: "#8A93A3" };
+    const FOCUS = [
+      { key: "Watersheds and Water Quality", short: "Watersheds", color: C.blue },
+      { key: "Forest Health", short: "Forest Health", color: C.green },
+      { key: "Sustainable Recreation and Transportation", short: "Recreation & Transportation", color: C.orange },
+      { key: "Science, Stewardship, and Accountability", short: "Science & Stewardship", color: C.navy },
+      { key: "Unassigned", short: "Unassigned", color: C.gray },
+    ];
+    const FOCUS_COLOR = Object.fromEntries(FOCUS.map(f => [f.key, f.color]));
+    const JURIS = ["City of South Lake Tahoe", "Douglas County, NV", "El Dorado County, CA", "Placer County, CA", "Washoe County, NV",
+      "Carson City County, NV", "Tahoe Regional Planning Agency", "U.S. Forest Service - Lake Tahoe Basin Management Unit", "Alpine County"];
+    const LS_REVIEW = "eipPriorities.review", LS_IMPORTS = "eipPriorities.imports";
+
+    // Criteria: fn returns 0..1, or null when the project has no data for it
+    // (null criteria drop out of that project's weighted average).
+    const CRITERIA = [
+      { key: "thr", label: "Threshold benefits", help: "Threshold categories the project reports against; four or more scores full.",
+        about: "Count of threshold categories on the project, divided by four, capped at 1.",
+        fn: p => p.thresholds.length ? Math.min(p.thresholds.length / 4, 1) : 0 },
+      { key: "multi", label: "Multiple benefits", help: "Lake clarity project, transportation project, or tied to a TMDL pollutant source.",
+        about: "One point each for the lake clarity flag, the transportation flag, and a TMDL pollutant source category; two or more scores full.",
+        fn: p => Math.min((p.lakeClarity ? 1 : 0) + (p.transport ? 1 : 0) + (p.tmdl ? 1 : 0), 2) / 2 },
+      { key: "ready", label: "Readiness", help: "Under construction scores full; planning projects score by how soon implementation starts.",
+        about: "Implementation stage 1.0. Planning/Design 0.6 if implementation starts by next year, 0.4 within three years, 0.25 later, 0.3 if unknown. Completed 0.1, Post-Implementation 0.5.",
+        fn: p => p.stage === "Implementation" ? 1 : p.stage === "Planning/Design"
+          ? (p.implStart != null ? (p.implStart <= YEAR + 1 ? 0.6 : p.implStart <= YEAR + 3 ? 0.4 : 0.25) : 0.3)
+          : p.stage === "Completed" ? 0.1 : 0.5 },
+      { key: "lev", label: "Funding leverage", help: "Distinct funding sources already on the project. More partners sharing cost scores higher.",
+        about: "Distinct funding sources: none 0, one 0.35, two 0.6, three 0.8, four or more 1.",
+        fn: p => [0, 0.35, 0.6, 0.8, 1][Math.min(p.funding.length, 4)] },
+      { key: "prog", label: "Progress to date", help: "Share of the estimated cost already spent. Rewards finishing what is under way.",
+        about: "Expenditures to date divided by estimated total cost, capped at 1. No data without a cost estimate.",
+        fn: p => p.cost > 0 ? Math.min((p.spent || 0) / p.cost, 1) : null },
+      { key: "urg", label: "Schedule urgency", help: "Finishing within two years scores full; later end dates score less.",
+        about: "End date within two years 1, within five years 0.6, later 0.3. No data without an end date.",
+        fn: p => p.end == null ? null : p.end <= YEAR + 2 ? 1 : p.end <= YEAR + 5 ? 0.6 : 0.3 },
+      { key: "afford", label: "Smaller remaining need", help: "Lower remaining cost scores higher, so more projects fit the envelope.",
+        about: "One minus the project's percentile rank by remaining need among priced projects in the pool. No data without a cost estimate.",
+        fn: (p, ctx) => p.need == null ? null : ctx.needPct(p) },
+      { key: "focus", label: "Focus area emphasis", help: "Your weights for the four focus areas, below.",
+        about: "The focus-area weight you set, divided by the largest focus-area weight.",
+        fn: (p, ctx) => ctx.focusMax > 0 ? (ctx.focusW[p.focus] || 0) / ctx.focusMax : null },
+      { key: "act", label: "Action priority emphasis", help: "Projects under the action priorities you pick score full, others zero.", needsPick: "actions",
+        about: "1 if the project's action priority is one you picked, else 0. Off until you pick one.",
+        fn: (p, ctx) => ctx.actions.size ? (ctx.actions.has(p.action) ? 1 : 0) : null },
+      { key: "geo", label: "Geographic emphasis", help: "Projects in the jurisdictions you pick or inside a drawn area score full.", needsPick: "geo",
+        about: "1 if the project is in a picked jurisdiction or inside the drawn area, 0.5 if it is basin-wide, else 0. Off until you pick one.",
+        fn: (p, ctx) => {
+          if (!ctx.juris.size && !ctx.area) return null;
+          const inJ = ctx.juris.size && p.jurisdictions.some(j => ctx.juris.has(j));
+          const inA = ctx.area && p.pt && ctx.inArea(p);
+          if (inJ || inA) return p.basinWide && !inA ? 0.5 : 1;
+          return p.basinWide ? 0.5 : 0;
+        } },
+      { key: "panel", label: "Panel review", help: "Average of reviewer scores (1 to 5) entered or imported below.", needsPick: "panel",
+        about: "Average reviewer score minus one, divided by four. No data until a project has a score.",
+        fn: (p, ctx) => { const s = ctx.panelAvg(p.id); return s == null ? null : (s - 1) / 4; } },
+    ];
+    const EQUAL_FOCUS = { "Watersheds and Water Quality": 3, "Forest Health": 3, "Sustainable Recreation and Transportation": 3, "Science, Stewardship, and Accountability": 3, "Unassigned": 1 };
+    const PRESETS = {
+      balanced: { label: "Balanced", w: { thr: 3, multi: 2, ready: 3, lev: 2, prog: 1, urg: 1, afford: 0, focus: 2, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
+      ready: { label: "Shovel ready", w: { thr: 1, multi: 1, ready: 5, lev: 3, prog: 3, urg: 2, afford: 1, focus: 1, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
+      clarity: { label: "Lake clarity", w: { thr: 2, multi: 4, ready: 2, lev: 2, prog: 1, urg: 1, afford: 0, focus: 4, act: 3, geo: 3, panel: 3 },
+        fw: { "Watersheds and Water Quality": 5, "Forest Health": 2, "Sustainable Recreation and Transportation": 1, "Science, Stewardship, and Accountability": 2, "Unassigned": 0 } },
+      wildfire: { label: "Wildfire resilience", w: { thr: 2, multi: 1, ready: 3, lev: 2, prog: 1, urg: 2, afford: 0, focus: 4, act: 4, geo: 3, panel: 3 },
+        fw: { "Watersheds and Water Quality": 1, "Forest Health": 5, "Sustainable Recreation and Transportation": 1, "Science, Stewardship, and Accountability": 1, "Unassigned": 0 },
+        actions: ["Reduce Hazardous Fuels", "Implement Prescribed Fire", "Implement Defensible Space on Public and Private Parcels and Utility Corridors",
+          "Upgrade Priority Water Infrastructure to Fight Catastrophic Wildfire", "Restore Native Vegetation and Forest Communities"] },
+      recreation: { label: "Recreation and transportation", w: { thr: 2, multi: 3, ready: 3, lev: 3, prog: 1, urg: 1, afford: 0, focus: 4, act: 3, geo: 3, panel: 3 },
+        fw: { "Watersheds and Water Quality": 1, "Forest Health": 1, "Sustainable Recreation and Transportation": 5, "Science, Stewardship, and Accountability": 1, "Unassigned": 0 } },
+      closeout: { label: "Finish what is started", w: { thr: 1, multi: 1, ready: 3, lev: 2, prog: 5, urg: 4, afford: 2, focus: 1, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
+      spread: { label: "Spread the dollars", w: { thr: 3, multi: 2, ready: 3, lev: 3, prog: 1, urg: 1, afford: 4, focus: 2, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
+    };
+
+    // ───────────────────────── Helpers ─────────────────────────
+    const $ = (id) => document.getElementById(id);
+    const escHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const hexA = (hex, a) => { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255, a]; };
+    const fmtUSD = (v) => v == null ? "" : v >= 1e6 ? `$${(v / 1e6).toFixed(v >= 1e8 ? 0 : 1)}M` : v >= 1e3 ? `$${Math.round(v / 1e3)}K` : `$${Math.round(v)}`;
+    const fmtM = (v) => `$${(v / 1e6).toLocaleString(undefined, { maximumFractionDigits: 1 })}M`;
+    const splitList = (s, sep) => String(s || "").split(sep).map(x => x.trim()).filter(x => x && x !== "n/a");
+    const num = (v) => (v == null || v === "" || isNaN(+v)) ? null : +v;
+    function toast(msg, ms = 2600) {
+      const t = $("toast"); t.textContent = msg; t.classList.add("show");
+      clearTimeout(toast._t); if (ms) toast._t = setTimeout(() => t.classList.remove("show"), ms);
+    }
+    function download(name, text, type = "text/csv") {
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }
+    const csvCell = (v) => { const s = v == null ? "" : String(v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    function parseCsv(text) {
+      const rows = []; let row = [], cell = "", q = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (q) { if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; }
+        else if (ch === '"') q = true;
+        else if (ch === ",") { row.push(cell); cell = ""; }
+        else if (ch === "\n" || ch === "\r") { if (ch === "\r" && text[i + 1] === "\n") i++; row.push(cell); rows.push(row); row = []; cell = ""; }
+        else cell += ch;
+      }
+      if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+      return rows.filter(r => r.some(c => c !== ""));
+    }
+
+    // ───────────────────────── State ─────────────────────────
+    let projects = [];          // normalized records
+    let pool = [];              // filtered + scored + ranked
+    let weights = { ...PRESETS.balanced.w };
+    let focusW = { ...PRESETS.balanced.fw };
+    let actions = new Set(), juris = new Set();
+    let pins = new Set(), excluded = new Set();
+    let envelope = null, fillMode = "skip";
+    let review = loadLS(LS_REVIEW, { reviewer: "", scores: {} });     // { reviewer, scores: { id: { s, n } } }
+    let imports = loadLS(LS_IMPORTS, {});                              // { reviewerName: { id: { s, n } } }
+    let areaGeom = null, selectedId = null, activeTab = "list", snapshotDate = null;
+    let map, view, ptLayer, areaLayer, hlLayer, sketch, GE, Graphic, Point, Polygon, drawBtnEl;
+    let gridApi = null, chartsDirty = true;
+
+    function loadLS(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } }
+    function saveLS(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+
+    // ───────────────────────── Data ─────────────────────────
+    function normalize(p, geom) {
+      const focus = p.EIPFocusArea || "Unassigned";
+      const jur = JURIS.filter(j => String(p.ProjectJurisdiction || "").includes(j));
+      const cost = num(p.EstimatedTotalCost), spent = num(p.TotalExpenditure);
+      const lon = geom && geom.coordinates ? geom.coordinates[0] : null, lat = geom && geom.coordinates ? geom.coordinates[1] : null;
+      return {
+        id: p.EIPProjectNumber || String(p.ProjectID), pid: p.ProjectID, name: p.ProjectName || "", focus, program: p.EIPProgram || "",
+        action: p.EIPActionPriority || "", desc: p.ProjectDescription || "", thresholds: splitList(p.ProjectThresholdCategories, ","),
+        lead: (p.LeadImplementer || "").replace(/�/g, "-").trim(), planStart: num(p.PlanningStartDate), implStart: num(p.ImplementationStartDate), end: num(p.EndDate),
+        stage: p.Stage || "", state: p.ProjectState && p.ProjectState !== "n/a" ? p.ProjectState : "", region: p.ProjectRegion || "",
+        jurisdictions: jur, basinWide: jur.length >= 5 || /basin-wide|lake-wide/i.test(p.ProjectRegion || ""),
+        watersheds: splitList(p.ProjectWatershed, ","), cost, spent, need: cost != null ? Math.max(cost - (spent || 0), 0) : null,
+        funding: splitList(p.FundingSources, ";"), lakeClarity: !!p.IsLakeClarityProject, transport: !!p.IsTransportationProject,
+        tmdl: !!p.TMDLPollutantSourceCategory, isEip: p.IsEIPProject !== false,
+        url: p.ProjectSummaryUrl || p.ProjectURL || "", factUrl: p.ProjectFactSheetUrl || "", lon, lat,
+        pt: lon != null && lat != null, score: 0, parts: {}, coverage: 0, rank: null, baseRank: null, fund: "none",
+      };
+    }
+    async function loadData() {
+      const [r1, r2] = await Promise.all([fetch(DATA_BASE + "projects.geojson"), fetch(DATA_BASE + "projects_aspatial.json")]);
+      if (!r1.ok || !r2.ok) throw new Error("data fetch failed");
+      snapshotDate = r1.headers.get("last-modified") ? new Date(r1.headers.get("last-modified")) : null;
+      const gj = await r1.json(), asp = await r2.json();
+      const seen = new Set();
+      projects = [];
+      for (const f of gj.features || []) { const p = normalize(f.properties, f.geometry); if (!seen.has(p.id)) { seen.add(p.id); projects.push(p); } }
+      for (const a of asp || []) { const p = normalize(a, null); if (!seen.has(p.id)) { seen.add(p.id); projects.push(p); } }
+    }
+
+    // ───────────────────────── Panel scores ─────────────────────────
+    function panelScores(id) {
+      const out = [];
+      const mine = review.scores[id]; if (mine && mine.s != null) out.push({ who: review.reviewer || "Me", s: mine.s, n: mine.n || "" });
+      for (const [who, m] of Object.entries(imports)) { const r = m[id]; if (r && r.s != null && who !== (review.reviewer || "")) out.push({ who, s: r.s, n: r.n || "" }); }
+      return out;
+    }
+    function panelAvg(id) { const s = panelScores(id); return s.length ? s.reduce((a, b) => a + b.s, 0) / s.length : null; }
+
+    // ───────────────────────── Filters ─────────────────────────
+    const chipsOn = (el) => [...el.querySelectorAll("button.on")].map(b => b.dataset.v);
+    const comboVals = (el) => (el.selectedItems || []).map(i => i.value);
+    function passes(p) {
+      if (!$("nonEip").checked && !p.isEip) return false;
+      if (!chipsOn($("stageChips")).includes(p.stage)) return false;
+      if (!chipsOn($("focusChips")).includes(p.focus)) return false;
+      const prog = comboVals($("programSel")); if (prog.length && !prog.includes(p.program)) return false;
+      const lead = comboVals($("leadSel")); if (lead.length && !lead.includes(p.lead)) return false;
+      const fs = comboVals($("fundSel")); if (fs.length && !p.funding.some(f => fs.includes(f))) return false;
+      const st = $("stateSeg").querySelector("button.active").dataset.v; if (st && !p.state.includes(st)) return false;
+      if ($("pricedOnly").checked && p.need == null) return false;
+      const q = $("searchInput").value.trim().toLowerCase();
+      if (q && !(p.name.toLowerCase().includes(q) || p.id.includes(q) || p.lead.toLowerCase().includes(q))) return false;
+      return true;
+    }
+
+    // ───────────────────────── Scoring ─────────────────────────
+    function makeCtx(fw, acts, jur, area) {
+      const fmax = Math.max(0, ...Object.values(fw));
+      return { focusW: fw, focusMax: fmax, actions: acts, juris: jur, area, panelAvg, needPct: null,
+        inArea: (p) => area && GE && GE.contains(area, new Point({ longitude: p.lon, latitude: p.lat })) };
+    }
+    function withNeedPct(ctx, list) {
+      const priced = list.filter(p => p.need != null).sort((a, b) => a.need - b.need);
+      const idx = new Map(priced.map((p, i) => [p.id, i])); const n = priced.length;
+      ctx.needPct = (p) => n <= 1 ? 1 : 1 - idx.get(p.id) / (n - 1);
+      return ctx;
+    }
+    function scoreOne(p, w, ctx) {
+      let numer = 0, den = 0, total = 0; const parts = {};
+      for (const c of CRITERIA) {
+        const wt = w[c.key]; if (!(wt > 0)) continue;
+        const v = c.fn(p, ctx); parts[c.key] = v;
+        if (v == null) continue;
+        numer += wt * v; den += wt;
+      }
+      // coverage: share of the weight that had data, counting only criteria that are "on"
+      for (const c of CRITERIA) { const wt = w[c.key]; if (wt > 0 && parts[c.key] !== undefined && (parts[c.key] != null || !c.needsPick || isPickActive(c, ctx))) total += wt; }
+      return { score: den ? numer / den * 100 : 0, parts, coverage: total ? den / total : 0 };
+    }
+    function isPickActive(c, ctx) {
+      if (c.needsPick === "actions") return ctx.actions.size > 0;
+      if (c.needsPick === "geo") return ctx.juris.size > 0 || !!ctx.area;
+      if (c.needsPick === "panel") return Object.keys(review.scores).length > 0 || Object.keys(imports).length > 0;
+      return true;
+    }
+    const rankSort = (a, b) => (pins.has(b.id) - pins.has(a.id)) || (b.score - a.score) || ((a.need ?? Infinity) - (b.need ?? Infinity)) || a.id.localeCompare(b.id);
+
+    function recompute() {
+      if (!projects.length) return;
+      const list = projects.filter(passes);
+      const ctx = withNeedPct(makeCtx(focusW, actions, juris, areaGeom), list);
+      const base = withNeedPct(makeCtx(EQUAL_FOCUS, new Set(), new Set(), null), list);
+      const bw = { ...PRESETS.balanced.w, panel: 0 };
+      for (const p of list) {
+        const r = scoreOne(p, weights, ctx); p.score = r.score; p.parts = r.parts; p.coverage = r.coverage;
+        p.baseScore = scoreOne(p, bw, base).score;
+        p.excluded = excluded.has(p.id); p.pinned = pins.has(p.id) && !p.excluded;
+      }
+      const active = list.filter(p => !p.excluded).sort(rankSort);
+      const baseOrder = [...active].sort((a, b) => (b.baseScore - a.baseScore) || ((a.need ?? Infinity) - (b.need ?? Infinity)) || a.id.localeCompare(b.id));
+      baseOrder.forEach((p, i) => p.baseRank = i + 1);
+      active.forEach((p, i) => p.rank = i + 1);
+      list.filter(p => p.excluded).forEach(p => { p.rank = null; p.baseRank = null; p.fund = "excluded"; });
+      allocate(active);
+      pool = [...active, ...list.filter(p => p.excluded).sort((a, b) => b.score - a.score)];
+      renderGrid(); renderMap(); renderLegend(); renderStatus(); syncWeightUI(); chartsDirty = true;
+      if (activeTab === "charts") renderCharts();
+      if (selectedId) showDetail(selectedId, false);
+      $("csvBtn").disabled = !pool.length;
+    }
+    function allocate(active) {
+      const env = envelope != null && envelope > 0 ? envelope * 1e6 : null;
+      let left = env, stopped = false;
+      for (const p of active) {
+        if (env == null) { p.fund = p.need == null ? "unpriced" : "none"; continue; }
+        if (p.need == null) { p.fund = "unpriced"; continue; }
+        if (p.pinned) { p.fund = "funded"; left -= p.need; continue; }
+        if (!stopped && p.need <= left) { p.fund = "funded"; left -= p.need; }
+        else { p.fund = "cut"; if (fillMode === "strict") stopped = true; }
+      }
+      allocate.left = left;
+    }
+
+    // ───────────────────────── Grid ─────────────────────────
+    const fundBadge = (f, pinned) => {
+      const b = f === "funded" ? '<span class="badge funded">Funded</span>' : f === "cut" ? '<span class="badge cut">Not funded</span>'
+        : f === "unpriced" ? '<span class="badge unpriced" title="No estimated total cost on the Tracker">Unpriced</span>' : f === "excluded" ? '<span class="badge unpriced">Excluded</span>' : "";
+      return (pinned ? '<span class="badge pinned" title="Pinned: funded first">Pinned</span> ' : "") + b;
+    };
+    function initGrid() {
+      const theme = agGrid.themeQuartz.withParams({ accentColor: C.blue, fontFamily: "Lexend Deca, system-ui, sans-serif", fontSize: 12,
+        headerFontSize: 11, headerFontWeight: 700, rowHeight: 32, headerHeight: 32, borderColor: "#E1E5EC", foregroundColor: C.navy });
+      const money = { type: "rightAligned", width: 100, valueFormatter: (p) => fmtUSD(p.value), comparator: (a, b) => (a ?? -1) - (b ?? -1) };
+      const flags = (p) => {
+        const d = p.data;
+        return `<button class="flag-btn pin ${d.pinned ? "on" : ""}" data-act="pin" title="${d.pinned ? "Unpin" : "Pin: fund this project first"}"><calcite-icon icon="pin" scale="s"></calcite-icon></button>` +
+          `<button class="flag-btn ex ${d.excluded ? "on" : ""}" data-act="ex" title="${d.excluded ? "Return to the pool" : "Exclude from the pool"}"><calcite-icon icon="x-circle" scale="s"></calcite-icon></button>`;
+      };
+      gridApi = agGrid.createGrid($("grid"), {
+        theme, rowData: [], getRowId: (p) => p.data.id, animateRows: false, suppressCellFocus: true, singleClickEdit: true, stopEditingWhenCellsLoseFocus: true,
+        rowClassRules: { "row-excluded": (p) => p.data.excluded, "row-pinned-proj": (p) => p.data.pinned, "row-selected-proj": (p) => p.data.id === selectedId },
+        defaultColDef: { sortable: true, resizable: true, suppressMovable: true, tooltipValueGetter: (p) => p.valueFormatted ?? p.value },
+        columnDefs: [
+          { headerName: "#", field: "rank", width: 54, type: "rightAligned", pinned: "left", valueFormatter: (p) => p.value ?? "", comparator: (a, b) => (a ?? 1e9) - (b ?? 1e9), sort: "asc" },
+          { headerName: "", field: "flags", width: 62, sortable: false, cellRenderer: flags, pinned: "left" },
+          { headerName: "Project #", field: "id", width: 118, cellRenderer: (p) => `<a href="${escHtml(p.data.factUrl || p.data.url)}" target="_blank" rel="noopener" title="Fact sheet on the EIP Project Tracker">${escHtml(p.value)}</a>` },
+          { headerName: "Project", field: "name", flex: 2, minWidth: 220 },
+          { headerName: "Focus area", field: "focus", width: 170, cellRenderer: (p) => `<i class="fdot" style="background:${FOCUS_COLOR[p.value] || C.gray}"></i>${escHtml((FOCUS.find(f => f.key === p.value) || {}).short || p.value)}` },
+          { headerName: "Lead implementer", field: "lead", flex: 1.2, minWidth: 160 },
+          { headerName: "Stage", field: "stage", width: 118 },
+          { headerName: "Score", field: "score", width: 120, cellRenderer: (p) => `<div class="sbar"><div class="bar"><i style="width:${Math.max(0, Math.min(100, p.value))}%"></i></div><b>${Math.round(p.value)}</b></div>`,
+            tooltipValueGetter: (p) => breakdownText(p.data) },
+          { headerName: "vs Balanced", field: "delta", width: 100, type: "rightAligned", valueGetter: (p) => p.data.rank && p.data.baseRank ? p.data.baseRank - p.data.rank : null,
+            cellRenderer: (p) => p.value == null ? "" : p.value > 0 ? `<span class="delta up">▲ ${p.value}</span>` : p.value < 0 ? `<span class="delta down">▼ ${-p.value}</span>` : `<span class="delta flat">–</span>`,
+            headerTooltip: "Rank change against the Balanced preset with no picks: up means your priorities moved this project up the list" },
+          { headerName: "Est. cost", field: "cost", ...money }, { headerName: "Spent", field: "spent", ...money },
+          { headerName: "Remaining", field: "need", ...money, headerTooltip: "Estimated total cost minus expenditures to date" },
+          { headerName: "Envelope", field: "fund", width: 128, cellRenderer: (p) => fundBadge(p.value, p.data.pinned), comparator: (a, b) => ["funded", "cut", "none", "unpriced", "excluded"].indexOf(a) - ["funded", "cut", "none", "unpriced", "excluded"].indexOf(b) },
+          { headerName: "Panel avg", field: "panelAvg", width: 96, type: "rightAligned", valueGetter: (p) => panelAvg(p.data.id),
+            valueFormatter: (p) => p.value == null ? "" : `${p.value.toFixed(1)} (${panelScores(p.data.id).length})`, tooltipValueGetter: (p) => panelScores(p.data.id).map(s => `${s.who}: ${s.s}${s.n ? " – " + s.n : ""}`).join("\n") || "No reviewer scores yet" },
+          { headerName: "My score", field: "my", width: 90, editable: true, cellEditor: "agNumberCellEditor", cellEditorParams: { min: 1, max: 5, precision: 0 }, type: "rightAligned",
+            valueGetter: (p) => review.scores[p.data.id]?.s ?? null, valueSetter: (p) => { setMyScore(p.data.id, p.newValue, undefined); return true; },
+            cellStyle: { background: "rgba(0,125,195,0.05)" }, headerTooltip: "Your score, 1 (low) to 5 (high). Click to edit." },
+          { headerName: "Note", field: "note", flex: 1.2, minWidth: 150, editable: true, cellEditor: "agTextCellEditor", valueGetter: (p) => review.scores[p.data.id]?.n ?? "",
+            valueSetter: (p) => { setMyScore(p.data.id, undefined, p.newValue); return true; }, cellStyle: { background: "rgba(0,125,195,0.05)" } },
+          { headerName: "Data", field: "coverage", width: 70, type: "rightAligned", valueFormatter: (p) => `${Math.round(p.value * 100)}%`, cellClass: "cov", headerTooltip: "Share of the active criteria weight this project had data for" },
+          { headerName: "Thresholds", field: "thresholds", width: 150, valueFormatter: (p) => (p.value || []).join(", "), hide: false },
+          { headerName: "Action priority", field: "action", width: 200 },
+          { headerName: "Funding sources", field: "funding", width: 200, valueFormatter: (p) => (p.value || []).join("; ") },
+          { headerName: "Years", width: 90, valueGetter: (p) => [p.data.implStart, p.data.end].filter(v => v != null).join(" – ") },
+        ],
+        onCellClicked: (e) => {
+          if (e.column.getColId() === "flags") { const b = e.event.target.closest("button"); if (b) toggleFlag(e.data.id, b.dataset.act); return; }
+          if (["my", "note"].includes(e.column.getColId())) return;
+          if (e.event.target.closest("a")) return;
+          selectProject(e.data.id, true);
+        },
+        onCellValueChanged: (e) => { if (["my", "note"].includes(e.column.getColId())) { if (e.column.getColId() === "my") recompute(); else gridApi.refreshCells({ rowNodes: [e.node], force: true }); } },
+      });
+      $("quickFilter").addEventListener("input", () => gridApi.setGridOption("quickFilterText", $("quickFilter").value));
+    }
+    function renderGrid() {
+      if (!gridApi) return;
+      gridApi.setGridOption("rowData", pool);
+      gridApi.refreshCells({ force: true });
+      const n = pool.filter(p => !p.excluded).length, nx = pool.length - n;
+      $("drawerCount").textContent = `${n.toLocaleString()} project${n === 1 ? "" : "s"} in the pool${nx ? `, ${nx} excluded` : ""}`;
+    }
+    function breakdownText(p) {
+      return CRITERIA.filter(c => weights[c.key] > 0 && p.parts[c.key] !== undefined).map(c => `${c.label}: ${p.parts[c.key] == null ? "no data" : Math.round(p.parts[c.key] * 100)} × ${weights[c.key]}`).join("\n");
+    }
+    function setMyScore(id, s, n) {
+      const cur = review.scores[id] || { s: null, n: "" };
+      if (s !== undefined) cur.s = (s == null || s === "" || isNaN(+s)) ? null : Math.max(1, Math.min(5, Math.round(+s)));
+      if (n !== undefined) cur.n = String(n || "");
+      if (cur.s == null && !cur.n) delete review.scores[id]; else review.scores[id] = cur;
+      saveLS(LS_REVIEW, review);
+    }
+    function toggleFlag(id, act) {
+      if (act === "pin") { if (pins.has(id)) pins.delete(id); else { pins.add(id); excluded.delete(id); } }
+      else { if (excluded.has(id)) excluded.delete(id); else { excluded.add(id); pins.delete(id); } }
+      recompute();
+    }
+
+    // ───────────────────────── Map ─────────────────────────
+    function mapButton(icon, title, onClick) {
+      const b = document.createElement("div");
+      b.className = "esri-widget--button esri-widget esri-interactive map-btn";
+      b.setAttribute("role", "button"); b.tabIndex = 0; b.title = title;
+      b.innerHTML = `<calcite-icon icon="${icon}" scale="s"></calcite-icon>`;
+      b.addEventListener("click", onClick);
+      return b;
+    }
+    require(["esri/Map", "esri/views/MapView", "esri/layers/GraphicsLayer", "esri/Graphic", "esri/widgets/ScaleBar", "esri/widgets/Home",
+      "esri/widgets/BasemapToggle", "esri/widgets/Sketch/SketchViewModel", "esri/geometry/geometryEngine", "esri/geometry/Point", "esri/geometry/Polygon"],
+      (Map, MapView, GraphicsLayer, _Graphic, ScaleBar, Home, BasemapToggle, SketchViewModel, geometryEngine, _Point, _Polygon) => {
+        Graphic = _Graphic; Point = _Point; Polygon = _Polygon; GE = geometryEngine;
+        areaLayer = new GraphicsLayer({ listMode: "hide" }); ptLayer = new GraphicsLayer({ listMode: "hide" }); hlLayer = new GraphicsLayer({ listMode: "hide" });
+        map = new Map({ basemap: "gray-vector", layers: [areaLayer, ptLayer, hlLayer] });
+        view = new MapView({ container: "viewDiv", map, center: BASIN.center, zoom: BASIN.zoom, constraints: { minZoom: 8, maxZoom: 18, snapToZoom: false },
+          ui: { components: ["zoom", "attribution"] }, popup: { autoOpenEnabled: false } });
+        view.when(() => {
+          view.ui.move("zoom", "top-left");
+          view.ui.add(new Home({ view }), "top-left");
+          view.ui.add(new ScaleBar({ view, unit: "dual" }), "bottom-right");
+          view.ui.add(new BasemapToggle({ view, nextBasemap: "hybrid" }), "bottom-right");
+          drawBtnEl = mapButton("polygon", "Draw an area: projects inside it score full on geographic emphasis", startDraw);
+          view.ui.add(drawBtnEl, "top-left");
+          sketch = new SketchViewModel({ view, layer: areaLayer, polygonSymbol: { type: "simple-fill", color: hexA(C.orange, 0.08), outline: { color: C.orange, width: 2, style: "dash" } } });
+          sketch.on("create", (e) => {
+            if (e.state === "complete") { areaGeom = e.graphic.geometry; drawBtnEl.classList.remove("active"); $("clearAreaBtn").hidden = false; recompute(); }
+            if (e.state === "cancel") drawBtnEl.classList.remove("active");
+          });
+          view.on("click", async (e) => {
+            if (sketch.state === "active") return;
+            const r = await view.hitTest(e, { include: ptLayer });
+            const g = r.results.find(x => x.graphic && x.graphic.attributes && x.graphic.attributes.id);
+            if (g) selectProject(g.graphic.attributes.id, false);
+          });
+          renderMap(); renderLegend();
+        });
+      });
+    function startDraw() {
+      if (!sketch) return;
+      if (sketch.state === "active") { sketch.cancel(); return; }
+      areaLayer.removeAll(); areaGeom = null; $("clearAreaBtn").hidden = true;
+      drawBtnEl.classList.add("active"); sketch.create("polygon"); toast("Click to draw an area, double-click to finish.", 3500);
+    }
+    $("drawAreaBtn").addEventListener("click", startDraw);
+    $("clearAreaBtn").addEventListener("click", () => { areaLayer.removeAll(); areaGeom = null; $("clearAreaBtn").hidden = true; recompute(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (sketch && sketch.state === "active") sketch.cancel(); hideDetail(); } });
+
+    function renderMap() {
+      if (!ptLayer || !Graphic) return;
+      ptLayer.removeAll();
+      const gs = [];
+      const sorted = [...pool].filter(p => p.pt && !p.excluded).sort((a, b) => a.score - b.score);   // high scores drawn on top
+      for (const p of sorted) {
+        const dim = envelope > 0 && p.fund !== "funded";
+        const color = FOCUS_COLOR[p.focus] || C.gray;
+        gs.push(new Graphic({ geometry: new Point({ longitude: p.lon, latitude: p.lat }), attributes: { id: p.id },
+          symbol: { type: "simple-marker", style: "circle", size: 6 + (p.score / 100) * 12, color: hexA(color, dim ? 0.35 : 0.9),
+            outline: { color: dim ? hexA(color, 0.9) : [255, 255, 255, 0.9], width: dim ? 1.2 : 1 } } }));
+      }
+      ptLayer.addMany(gs);
+      renderHighlight();
+    }
+    function renderHighlight() {
+      if (!hlLayer) return; hlLayer.removeAll();
+      const p = pool.find(x => x.id === selectedId); if (!p || !p.pt) return;
+      hlLayer.add(new Graphic({ geometry: new Point({ longitude: p.lon, latitude: p.lat }),
+        symbol: { type: "simple-marker", style: "circle", size: 10 + (p.score / 100) * 12, color: [0, 0, 0, 0], outline: { color: "#FFC20E", width: 3 } } }));
+    }
+    function renderLegend() {
+      const el = $("legend");
+      const unloc = pool.filter(p => !p.pt && !p.excluded).length;
+      el.innerHTML = FOCUS.filter(f => pool.some(p => p.focus === f.key)).map(f => `<span><i style="background:${f.color}"></i>${escHtml(f.short)}</span>`).join("") +
+        `<span class="lg-size"><i style="width:7px;height:7px"></i><i style="width:12px;height:12px"></i><i style="width:17px;height:17px"></i> size = score</span>` +
+        (envelope > 0 ? `<span class="lg-size"><i style="background:transparent;border-color:${C.gray};box-shadow:none;border:1.5px solid ${C.gray}"></i> hollow = not funded</span>` : "") +
+        (unloc ? `<span class="lg-note">${unloc} basin-wide or unlocated project${unloc === 1 ? "" : "s"} in the table only</span>` : "");
+    }
+
+    // ───────────────────────── Detail card ─────────────────────────
+    function selectProject(id, fromGrid) {
+      selectedId = id; renderHighlight(); showDetail(id, true);
+      if (gridApi) { gridApi.redrawRows(); const node = gridApi.getRowNode(id); if (node && !fromGrid) gridApi.ensureNodeVisible(node, "middle"); }
+      const p = pool.find(x => x.id === id);
+      if (p && p.pt && fromGrid && view) view.goTo({ center: [p.lon, p.lat], zoom: Math.max(view.zoom, 12) }, { duration: 500 }).catch(() => {});
+    }
+    function hideDetail() { selectedId = null; $("detailCard").hidden = true; renderHighlight(); if (gridApi) gridApi.redrawRows(); }
+    function showDetail(id, open) {
+      const p = pool.find(x => x.id === id); if (!p) { hideDetail(); return; }
+      const f = FOCUS.find(x => x.key === p.focus) || FOCUS[4];
+      const rows = CRITERIA.filter(c => weights[c.key] > 0 && p.parts[c.key] !== undefined).map(c => {
+        const v = p.parts[c.key];
+        return `<div class="bl" title="${escHtml(c.help)}">${escHtml(c.label)}</div>` + (v == null ? `<div class="na">no data, left out</div>`
+          : `<div class="bb"><i style="width:${Math.round(v * 100)}%"></i></div><div class="bv">${Math.round(v * 100)}</div><div class="bw">×${weights[c.key]}</div>`);
+      }).join("");
+      const panel = panelScores(p.id);
+      $("detailCard").innerHTML = `
+        <div class="dc-head"><h3><i class="fdot" style="background:${f.color}"></i>${escHtml(p.name)}</h3>
+          <button class="dc-close" id="dcClose" title="Close" aria-label="Close"><calcite-icon icon="x" scale="s"></calcite-icon></button></div>
+        <div class="dc-sub">${escHtml(p.id)} · ${escHtml(f.short)} · ${escHtml(p.program)}${p.action ? `<br>${escHtml(p.action)}` : ""}</div>
+        <dl class="dc-grid">
+          <dt>Lead</dt><dd>${escHtml(p.lead)}</dd>
+          <dt>Stage</dt><dd>${escHtml(p.stage)}${p.implStart || p.end ? ` · ${[p.implStart, p.end].filter(v => v != null).join(" to ")}` : ""}</dd>
+          <dt>Cost</dt><dd>${p.cost != null ? `${fmtUSD(p.cost)} estimated, ${fmtUSD(p.spent || 0)} spent, <b>${fmtUSD(p.need)} remaining</b>` : `no estimate${p.spent ? `, ${fmtUSD(p.spent)} spent` : ""}`}</dd>
+          <dt>Funding</dt><dd>${p.funding.length ? escHtml(p.funding.join("; ")) : "none reported"}</dd>
+          <dt>Thresholds</dt><dd>${p.thresholds.length ? escHtml(p.thresholds.join(", ")) : "none listed"}</dd>
+          ${p.jurisdictions.length ? `<dt>Where</dt><dd>${p.basinWide ? "Basin-wide" : escHtml(p.jurisdictions.join("; "))}</dd>` : ""}
+          ${panel.length ? `<dt>Panel</dt><dd>${panel.map(s => `${escHtml(s.who)} ${s.s}${s.n ? ` <span style="color:var(--gray-text)">${escHtml(s.n)}</span>` : ""}`).join("<br>")}</dd>` : ""}
+        </dl>
+        <div class="dc-desc" id="dcDesc" title="Click to expand">${escHtml(p.desc)}</div>
+        <div class="dc-score"><b>${Math.round(p.score)}</b><span>score${p.rank ? ` · rank ${p.rank} of ${pool.filter(x => !x.excluded).length}` : " · excluded"}</span>
+          <span style="margin-left:auto">${fundBadge(p.fund, p.pinned)}</span></div>
+        <div class="brk">${rows}</div>
+        <div class="dc-links">
+          <calcite-button href="${escHtml(p.factUrl || p.url)}" target="_blank" rel="noopener" icon-start="launch" appearance="outline" kind="brand" scale="s">Fact sheet</calcite-button>
+          <calcite-button id="dcPin" icon-start="pin" appearance="${p.pinned ? "solid" : "outline"}" kind="brand" scale="s">${p.pinned ? "Unpin" : "Pin"}</calcite-button>
+          <calcite-button id="dcEx" icon-start="x-circle" appearance="${p.excluded ? "solid" : "outline"}" kind="neutral" scale="s">${p.excluded ? "Restore" : "Exclude"}</calcite-button>
+        </div>`;
+      $("detailCard").hidden = !open && $("detailCard").hidden;
+      $("dcClose").addEventListener("click", hideDetail);
+      $("dcDesc").addEventListener("click", (e) => e.currentTarget.classList.toggle("open"));
+      $("dcPin").addEventListener("click", () => toggleFlag(p.id, "pin"));
+      $("dcEx").addEventListener("click", () => toggleFlag(p.id, "ex"));
+    }
+
+    // ───────────────────────── Charts ─────────────────────────
+    const PL = { font: { family: "Lexend Deca, system-ui, sans-serif", size: 11, color: C.navy }, paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+      margin: { l: 8, r: 8, t: 8, b: 30 }, hoverlabel: { font: { family: "Lexend Deca, system-ui, sans-serif", size: 11 } }, showlegend: false };
+    const PLC = { displayModeBar: false, responsive: true };
+    function renderTiles(active) {
+      const priced = active.filter(p => p.need != null);
+      const totalNeed = priced.reduce((a, p) => a + p.need, 0);
+      const funded = active.filter(p => p.fund === "funded"), fundedNeed = funded.reduce((a, p) => a + p.need, 0);
+      const t = [
+        [active.length, "in the pool"], [priced.length, "with a cost estimate"], [fmtM(totalNeed), "total remaining need"],
+      ];
+      if (envelope > 0) t.push([fmtM(envelope * 1e6), "envelope"], [funded.length, "projects funded", "hi"], [fmtM(fundedNeed), "committed", "hi"],
+        [fmtM(Math.max(totalNeed - fundedNeed, 0)), "priced need not funded"]);
+      $("tiles").innerHTML = t.map(([v, l, cls]) => `<div class="tile ${cls || ""}"><b>${typeof v === "number" ? v.toLocaleString() : v}</b><span>${l}</span></div>`).join("");
+    }
+    function renderCharts() {
+      if (!chartsDirty) return; chartsDirty = false;
+      const active = pool.filter(p => !p.excluded);
+      renderTiles(active);
+      // Cumulative remaining need by rank (priced projects, in rank order)
+      const priced = active.filter(p => p.need != null);
+      let cum = 0; const xs = [], ys = [], cols = [], txt = [];
+      priced.forEach((p, i) => { cum += p.need; xs.push(i + 1); ys.push(cum / 1e6); cols.push(p.fund === "funded" ? C.green : envelope > 0 ? "#C9CFD8" : C.blue);
+        txt.push(`<b>${escHtml(p.name)}</b><br>rank ${p.rank} · ${fmtUSD(p.need)} remaining<br>cumulative ${fmtM(cum)}`); });
+      const shapes = envelope > 0 ? [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: envelope, y1: envelope, line: { color: C.orange, width: 2, dash: "dash" } }] : [];
+      // A few very large projects dwarf everything else, so cap the axis: enough to show
+      // the envelope with room above it, or the first dozen priced projects, whichever is more.
+      const total = ys.length ? ys[ys.length - 1] : 0;
+      const cap = envelope > 0 ? Math.min(total, Math.max(envelope * 2.5, ys[Math.min(11, ys.length - 1)] || 0)) : total;
+      const clipped = total > cap * 1.02;
+      const ann = envelope > 0 ? [{ xref: "paper", x: 1, y: envelope, text: `envelope ${fmtM(envelope * 1e6)}`, showarrow: false, xanchor: "right", yanchor: "bottom", font: { color: C.orange, size: 10 } }] : [];
+      Plotly.react("chartCum", [{ type: "bar", x: xs, y: ys, marker: { color: cols }, text: txt, hoverinfo: "text", hovertemplate: "%{text}<extra></extra>" }],
+        { ...PL, shapes, annotations: ann, bargap: 0.1, xaxis: { title: { text: "priced projects in rank order", font: { size: 10, color: "#5F6B7E" } }, showgrid: false, zeroline: false },
+          yaxis: { ticksuffix: "M", tickprefix: "$", gridcolor: "#EEF1F5", zeroline: false, automargin: true, range: [0, cap * 1.08], fixedrange: false },
+          ...(clipped ? { annotations: [...ann, { xref: "paper", yref: "paper", x: 0.02, y: 0.98, text: `axis capped; the full list reaches ${fmtM(total * 1e6)}`, showarrow: false, xanchor: "left", yanchor: "top", font: { size: 10, color: "#5F6B7E" } }] } : {}) }, PLC);
+      // Need by focus area and by lead, split funded / not funded
+      const stack = (keyFn, labelFn, top) => {
+        const agg = {};
+        for (const p of priced) { const k = keyFn(p); agg[k] = agg[k] || { f: 0, u: 0, n: 0 }; agg[k].n++; if (p.fund === "funded") agg[k].f += p.need; else agg[k].u += p.need; }
+        let keys = Object.keys(agg).sort((a, b) => (agg[b].f + agg[b].u) - (agg[a].f + agg[a].u)); if (top) keys = keys.slice(0, top);
+        keys.reverse();
+        const lab = keys.map(labelFn);
+        const traces = [{ type: "bar", orientation: "h", y: lab, x: keys.map(k => agg[k].f / 1e6), name: "Funded", marker: { color: C.green }, hovertemplate: "%{y}<br>funded $%{x:.1f}M<extra></extra>" },
+          { type: "bar", orientation: "h", y: lab, x: keys.map(k => agg[k].u / 1e6), name: envelope > 0 ? "Not funded" : "Remaining need", marker: { color: envelope > 0 ? "#C9CFD8" : C.blue }, hovertemplate: "%{y}<br>$%{x:.1f}M<extra></extra>" }];
+        return { traces, n: keys.length };
+      };
+      const f = stack(p => p.focus, k => (FOCUS.find(x => x.key === k) || {}).short || k);
+      Plotly.react("chartFocus", f.traces, { ...PL, barmode: "stack", margin: { l: 8, r: 8, t: 8, b: 30 }, xaxis: { ticksuffix: "M", tickprefix: "$", gridcolor: "#EEF1F5", zeroline: false }, yaxis: { automargin: true } }, PLC);
+      const l = stack(p => p.lead, k => k.length > 28 ? k.slice(0, 26) + "…" : k, 12);
+      Plotly.react("chartLead", l.traces, { ...PL, barmode: "stack", xaxis: { ticksuffix: "M", tickprefix: "$", gridcolor: "#EEF1F5", zeroline: false }, yaxis: { automargin: true, tickfont: { size: 10 } } }, PLC);
+    }
+
+    // ───────────────────────── Status + exports ─────────────────────────
+    function renderStatus() {
+      const active = pool.filter(p => !p.excluded), priced = active.filter(p => p.need != null);
+      let s = `${active.length.toLocaleString()} projects ranked, ${priced.length} with a cost estimate (${fmtM(priced.reduce((a, p) => a + p.need, 0))} remaining need).`;
+      if (envelope > 0) {
+        const funded = active.filter(p => p.fund === "funded");
+        s += ` Envelope ${fmtM(envelope * 1e6)} funds ${funded.length} (${fmtM(funded.reduce((a, p) => a + p.need, 0))})${allocate.left < 0 ? ", pinned projects exceed it" : allocate.left > 0 ? `, ${fmtM(allocate.left)} left` : ""}.`;
+      }
+      $("footStatus").textContent = s;
+    }
+    $("csvBtn").addEventListener("click", () => {
+      const head = ["Rank", "Project #", "Project", "Focus area", "Program", "Action priority", "Lead implementer", "Stage", "Implementation start", "End", "Score", "Rank vs Balanced",
+        "Estimated cost", "Expenditures to date", "Remaining need", "Envelope status", "Pinned", "Excluded", "Panel average", "Panel scores", "My score", "My note", "Data coverage",
+        ...CRITERIA.map(c => `${c.label} (w${weights[c.key]})`), "Threshold categories", "Funding sources", "Jurisdictions", "Fact sheet"];
+      const lines = [head.map(csvCell).join(",")];
+      for (const p of pool) {
+        const mine = review.scores[p.id] || {};
+        lines.push([p.rank ?? "", p.id, p.name, p.focus, p.program, p.action, p.lead, p.stage, p.implStart ?? "", p.end ?? "", p.score.toFixed(1), p.rank && p.baseRank ? p.baseRank - p.rank : "",
+          p.cost ?? "", p.spent ?? "", p.need ?? "", p.fund, p.pinned ? "yes" : "", p.excluded ? "yes" : "", panelAvg(p.id)?.toFixed(2) ?? "", panelScores(p.id).map(s => `${s.who}: ${s.s}`).join("; "),
+          mine.s ?? "", mine.n ?? "", Math.round(p.coverage * 100) + "%",
+          ...CRITERIA.map(c => p.parts[c.key] == null ? "" : (p.parts[c.key] * 100).toFixed(0)), p.thresholds.join(", "), p.funding.join("; "), p.jurisdictions.join("; "), p.factUrl || p.url].map(csvCell).join(","));
+      }
+      const meta = `# EIP Funding Priorities ${new Date().toISOString().slice(0, 10)} · envelope ${envelope > 0 ? fmtM(envelope * 1e6) : "none"} · weights ${CRITERIA.map(c => `${c.key}=${weights[c.key]}`).join(" ")}`;
+      download(`eip-priorities-${new Date().toISOString().slice(0, 10)}.csv`, "﻿" + lines.join("\r\n") + "\r\n" + meta + "\r\n");
+    });
+    $("exportScoresBtn").addEventListener("click", () => {
+      const who = $("reviewerName").value.trim();
+      if (!who) { toast("Enter your name or agency first, so the file can be told apart from other reviewers.", 4000); $("reviewerName").focus(); return; }
+      const ids = Object.keys(review.scores); if (!ids.length) { toast("No scores yet. Click a cell in the My score column to add one.", 4000); return; }
+      const byId = new Map(projects.map(p => [p.id, p]));
+      const lines = [["Reviewer", "Project #", "Project", "Score", "Note"].join(",")];
+      for (const id of ids) { const r = review.scores[id]; lines.push([who, id, byId.get(id)?.name || "", r.s ?? "", r.n ?? ""].map(csvCell).join(",")); }
+      download(`eip-scores-${who.replace(/[^\w-]+/g, "_")}-${new Date().toISOString().slice(0, 10)}.csv`, "﻿" + lines.join("\r\n") + "\r\n");
+    });
+    $("importScoresBtn").addEventListener("click", () => $("importFile").click());
+    $("importFile").addEventListener("change", async (e) => {
+      let added = 0;
+      for (const file of e.target.files) {
+        const rows = parseCsv((await file.text()).replace(/^﻿/, ""));
+        if (!rows.length) continue;
+        const h = rows[0].map(x => x.trim().toLowerCase());
+        const iR = h.indexOf("reviewer"), iId = h.findIndex(x => x === "project #" || x === "project" && false) , iS = h.indexOf("score"), iN = h.indexOf("note");
+        const idCol = iId >= 0 ? iId : h.findIndex(x => /project ?#|eip ?project ?number|project number/.test(x));
+        if (idCol < 0 || iS < 0) { toast(`${file.name}: expected columns "Project #" and "Score".`, 4500); continue; }
+        for (const r of rows.slice(1)) {
+          const who = (iR >= 0 && r[iR]) ? r[iR].trim() : file.name.replace(/\.csv$/i, "");
+          const s = num(r[iS]); if (s == null) continue;
+          imports[who] = imports[who] || {}; imports[who][r[idCol].trim()] = { s: Math.max(1, Math.min(5, Math.round(s))), n: iN >= 0 ? (r[iN] || "") : "" }; added++;
+        }
+      }
+      saveLS(LS_IMPORTS, imports); e.target.value = "";
+      renderReviewers(); recompute();
+      if (added) toast(`Imported ${added} score${added === 1 ? "" : "s"}.`);
+    });
+    function renderReviewers() {
+      const el = $("reviewerChips"); el.innerHTML = "";
+      for (const who of Object.keys(imports)) {
+        const chip = document.createElement("calcite-chip"); chip.scale = "s"; chip.closable = true; chip.dataset.who = who;
+        chip.textContent = `${who} (${Object.keys(imports[who]).length})`; chip.title = "Imported reviewer scores. Close to remove."; el.appendChild(chip);
+      }
+    }
+    $("reviewerChips").addEventListener("calciteChipClose", (e) => { delete imports[e.target.dataset.who]; saveLS(LS_IMPORTS, imports); renderReviewers(); recompute(); });
+    $("clearReviewBtn").addEventListener("click", () => {
+      if (!confirm("Clear your scores and notes and remove imported reviewer files from this browser?")) return;
+      review = { reviewer: $("reviewerName").value, scores: {} }; imports = {}; saveLS(LS_REVIEW, review); saveLS(LS_IMPORTS, imports); renderReviewers(); recompute();
+    });
+    $("reviewerName").addEventListener("change", () => { review.reviewer = $("reviewerName").value.trim(); saveLS(LS_REVIEW, review); recompute(); });
+
+    // ───────────────────────── Controls ─────────────────────────
+    function buildControls() {
+      // focus chips + focus weights
+      $("focusChips").innerHTML = FOCUS.map(f => `<button data-v="${escHtml(f.key)}" class="on" style="--c:${f.color}"><i></i>${escHtml(f.short)}</button>`).join("");
+      $("focusWeights").innerHTML = FOCUS.filter(f => f.key !== "Unassigned").map(f =>
+        `<div class="fw-row"><i style="background:${f.color}"></i><span>${escHtml(f.short)}</span><input type="range" min="0" max="5" step="1" data-k="${escHtml(f.key)}" value="${focusW[f.key]}" aria-label="${escHtml(f.short)} weight" /><span class="wv">${focusW[f.key]}</span></div>`).join("");
+      // criteria weights
+      $("weightRows").innerHTML = CRITERIA.map(c =>
+        `<div class="wrow" data-k="${c.key}"><div class="wl"><b>${escHtml(c.label)}</b><span>${escHtml(c.help)}</span></div><input type="range" min="0" max="5" step="1" data-k="${c.key}" value="${weights[c.key]}" aria-label="${escHtml(c.label)} weight" /><span class="wv">${weights[c.key]}</span></div>`).join("");
+      // presets
+      $("presetSel").innerHTML = Object.entries(PRESETS).map(([k, p]) => `<option value="${k}">${p.label}</option>`).join("") + `<option value="custom">Custom</option>`;
+      // comboboxes from data
+      const fill = (el, values) => { el.innerHTML = ""; for (const v of values) { const it = document.createElement("calcite-combobox-item"); it.value = v; it.heading = v; el.appendChild(it); } };
+      const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+      fill($("programSel"), uniq(projects.map(p => p.program)));
+      fill($("leadSel"), uniq(projects.map(p => p.lead)));
+      fill($("fundSel"), uniq(projects.flatMap(p => p.funding)));
+      fill($("actionSel"), uniq(projects.map(p => p.action)));
+      fill($("jurisSel"), JURIS);
+      // about table
+      $("aboutCriteria").querySelector("tbody").innerHTML = CRITERIA.map(c => `<tr><td><b>${escHtml(c.label)}</b></td><td>${escHtml(c.about)}</td></tr>`).join("");
+      syncWeightUI();
+    }
+    function syncWeightUI() {
+      document.querySelectorAll("#weightRows .wrow").forEach(r => {
+        const k = r.dataset.k, c = CRITERIA.find(x => x.key === k);
+        r.querySelector("input").value = weights[k]; r.querySelector(".wv").textContent = weights[k];
+        r.classList.toggle("off", !(weights[k] > 0));
+        const ctx = { actions, juris, area: areaGeom };
+        r.classList.toggle("na", weights[k] > 0 && !!c.needsPick && !isPickActive(c, ctx));
+        r.dataset.na = c.needsPick === "panel" ? "off until a project has a reviewer score" : "off until you pick one below";
+      });
+      document.querySelectorAll("#focusWeights input").forEach(i => { i.value = focusW[i.dataset.k]; i.nextElementSibling.textContent = focusW[i.dataset.k]; });
+    }
+    function matchPreset() {
+      for (const [k, p] of Object.entries(PRESETS)) {
+        if (CRITERIA.every(c => p.w[c.key] === weights[c.key]) && Object.keys(p.fw).every(f => p.fw[f] === focusW[f])) return k;
+      }
+      return "custom";
+    }
+    function applyPreset(k) {
+      const p = PRESETS[k]; if (!p) return;
+      weights = { ...p.w }; focusW = { ...p.fw };
+      if (p.actions) { setCombo($("actionSel"), p.actions); actions = new Set(comboVals($("actionSel"))); }
+      $("presetSel").value = k; syncWeightUI(); recompute();
+    }
+    function setCombo(el, values) { const set = new Set(values); el.querySelectorAll("calcite-combobox-item").forEach(it => { it.selected = set.has(it.value); }); }
+
+    // events
+    $("presetSel").addEventListener("change", (e) => { if (e.target.value !== "custom") applyPreset(e.target.value); });
+    $("weightRows").addEventListener("input", (e) => { const i = e.target; if (i.tagName !== "INPUT") return; weights[i.dataset.k] = +i.value; $("presetSel").value = matchPreset(); syncWeightUI(); recomputeSoon(); });
+    $("focusWeights").addEventListener("input", (e) => { const i = e.target; if (i.tagName !== "INPUT") return; focusW[i.dataset.k] = +i.value; $("presetSel").value = matchPreset(); syncWeightUI(); recomputeSoon(); });
+    $("resetWeightsBtn").addEventListener("click", () => { setCombo($("actionSel"), []); actions = new Set(); setCombo($("jurisSel"), []); juris = new Set(); applyPreset("balanced"); });
+    $("actionSel").addEventListener("calciteComboboxChange", () => { actions = new Set(comboVals($("actionSel"))); syncWeightUI(); recompute(); });
+    $("jurisSel").addEventListener("calciteComboboxChange", () => { juris = new Set(comboVals($("jurisSel"))); syncWeightUI(); recompute(); });
+    ["programSel", "leadSel", "fundSel"].forEach(id => $(id).addEventListener("calciteComboboxChange", recompute));
+    ["pricedOnly", "nonEip"].forEach(id => $(id).addEventListener("calciteSwitchChange", recompute));
+    $("searchInput").addEventListener("input", recomputeSoon);
+    [$("stageChips"), $("focusChips")].forEach(el => el.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; b.classList.toggle("on"); recompute(); }));
+    const segClick = (id, fn) => $(id).addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return;
+      $(id).querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b)); fn(b.dataset.v); });
+    segClick("stateSeg", () => recompute());
+    segClick("modeSeg", (v) => { fillMode = v; recompute(); });
+    $("envInput").addEventListener("input", () => { const v = num($("envInput").value); envelope = v != null && v > 0 ? v : null; recomputeSoon(); });
+    $("envPresets").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; $("envInput").value = b.dataset.v; envelope = b.dataset.v ? +b.dataset.v : null; recompute(); });
+    $("resetFiltersBtn").addEventListener("click", () => {
+      $("searchInput").value = ""; $("stageChips").querySelectorAll("button").forEach(b => b.classList.toggle("on", ["Planning/Design", "Implementation"].includes(b.dataset.v)));
+      $("focusChips").querySelectorAll("button").forEach(b => b.classList.add("on")); ["programSel", "leadSel", "fundSel"].forEach(id => setCombo($(id), []));
+      $("stateSeg").querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.v === "")); $("pricedOnly").checked = false; $("nonEip").checked = false; recompute();
+    });
+    let recomputeT; function recomputeSoon() { clearTimeout(recomputeT); recomputeT = setTimeout(recompute, 180); }
+
+    // drawer
+    document.querySelector(".dtabs").addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      activeTab = b.dataset.tab; document.querySelectorAll(".dtabs button").forEach(x => x.classList.toggle("active", x === b));
+      $("gridWrap").hidden = activeTab !== "list"; $("chartsWrap").hidden = activeTab !== "charts"; $("drawerTools").hidden = activeTab !== "list";
+      if (activeTab === "charts") { renderCharts(); setTimeout(() => ["chartCum", "chartFocus", "chartLead"].forEach(id => Plotly.Plots.resize(id)), 50); }
+    });
+    $("drawerToggle").addEventListener("click", () => { document.body.classList.toggle("drawer-collapsed"); $("drawerToggleIcon").icon = document.body.classList.contains("drawer-collapsed") ? "chevron-up" : "chevron-down"; });
+    $("panelToggle").addEventListener("click", () => { document.body.classList.toggle("panel-collapsed"); $("panelToggleIcon").icon = document.body.classList.contains("panel-collapsed") ? "chevron-right" : "chevron-left"; });
+    $("aboutBtn").addEventListener("click", () => { $("aboutDialog").open = true; });
+    window.addEventListener("resize", () => { if (activeTab === "charts") ["chartCum", "chartFocus", "chartLead"].forEach(id => { try { Plotly.Plots.resize(id); } catch {} }); });
+
+    // ───────────────────────── Share link ─────────────────────────
+    function scenario() {
+      return { w: weights, fw: focusW, a: [...actions], j: [...juris], env: envelope, mode: fillMode, pins: [...pins], ex: [...excluded],
+        f: { q: $("searchInput").value, st: chipsOn($("stageChips")), fa: chipsOn($("focusChips")), pr: comboVals($("programSel")), ld: comboVals($("leadSel")), fs: comboVals($("fundSel")),
+          s: $("stateSeg").querySelector("button.active").dataset.v, pc: $("pricedOnly").checked, ne: $("nonEip").checked },
+        area: areaGeom ? areaGeom.toJSON().rings : null };
+    }
+    function applyScenario(s) {
+      if (s.w) weights = { ...weights, ...s.w }; if (s.fw) focusW = { ...focusW, ...s.fw };
+      if (s.a) { setCombo($("actionSel"), s.a); actions = new Set(s.a); } if (s.j) { setCombo($("jurisSel"), s.j); juris = new Set(s.j); }
+      envelope = s.env ?? null; $("envInput").value = envelope ?? ""; fillMode = s.mode || "skip";
+      $("modeSeg").querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.v === fillMode));
+      pins = new Set(s.pins || []); excluded = new Set(s.ex || []);
+      if (s.f) {
+        $("searchInput").value = s.f.q || "";
+        $("stageChips").querySelectorAll("button").forEach(b => b.classList.toggle("on", (s.f.st || []).includes(b.dataset.v)));
+        $("focusChips").querySelectorAll("button").forEach(b => b.classList.toggle("on", (s.f.fa || []).includes(b.dataset.v)));
+        setCombo($("programSel"), s.f.pr || []); setCombo($("leadSel"), s.f.ld || []); setCombo($("fundSel"), s.f.fs || []);
+        $("stateSeg").querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.v === (s.f.s || "")));
+        $("pricedOnly").checked = !!s.f.pc; $("nonEip").checked = !!s.f.ne;
+      }
+      if (s.area && Polygon) { areaGeom = new Polygon({ rings: s.area, spatialReference: { wkid: 102100 } }); areaLayer.removeAll();
+        areaLayer.add(new Graphic({ geometry: areaGeom, symbol: { type: "simple-fill", color: hexA(C.orange, 0.08), outline: { color: C.orange, width: 2, style: "dash" } } })); $("clearAreaBtn").hidden = false; }
+      $("presetSel").value = matchPreset(); syncWeightUI();
+    }
+    const b64e = (o) => btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const b64d = (s) => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/")))));
+    $("shareBtn").addEventListener("click", async () => {
+      const url = `${location.origin}${location.pathname}#s=${b64e(scenario())}`;
+      try { await navigator.clipboard.writeText(url); toast("Link copied. It reopens this scenario: filters, weights, envelope, pins, and drawn area. Panel scores stay in each reviewer's browser.", 5000); }
+      catch { prompt("Copy this link", url); }
+    });
+    function readHash() { const m = location.hash.match(/#s=([\w-]+)/); if (!m) return null; try { return b64d(m[1]); } catch { return null; } }
+
+    // ───────────────────────── Boot ─────────────────────────
+    (async () => {
+      try {
+        await loadData();
+      } catch (e) {
+        console.error(e); $("footStatus").textContent = "Could not load the EIP project snapshot. Check the network connection and reload."; return;
+      }
+      await customElements.whenDefined("calcite-combobox");
+      buildControls();
+      $("reviewerName").value = review.reviewer || "";
+      renderReviewers();
+      initGrid();
+      const sc = readHash();
+      const applyWhenReady = () => { if (sc) applyScenario(sc); recompute(); };
+      // the drawn area needs the SDK; everything else can go now
+      if (sc && sc.area && !Polygon) { const t = setInterval(() => { if (Polygon && areaLayer) { clearInterval(t); applyWhenReady(); } }, 100); } else applyWhenReady();
+      const active = projects.filter(p => p.isEip && ["Planning/Design", "Implementation"].includes(p.stage));
+      $("aboutData").textContent = `${projects.length.toLocaleString()} projects in the snapshot${snapshotDate ? `, refreshed ${snapshotDate.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}` : ""}. ` +
+        `${active.length} EIP projects are in planning or implementation; ${active.filter(p => p.cost != null).length} of those report an estimated total cost.`;
+    })();
+  </script>
+</body>
+</html>

@@ -119,6 +119,20 @@
       "beta": true
     },
     {
+      "id": "eippriorities",
+      "title": "EIP Funding Priorities",
+      "category": "eip",
+      "url": "eip/funding-priorities.html",
+      "thumbnail": "assets/thumbs/eip-priorities.svg",
+      "description": "Rank EIP projects against weighted criteria, test a funding envelope against remaining need, collect panel scores from partner agencies, and export the ranked list.",
+      "tags": [
+        "EIP",
+        "Funding",
+        "Prioritization"
+      ],
+      "beta": true
+    },
+    {
       "id": "bmp",
       "title": "BMP Mapping Tool",
       "category": "eip",
