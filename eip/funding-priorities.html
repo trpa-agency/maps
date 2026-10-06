@@ -77,6 +77,7 @@
     #panelToggle:hover { background: var(--gray-bg); color: var(--eip-blue); }
 
     .panel-sec { display: flex; flex-direction: column; gap: 0.55rem; }
+    .panel-sec.collapsed > :not(.sec-title):not(.sec-help) { display: none; }
     .sec-title { display: flex; align-items: center; gap: 0.45rem; margin: 0;
       font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--gray-text); }
     .sec-num { display: inline-flex; align-items: center; justify-content: center; width: 1.15rem; height: 1.15rem;
@@ -195,11 +196,14 @@
     .badge.cut { background: var(--eip-orange-light); color: #B5430E; }
     .badge.unpriced { background: var(--gray-bg); color: var(--gray-text); border: 1px solid var(--gray-border); }
     .badge.fully { background: #fff; color: #2F6B13; border: 1px solid var(--eip-green); }
+    .badge.partial { background: var(--eip-blue-light); color: var(--eip-blue); }
     .badge.pinned { background: var(--eip-blue-light); color: var(--eip-blue); }
     .flag-btn { border: none; background: transparent; cursor: pointer; color: #B8C0CC; padding: 0 0.15rem; line-height: 0; vertical-align: middle; border-radius: 999px; }
     .flag-btn:hover { color: var(--eip-blue); background: var(--gray-bg); }
     .flag-btn.on.pin { color: var(--eip-blue); }
     .flag-btn.on.ex { color: var(--eip-orange); }
+    .pp { display: flex; align-items: center; justify-content: center; height: 100%; cursor: pointer; }
+    .pp input { width: 15px; height: 15px; accent-color: var(--eip-blue); cursor: pointer; pointer-events: none; }
     .ag-row.row-excluded { color: var(--gray-muted); }
     .ag-row.row-excluded .ag-cell:not([col-id="flags"]) { text-decoration: line-through; text-decoration-color: rgba(107,118,136,0.45); }
     .ag-row.row-pinned-proj { background: rgba(0,125,195,0.06); }
@@ -306,8 +310,8 @@
         <h2 class="sec-title"><span class="sec-num">1</span> Candidate pool
           <button id="resetFiltersBtn" class="sec-tool" title="Reset the pool to the default: EIP projects in planning or implementation">Reset</button>
         </h2>
-        <p class="sec-help">Which projects compete. The default is the forward-looking set: EIP projects in planning or implementation,
-          roughly the Project Tracker's 5-Year List.</p>
+        <p class="sec-help">Which projects compete. The pool is EIP projects in planning or implementation, the forward-looking set
+          behind the Project Tracker's 5-Year List.</p>
         <div class="search-box">
           <calcite-icon icon="search" scale="s"></calcite-icon>
           <input id="searchInput" type="text" autocomplete="off" spellcheck="false" placeholder="Project name, number, or implementer…" aria-label="Search projects" />
@@ -316,10 +320,6 @@
           <div class="chips" id="stageChips">
             <button data-v="Planning/Design" class="on">Planning / Design</button>
             <button data-v="Implementation" class="on">Implementation</button>
-            <button data-v="Post-Implementation">Post-Implementation</button>
-            <button data-v="Completed">Completed</button>
-            <button data-v="Deferred">Deferred</button>
-            <button data-v="Terminated">Terminated</button>
           </div>
         </label>
         <label class="field">Focus area
@@ -335,7 +335,7 @@
           <calcite-combobox id="fundSel" selection-mode="multiple" scale="s" placeholder="Any source" max-items="7" overlay-positioning="fixed"></calcite-combobox>
         </label>
         <label class="field">Tag
-          <calcite-combobox id="tagSel" selection-mode="multiple" scale="s" placeholder="Any tag (LTRA, Climate Resilience, and others)" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+          <calcite-combobox id="tagSel" selection-mode="multiple" scale="s" placeholder="Any public tag (Climate Resilience, corridor plans, and others)" max-items="7" overlay-positioning="fixed"></calcite-combobox>
         </label>
         <label class="field">State
           <div class="seg" id="stateSeg" role="radiogroup">
@@ -344,13 +344,17 @@
             <button data-v="NV">Nevada</button>
           </div>
         </label>
-        <label class="toggle">
-          <calcite-switch id="pricedOnly" scale="s"></calcite-switch>
-          <span>Only projects with a cost estimate <span class="t-help">(the ones an envelope can count)</span></span>
+        <label class="field">Funding status
+          <div class="chips" id="fundChips">
+            <button data-v="unfunded" class="on" title="Has a cost estimate and no secured funding yet">Unfunded</button>
+            <button data-v="partial" class="on" title="Some funding secured, some still needed">Partially funded</button>
+            <button data-v="fully" class="on" title="Secured funding covers the estimated cost">Fully funded</button>
+            <button data-v="unpriced" class="on" title="No estimated total cost on the Tracker">Unpriced</button>
+          </div>
         </label>
         <label class="toggle">
-          <calcite-switch id="needOnly" scale="s"></calcite-switch>
-          <span>Only projects with unfunded need <span class="t-help">(drops fully funded ones)</span></span>
+          <calcite-switch id="ltraOnly" scale="s"></calcite-switch>
+          <span>Only projects with an LTRA funding source <span class="t-help">(Lake Tahoe Restoration Act: secured, targeted, or spent)</span></span>
         </label>
         <label class="toggle">
           <calcite-switch id="nonEip" scale="s"></calcite-switch>
@@ -359,33 +363,8 @@
       </section>
 
       <section class="panel-sec">
-        <h2 class="sec-title"><span class="sec-num">2</span> Priorities
-          <button id="resetWeightsBtn" class="sec-tool" title="Back to the Balanced preset">Reset</button>
-        </h2>
-        <p class="sec-help">Weight each criterion 0 to 5. The score is the weighted average of the criteria that have data for a project, on a 0 to 100 scale.
-          Start from a preset, then adjust.</p>
-        <label class="field">Preset
-          <select id="presetSel"></select>
-        </label>
-        <div id="weightRows"></div>
-
-        <div class="sub-title">Focus area emphasis</div>
-        <div class="fw-grid" id="focusWeights"></div>
-
-        <div class="sub-title">Action priority emphasis</div>
-        <calcite-combobox id="actionSel" selection-mode="multiple" scale="s" placeholder="Pick action priorities to favor" max-items="7" overlay-positioning="fixed"></calcite-combobox>
-
-        <div class="sub-title">Geographic emphasis
-          <button id="drawAreaBtn" class="sec-tool" title="Draw an area on the map; projects inside it score full on geography"><calcite-icon icon="polygon" scale="s"></calcite-icon> Draw area</button>
-          <button id="clearAreaBtn" class="sec-tool" title="Remove the drawn area" hidden><calcite-icon icon="trash" scale="s"></calcite-icon></button>
-        </div>
-        <calcite-combobox id="jurisSel" selection-mode="multiple" scale="s" placeholder="Pick jurisdictions to favor" max-items="7" overlay-positioning="fixed"></calcite-combobox>
-        <span class="field-help">Basin-wide projects score half under geographic emphasis. Projects with no mapped location can only match by jurisdiction.</span>
-      </section>
-
-      <section class="panel-sec">
-        <h2 class="sec-title"><span class="sec-num">3</span> Funding envelope</h2>
-        <p class="sec-help">How much is on the table this round. Projects are funded in rank order by their unfunded need
+        <h2 class="sec-title"><span class="sec-num">2</span> Funding envelope</h2>
+        <p class="sec-help">Select the amount of available funds. Projects are funded in rank order by their unfunded need
           (estimated cost minus secured funding, as reported to the Tracker). Pinned projects are funded first.</p>
         <div class="pill-input">
           <span class="pre">$</span>
@@ -405,20 +384,46 @@
       </section>
 
       <section class="panel-sec">
-        <h2 class="sec-title"><span class="sec-num">4</span> Panel review
-          <button id="clearReviewBtn" class="sec-tool" title="Clear your scores and any imported reviewer files from this browser">Clear</button>
+        <h2 class="sec-title"><span class="sec-num">3</span> Priority projects
+          <button id="clearReviewBtn" class="sec-tool" title="Clear your priority picks and any imported reviewer files from this browser">Clear</button>
         </h2>
-        <p class="sec-help">Each reviewer scores projects 1 to 5 in the table (the <em>My score</em> and <em>Note</em> columns) and exports a scores file.
-          Whoever runs the meeting imports everyone's files here. The average feeds the <em>Panel review</em> criterion.</p>
+        <p class="sec-help">Tick <em>Priority project</em> in the table for the projects your agency wants funded this round, add a note, and export
+          your list. Whoever runs the meeting imports everyone's lists; the share of reviewers who picked a project shows in
+          <em>Priority votes</em> and feeds the <em>Priority votes</em> criterion.</p>
         <label class="field">Your name or agency
           <input id="reviewerName" type="text" class="plain" placeholder="e.g. Conservancy, USFS, TRPA" />
         </label>
         <div class="row">
-          <calcite-button id="exportScoresBtn" icon-start="file-csv" appearance="outline" kind="brand" scale="s" width="full" title="Download your scores and notes as a CSV">My scores</calcite-button>
-          <calcite-button id="importScoresBtn" icon-start="upload" appearance="outline" kind="brand" scale="s" width="full" title="Import one or more reviewer score files">Import</calcite-button>
+          <calcite-button id="exportScoresBtn" icon-start="file-csv" appearance="outline" kind="brand" scale="s" width="full" title="Download your priority picks and notes as a CSV">My picks</calcite-button>
+          <calcite-button id="importScoresBtn" icon-start="upload" appearance="outline" kind="brand" scale="s" width="full" title="Import one or more reviewers' picks files">Import</calcite-button>
           <input id="importFile" type="file" accept=".csv,text/csv" multiple hidden />
         </div>
         <div id="reviewerChips" aria-label="Imported reviewers"></div>
+      </section>
+      <section class="panel-sec collapsed" id="weightsSec">
+        <h2 class="sec-title"><span class="sec-num">4</span> Scoring weights
+          <button id="resetWeightsBtn" class="sec-tool" title="Back to the Balanced preset">Reset</button>
+          <button id="weightsToggle" class="sec-tool" title="Show or hide the scoring weights">Show</button>
+        </h2>
+        <p class="sec-help">Optional. The ranking uses the Balanced preset unless you change it here. Scores depend on how much each
+          implementer entered in the Tracker, so treat them as a starting order, not a verdict.</p>
+        <label class="field">Preset
+          <select id="presetSel"></select>
+        </label>
+        <div id="weightRows"></div>
+
+        <div class="sub-title">Focus area emphasis</div>
+        <div class="fw-grid" id="focusWeights"></div>
+
+        <div class="sub-title">Action priority emphasis</div>
+        <calcite-combobox id="actionSel" selection-mode="multiple" scale="s" placeholder="Pick action priorities to favor" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+
+        <div class="sub-title">Geographic emphasis
+          <button id="drawAreaBtn" class="sec-tool" title="Draw an area on the map; projects inside it score full on geography"><calcite-icon icon="polygon" scale="s"></calcite-icon> Draw area</button>
+          <button id="clearAreaBtn" class="sec-tool" title="Remove the drawn area" hidden><calcite-icon icon="trash" scale="s"></calcite-icon></button>
+        </div>
+        <calcite-combobox id="jurisSel" selection-mode="multiple" scale="s" placeholder="Pick jurisdictions to favor" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+        <span class="field-help">Basin-wide projects score half under geographic emphasis. Projects with no mapped location can only match by jurisdiction.</span>
       </section>
     </div><!-- /panelScroll -->
 
@@ -474,15 +479,16 @@
         records the <a href="https://eip.laketahoeinfo.org/" target="_blank" rel="noopener">EIP Project Tracker</a> publishes, scores them against
         criteria you weight, tests a funding envelope, and collects panel scores from partner agencies.</p>
       <ol>
-        <li><strong>Candidate pool.</strong> Filter to the projects that compete. The default is EIP projects in planning or implementation.</li>
-        <li><strong>Priorities.</strong> Weight the criteria. Each is scored 0 to 1 per project from Tracker data; the project score is the weighted
-          average of the criteria that have data, times 100. Criteria without data for a project are left out of its average, and the
-          <em>Data</em> column shows how much of the active weight had data.</li>
+        <li><strong>Candidate pool.</strong> Filter to the projects that compete: EIP projects in planning or implementation, by focus area,
+          program, implementer, funding source, tag, state, funding status, and Lake Tahoe Restoration Act (LTRA) involvement.</li>
         <li><strong>Funding envelope.</strong> Enter a dollar amount. Projects are funded in rank order by unfunded need (estimated cost minus
           secured funding, as the implementer reported it to the Tracker). Where secured funding is not reported, cost minus expenditures
           stands in and the row is marked with an asterisk. Pinned projects go first; excluded projects leave the pool.</li>
-        <li><strong>Panel review.</strong> Reviewers score 1 to 5 in the table and export a file. Import the files to average them into the score.
-          Scores and notes are kept in this browser only.</li>
+        <li><strong>Priority projects.</strong> Each reviewer ticks the projects their agency wants funded, adds notes, and exports a list.
+          Import the lists to see how many reviewers picked each project. Picks and notes are kept in this browser only.</li>
+        <li><strong>Scoring weights</strong> (optional). The list is ordered by a 0 to 100 score: the weighted average of the criteria below
+          that have data for a project. The Balanced preset applies unless you change it. Criteria without data for a project are left out of its
+          average, and the <em>Data</em> column shows how much of the active weight had data.</li>
       </ol>
       <h3>Criteria</h3>
       <table id="aboutCriteria"><thead><tr><th>Criterion</th><th>How it is scored</th></tr></thead><tbody></tbody></table>
@@ -493,8 +499,10 @@
       </ul>
       <h3>Caveats</h3>
       <ul id="aboutCaveats">
-        <li>Projects without an estimated total cost are ranked but marked <em>Unpriced</em>, and the envelope cannot count them. Turn on
-          <em>Only projects with a cost estimate</em> to see the envelope against priced projects alone.</li>
+        <li>Projects without an estimated total cost are ranked but marked <em>Unpriced</em>, and the envelope cannot count them. Turn off
+          <em>Unpriced</em> under Funding status to see the envelope against priced projects alone.</li>
+        <li><em>LTRA ask</em> is the targeted (not yet secured) amount from Lake Tahoe Restoration Act funding sources in a project's expected
+          funding table on the Tracker. <em>Targeted</em> is the same across all sources. Only public tags are shown.</li>
         <li>Unfunded need, secured funding, and cost are self-reported by implementers and are only as current as their last Tracker update.
           Projects whose secured funding equals their cost show zero need and are funded at no cost to the envelope.</li>
         <li>The Tracker assigns each project one action priority for reporting, so multi-benefit projects may not match the action priority you pick.</li>
@@ -565,9 +573,9 @@
           if (inJ || inA) return p.basinWide && !inA ? 0.5 : 1;
           return p.basinWide ? 0.5 : 0;
         } },
-      { key: "panel", label: "Panel review", help: "Average of reviewer scores (1 to 5) entered or imported below.", needsPick: "panel",
-        about: "Average reviewer score minus one, divided by four. No data until a project has a score.",
-        fn: (p, ctx) => { const s = ctx.panelAvg(p.id); return s == null ? null : (s - 1) / 4; } },
+      { key: "panel", label: "Priority votes", help: "Share of reviewers who marked the project a priority project.", needsPick: "panel",
+        about: "Reviewers who ticked Priority project, divided by the number of reviewers (you plus imported lists). Off until someone has picked a project.",
+        fn: (p, ctx) => ctx.panelAvg(p.id) },
     ];
     const EQUAL_FOCUS = { "Watersheds and Water Quality": 3, "Forest Health": 3, "Sustainable Recreation and Transportation": 3, "Science, Stewardship, and Accountability": 3, "Unassigned": 1 };
     const PRESETS = {
@@ -639,7 +647,7 @@
       const jur = JURIS.filter(j => String(p.ProjectJurisdiction || "").includes(j));
       const cost = num(p.EstimatedTotalCost), spent = num(p.TotalExpenditure), secured = num(p.SecuredFunding), unfunded = num(p.UnfundedNeed);
       const lon = geom && geom.coordinates ? geom.coordinates[0] : null, lat = geom && geom.coordinates ? geom.coordinates[1] : null;
-      return {
+      const out = {
         id: p.EIPProjectNumber || String(p.ProjectID), pid: p.ProjectID, name: p.ProjectName || "", focus, program: p.EIPProgram || "",
         action: p.EIPActionPriority || "", desc: p.ProjectDescription || "", thresholds: splitList(p.ProjectThresholdCategories, ","),
         lead: (p.LeadImplementer || "").replace(/�/g, "-").trim(), planStart: num(p.PlanningStartDate), implStart: num(p.ImplementationStartDate), end: num(p.EndDate),
@@ -652,11 +660,17 @@
         needBasis: unfunded != null ? "unfunded" : cost != null ? "spent" : null,
         remaining: cost != null ? Math.max(cost - (spent || 0), 0) : null,
         tags: splitList(p.Tags, ";"), locArea: p.ProjectLocationArea || "",
+        targeted: num(p.TargetedFunding), ltraAsk: num(p.LTRATargetedFunding), ltraSecured: num(p.LTRASecuredFunding),
+        hasLtra: !!p.HasLTRAFunding, fiveYear: !!p.IsOnFiveYearList, requests: p.FundingRequests || "",
         funding: splitList(p.FundingSources, ";"), lakeClarity: !!p.IsLakeClarityProject, transport: !!p.IsTransportationProject,
         tmdl: !!p.TMDLPollutantSourceCategory, isEip: p.IsEIPProject !== false,
         url: p.ProjectSummaryUrl || p.ProjectURL || "", factUrl: p.ProjectFactSheetUrl || "", lon, lat,
         pt: lon != null && lat != null, score: 0, parts: {}, coverage: 0, rank: null, baseRank: null, fund: "none",
       };
+      // Funding status from the Tracker, independent of any envelope
+      const need = out.need;
+      out.fstatus = need == null ? "unpriced" : need === 0 ? "fully" : (secured > 0 ? "partial" : "unfunded");
+      return out;
     }
     async function loadData() {
       const [r1, r2] = await Promise.all([fetch(DATA_BASE + "projects.geojson"), fetch(DATA_BASE + "projects_aspatial.json")]);
@@ -676,7 +690,11 @@
       for (const [who, m] of Object.entries(imports)) { const r = m[id]; if (r && r.s != null && who !== (review.reviewer || "")) out.push({ who, s: r.s, n: r.n || "" }); }
       return out;
     }
-    function panelAvg(id) { const s = panelScores(id); return s.length ? s.reduce((a, b) => a + b.s, 0) / s.length : null; }
+    function reviewerCount() { return (Object.values(review.scores).some(r => r.s) ? 1 : 0) + Object.keys(imports).filter(w => w !== (review.reviewer || "")).length; }
+    function panelPicks(id) { return panelScores(id).filter(x => x.s); }
+    // Share of reviewers who marked the project a priority; null until anyone has picked anything
+    function panelShare(id) { const n = reviewerCount(); return n ? panelPicks(id).length / n : null; }
+    const panelAvg = panelShare;
 
     // ───────────────────────── Filters ─────────────────────────
     const chipsOn = (el) => [...el.querySelectorAll("button.on")].map(b => b.dataset.v);
@@ -689,9 +707,9 @@
       const lead = comboVals($("leadSel")); if (lead.length && !lead.includes(p.lead)) return false;
       const fs = comboVals($("fundSel")); if (fs.length && !p.funding.some(f => fs.includes(f))) return false;
       const tg = comboVals($("tagSel")); if (tg.length && !p.tags.some(t => tg.includes(t))) return false;
-      if ($("needOnly").checked && !(p.need > 0)) return false;
+      if ($("ltraOnly").checked && !p.hasLtra) return false;
       const st = $("stateSeg").querySelector("button.active").dataset.v; if (st && !p.state.includes(st)) return false;
-      if ($("pricedOnly").checked && p.need == null) return false;
+      if (!chipsOn($("fundChips")).includes(p.fstatus)) return false;
       const q = $("searchInput").value.trim().toLowerCase();
       if (q && !(p.name.toLowerCase().includes(q) || p.id.includes(q) || p.lead.toLowerCase().includes(q))) return false;
       return true;
@@ -724,7 +742,7 @@
     function isPickActive(c, ctx) {
       if (c.needsPick === "actions") return ctx.actions.size > 0;
       if (c.needsPick === "geo") return ctx.juris.size > 0 || !!ctx.area;
-      if (c.needsPick === "panel") return Object.keys(review.scores).length > 0 || Object.keys(imports).length > 0;
+      if (c.needsPick === "panel") return reviewerCount() > 0;
       return true;
     }
     const rankSort = (a, b) => (pins.has(b.id) - pins.has(a.id)) || (b.score - a.score) || ((a.need ?? Infinity) - (b.need ?? Infinity)) || a.id.localeCompare(b.id);
@@ -767,10 +785,12 @@
     }
 
     // ───────────────────────── Grid ─────────────────────────
+    const statusBadge = (f) => f === "fully" ? '<span class="badge fully">Fully funded</span>' : f === "partial" ? '<span class="badge partial">Partially funded</span>'
+      : f === "unfunded" ? '<span class="badge cut">Unfunded</span>' : '<span class="badge unpriced" title="No estimated total cost on the Tracker">Unpriced</span>';
     const fundBadge = (f, pinned) => {
       const b = f === "funded" ? '<span class="badge funded">Funded</span>' : f === "cut" ? '<span class="badge cut">Not funded</span>'
-        : f === "fully" ? '<span class="badge fully" title="Secured funding already covers the estimated cost; needs nothing from the envelope">Fully funded</span>'
-        : f === "unpriced" ? '<span class="badge unpriced" title="No estimated total cost on the Tracker">Unpriced</span>' : f === "excluded" ? '<span class="badge unpriced">Excluded</span>' : "";
+        : f === "fully" ? '<span class="cov" title="Secured funding already covers the estimated cost; needs nothing from the envelope">nothing needed</span>'
+        : f === "unpriced" ? '<span class="cov" title="No estimated total cost, so the envelope cannot count it">not counted</span>' : f === "excluded" ? '<span class="badge unpriced">Excluded</span>' : "";
       return (pinned ? '<span class="badge pinned" title="Pinned: funded first">Pinned</span> ' : "") + b;
     };
     function initGrid() {
@@ -800,15 +820,20 @@
             cellRenderer: (p) => p.value == null ? "" : p.value > 0 ? `<span class="delta up">▲ ${p.value}</span>` : p.value < 0 ? `<span class="delta down">▼ ${-p.value}</span>` : `<span class="delta flat">–</span>`,
             headerTooltip: "Rank change against the Balanced preset with no picks: up means your priorities moved this project up the list" },
           { headerName: "Est. cost", field: "cost", ...money }, { headerName: "Secured", field: "secured", ...money, headerTooltip: "Funding the implementer reports as secured" },
+          { headerName: "LTRA ask", field: "ltraAsk", ...money, headerTooltip: "Targeted (not yet secured) funding from Lake Tahoe Restoration Act sources in the Tracker's expected funding table",
+            cellRenderer: (p) => p.value == null ? "" : `${fmtUSD(p.value)}${p.data.ltraSecured > 0 ? ` <span class="cov" title="${fmtUSD(p.data.ltraSecured)} LTRA already secured">+</span>` : ""}` },
+          { headerName: "Targeted", field: "targeted", ...money, headerTooltip: "All targeted (not yet secured) funding identified in the Tracker" },
+          { headerName: "Funding status", field: "fstatus", width: 128, cellRenderer: (p) => statusBadge(p.value),
+            comparator: (a, b) => ["unfunded", "partial", "fully", "unpriced"].indexOf(a) - ["unfunded", "partial", "fully", "unpriced"].indexOf(b) },
           { headerName: "Unfunded need", field: "need", ...money, width: 118, headerTooltip: "What the envelope counts: the Tracker's unfunded need (cost minus secured funding), or cost minus expenditures when secured funding is not reported",
             cellRenderer: (p) => p.value == null ? "" : `${fmtUSD(p.value)}${p.data.needBasis === "spent" ? ' <span class="cov" title="Secured funding not reported; cost minus expenditures">*</span>' : ""}` },
           { headerName: "Spent", field: "spent", ...money }, { headerName: "Remaining", field: "remaining", ...money, headerTooltip: "Estimated total cost minus expenditures to date" },
-          { headerName: "Envelope", field: "fund", width: 128, cellRenderer: (p) => fundBadge(p.value, p.data.pinned), comparator: (a, b) => ["funded", "cut", "fully", "none", "unpriced", "excluded"].indexOf(a) - ["funded", "cut", "fully", "none", "unpriced", "excluded"].indexOf(b) },
-          { headerName: "Panel avg", field: "panelAvg", width: 96, type: "rightAligned", valueGetter: (p) => panelAvg(p.data.id),
-            valueFormatter: (p) => p.value == null ? "" : `${p.value.toFixed(1)} (${panelScores(p.data.id).length})`, tooltipValueGetter: (p) => panelScores(p.data.id).map(s => `${s.who}: ${s.s}${s.n ? " – " + s.n : ""}`).join("\n") || "No reviewer scores yet" },
-          { headerName: "My score", field: "my", width: 90, editable: true, cellEditor: "agNumberCellEditor", cellEditorParams: { min: 1, max: 5, precision: 0 }, type: "rightAligned",
-            valueGetter: (p) => review.scores[p.data.id]?.s ?? null, valueSetter: (p) => { setMyScore(p.data.id, p.newValue, undefined); return true; },
-            cellStyle: { background: "rgba(0,125,195,0.05)" }, headerTooltip: "Your score, 1 (low) to 5 (high). Click to edit." },
+          { headerName: "Envelope", field: "fund", width: 128, hide: true, cellRenderer: (p) => fundBadge(p.value, p.data.pinned), comparator: (a, b) => ["funded", "cut", "fully", "none", "unpriced", "excluded"].indexOf(a) - ["funded", "cut", "fully", "none", "unpriced", "excluded"].indexOf(b) },
+          { headerName: "Priority project", field: "my", width: 118, sortable: true, valueGetter: (p) => review.scores[p.data.id]?.s ? 1 : 0,
+            cellRenderer: (p) => `<label class="pp"><input type="checkbox" ${p.value ? "checked" : ""} aria-label="Priority project" /></label>`,
+            cellStyle: { background: "rgba(0,125,195,0.05)" }, headerTooltip: "Tick the projects your agency wants funded this round" },
+          { headerName: "Priority votes", field: "votes", width: 112, type: "rightAligned", valueGetter: (p) => panelPicks(p.data.id).length,
+            valueFormatter: (p) => reviewerCount() ? `${p.value} of ${reviewerCount()}` : "", tooltipValueGetter: (p) => panelPicks(p.data.id).map(s => s.who + (s.n ? " – " + s.n : "")).join("\n") || "Nobody has picked this project yet" },
           { headerName: "Note", field: "note", flex: 1.2, minWidth: 150, editable: true, cellEditor: "agTextCellEditor", valueGetter: (p) => review.scores[p.data.id]?.n ?? "",
             valueSetter: (p) => { setMyScore(p.data.id, undefined, p.newValue); return true; }, cellStyle: { background: "rgba(0,125,195,0.05)" } },
           { headerName: "Data", field: "coverage", width: 70, type: "rightAligned", valueFormatter: (p) => `${Math.round(p.value * 100)}%`, cellClass: "cov", headerTooltip: "Share of the active criteria weight this project had data for" },
@@ -817,20 +842,24 @@
           { headerName: "Funding sources", field: "funding", width: 200, valueFormatter: (p) => (p.value || []).join("; ") },
           { headerName: "Tags", field: "tags", width: 150, valueFormatter: (p) => (p.value || []).join("; ") },
           { headerName: "Years", width: 90, valueGetter: (p) => [p.data.implStart, p.data.end].filter(v => v != null).join(" – ") },
+          { headerName: "5-Year List", field: "fiveYear", width: 96, valueFormatter: (p) => p.value ? "yes" : "" },
+          { headerName: "Funding requests", field: "requests", width: 260, headerTooltip: "Secured and targeted amounts by source, from the Tracker" },
         ],
         onCellClicked: (e) => {
           if (e.column.getColId() === "flags") { const b = e.event.target.closest("button"); if (b) toggleFlag(e.data.id, b.dataset.act); return; }
-          if (["my", "note"].includes(e.column.getColId())) return;
+          if (e.column.getColId() === "my") { setMyScore(e.data.id, review.scores[e.data.id]?.s ? null : 1, undefined); recompute(); return; }
+          if (e.column.getColId() === "note") return;
           if (e.event.target.closest("a")) return;
           selectProject(e.data.id, true);
         },
-        onCellValueChanged: (e) => { if (["my", "note"].includes(e.column.getColId())) { if (e.column.getColId() === "my") recompute(); else gridApi.refreshCells({ rowNodes: [e.node], force: true }); } },
+        onCellValueChanged: (e) => { if (e.column.getColId() === "note") gridApi.refreshCells({ rowNodes: [e.node], force: true }); },
       });
       $("quickFilter").addEventListener("input", () => gridApi.setGridOption("quickFilterText", $("quickFilter").value));
     }
     function renderGrid() {
       if (!gridApi) return;
       gridApi.setGridOption("rowData", pool);
+      gridApi.setColumnsVisible(["fund"], envelope > 0);
       gridApi.refreshCells({ force: true });
       const n = pool.filter(p => !p.excluded).length, nx = pool.length - n;
       $("drawerCount").textContent = `${n.toLocaleString()} project${n === 1 ? "" : "s"} in the pool${nx ? `, ${nx} excluded` : ""}`;
@@ -945,7 +974,7 @@
         return `<div class="bl" title="${escHtml(c.help)}">${escHtml(c.label)}</div>` + (v == null ? `<div class="na">no data, left out</div>`
           : `<div class="bb"><i style="width:${Math.round(v * 100)}%"></i></div><div class="bv">${Math.round(v * 100)}</div><div class="bw">×${weights[c.key]}</div>`);
       }).join("");
-      const panel = panelScores(p.id);
+      const panel = panelPicks(p.id);
       $("detailCard").innerHTML = `
         <div class="dc-head"><h3><i class="fdot" style="background:${f.color}"></i>${escHtml(p.name)}</h3>
           <button class="dc-close" id="dcClose" title="Close" aria-label="Close"><calcite-icon icon="x" scale="s"></calcite-icon></button></div>
@@ -955,11 +984,13 @@
           <dt>Stage</dt><dd>${escHtml(p.stage)}${p.implStart || p.end ? ` · ${[p.implStart, p.end].filter(v => v != null).join(" to ")}` : ""}</dd>
           <dt>Cost</dt><dd>${p.cost != null ? `${fmtUSD(p.cost)} estimated${p.secured != null ? `, ${fmtUSD(p.secured)} secured` : ""}, ${fmtUSD(p.spent || 0)} spent` : `no estimate${p.spent ? `, ${fmtUSD(p.spent)} spent` : ""}`}</dd>
           ${p.need != null ? `<dt>Need</dt><dd><b>${fmtUSD(p.need)}</b> ${p.needBasis === "unfunded" ? "unfunded, per the Tracker" : "remaining (cost minus expenditures; secured funding not reported)"}</dd>` : ""}
+          ${p.ltraAsk > 0 || p.ltraSecured > 0 ? `<dt>LTRA</dt><dd>${p.ltraAsk > 0 ? `<b>${fmtUSD(p.ltraAsk)}</b> targeted` : ""}${p.ltraAsk > 0 && p.ltraSecured > 0 ? ", " : ""}${p.ltraSecured > 0 ? `${fmtUSD(p.ltraSecured)} secured` : ""}</dd>` : ""}
+          ${p.requests ? `<dt>Requests</dt><dd style="font-size:0.66rem">${escHtml(p.requests)}</dd>` : ""}
           ${p.tags.length ? `<dt>Tags</dt><dd>${escHtml(p.tags.join("; "))}</dd>` : ""}
           <dt>Funding</dt><dd>${p.funding.length ? escHtml(p.funding.join("; ")) : "none reported"}</dd>
           <dt>Thresholds</dt><dd>${p.thresholds.length ? escHtml(p.thresholds.join(", ")) : "none listed"}</dd>
           ${p.locArea || p.jurisdictions.length ? `<dt>Where</dt><dd>${escHtml(p.locArea || (p.basinWide ? "Basin-wide" : p.jurisdictions.join("; ")))}</dd>` : ""}
-          ${panel.length ? `<dt>Panel</dt><dd>${panel.map(s => `${escHtml(s.who)} ${s.s}${s.n ? ` <span style="color:var(--gray-text)">${escHtml(s.n)}</span>` : ""}`).join("<br>")}</dd>` : ""}
+          ${panel.length ? `<dt>Priority for</dt><dd>${panel.map(s => `${escHtml(s.who)}${s.n ? ` <span style="color:var(--gray-text)">${escHtml(s.n)}</span>` : ""}`).join("<br>")}</dd>` : ""}
         </dl>
         <div class="dc-desc" id="dcDesc" title="Click to expand">${escHtml(p.desc)}</div>
         <div class="dc-score"><b>${Math.round(p.score)}</b><span>score${p.rank ? ` · rank ${p.rank} of ${pool.filter(x => !x.excluded).length}` : " · excluded"}</span>
@@ -1043,15 +1074,15 @@
     }
     $("csvBtn").addEventListener("click", () => {
       const head = ["Rank", "Project #", "Project", "Focus area", "Program", "Action priority", "Lead implementer", "Stage", "Implementation start", "End", "Score", "Rank vs Balanced",
-        "Estimated cost", "Secured funding", "Unfunded need", "Need basis", "Expenditures to date", "Cost minus expenditures", "Envelope status", "Pinned", "Excluded", "Panel average", "Panel scores", "My score", "My note", "Data coverage",
-        ...CRITERIA.map(c => `${c.label} (w${weights[c.key]})`), "Threshold categories", "Funding sources", "Tags", "Jurisdictions", "Fact sheet"];
+        "Estimated cost", "Secured funding", "Unfunded need", "Need basis", "LTRA ask", "LTRA secured", "Targeted funding", "Funding status", "On 5-Year List", "Expenditures to date", "Cost minus expenditures", "Envelope status", "Pinned", "Excluded", "Priority votes", "Priority for", "My priority", "My note", "Data coverage",
+        ...CRITERIA.map(c => `${c.label} (w${weights[c.key]})`), "Threshold categories", "Funding sources", "Funding requests", "Tags", "Jurisdictions", "Fact sheet"];
       const lines = [head.map(csvCell).join(",")];
       for (const p of pool) {
         const mine = review.scores[p.id] || {};
         lines.push([p.rank ?? "", p.id, p.name, p.focus, p.program, p.action, p.lead, p.stage, p.implStart ?? "", p.end ?? "", p.score.toFixed(1), p.rank && p.baseRank ? p.baseRank - p.rank : "",
-          p.cost ?? "", p.secured ?? "", p.need ?? "", p.needBasis ?? "", p.spent ?? "", p.remaining ?? "", p.fund, p.pinned ? "yes" : "", p.excluded ? "yes" : "", panelAvg(p.id)?.toFixed(2) ?? "", panelScores(p.id).map(s => `${s.who}: ${s.s}`).join("; "),
-          mine.s ?? "", mine.n ?? "", Math.round(p.coverage * 100) + "%",
-          ...CRITERIA.map(c => p.parts[c.key] == null ? "" : (p.parts[c.key] * 100).toFixed(0)), p.thresholds.join(", "), p.funding.join("; "), p.tags.join("; "), p.jurisdictions.join("; "), p.factUrl || p.url].map(csvCell).join(","));
+          p.cost ?? "", p.secured ?? "", p.need ?? "", p.needBasis ?? "", p.ltraAsk ?? "", p.ltraSecured ?? "", p.targeted ?? "", p.fstatus, p.fiveYear ? "yes" : "", p.spent ?? "", p.remaining ?? "", p.fund, p.pinned ? "yes" : "", p.excluded ? "yes" : "", reviewerCount() ? `${panelPicks(p.id).length} of ${reviewerCount()}` : "", panelPicks(p.id).map(s => s.who).join("; "),
+          mine.s ? "yes" : "", mine.n ?? "", Math.round(p.coverage * 100) + "%",
+          ...CRITERIA.map(c => p.parts[c.key] == null ? "" : (p.parts[c.key] * 100).toFixed(0)), p.thresholds.join(", "), p.funding.join("; "), p.requests, p.tags.join("; "), p.jurisdictions.join("; "), p.factUrl || p.url].map(csvCell).join(","));
       }
       const meta = `# EIP Funding Priorities ${new Date().toISOString().slice(0, 10)} · envelope ${envelope > 0 ? fmtM(envelope * 1e6) : "none"} · weights ${CRITERIA.map(c => `${c.key}=${weights[c.key]}`).join(" ")}`;
       download(`eip-priorities-${new Date().toISOString().slice(0, 10)}.csv`, "﻿" + lines.join("\r\n") + "\r\n" + meta + "\r\n");
@@ -1059,11 +1090,11 @@
     $("exportScoresBtn").addEventListener("click", () => {
       const who = $("reviewerName").value.trim();
       if (!who) { toast("Enter your name or agency first, so the file can be told apart from other reviewers.", 4000); $("reviewerName").focus(); return; }
-      const ids = Object.keys(review.scores); if (!ids.length) { toast("No scores yet. Click a cell in the My score column to add one.", 4000); return; }
+      const ids = Object.keys(review.scores); if (!ids.length) { toast("No picks yet. Tick Priority project in the table to add one.", 4000); return; }
       const byId = new Map(projects.map(p => [p.id, p]));
-      const lines = [["Reviewer", "Project #", "Project", "Score", "Note"].join(",")];
-      for (const id of ids) { const r = review.scores[id]; lines.push([who, id, byId.get(id)?.name || "", r.s ?? "", r.n ?? ""].map(csvCell).join(",")); }
-      download(`eip-scores-${who.replace(/[^\w-]+/g, "_")}-${new Date().toISOString().slice(0, 10)}.csv`, "﻿" + lines.join("\r\n") + "\r\n");
+      const lines = [["Reviewer", "Project #", "Project", "Priority", "Note"].join(",")];
+      for (const id of ids) { const r = review.scores[id]; lines.push([who, id, byId.get(id)?.name || "", r.s ? "yes" : "", r.n ?? ""].map(csvCell).join(",")); }
+      download(`eip-priority-picks-${who.replace(/[^\w-]+/g, "_")}-${new Date().toISOString().slice(0, 10)}.csv`, "﻿" + lines.join("\r\n") + "\r\n");
     });
     $("importScoresBtn").addEventListener("click", () => $("importFile").click());
     $("importFile").addEventListener("change", async (e) => {
@@ -1072,29 +1103,30 @@
         const rows = parseCsv((await file.text()).replace(/^﻿/, ""));
         if (!rows.length) continue;
         const h = rows[0].map(x => x.trim().toLowerCase());
-        const iR = h.indexOf("reviewer"), iId = h.findIndex(x => x === "project #" || x === "project" && false) , iS = h.indexOf("score"), iN = h.indexOf("note");
-        const idCol = iId >= 0 ? iId : h.findIndex(x => /project ?#|eip ?project ?number|project number/.test(x));
-        if (idCol < 0 || iS < 0) { toast(`${file.name}: expected columns "Project #" and "Score".`, 4500); continue; }
+        const iR = h.indexOf("reviewer"), iS = h.findIndex(x => x === "priority" || x === "score" || x === "priority project"), iN = h.indexOf("note");
+        const idCol = h.findIndex(x => x === "project #" || /project ?#|eip ?project ?number|project number/.test(x));
+        if (idCol < 0 || iS < 0) { toast(`${file.name}: expected columns "Project #" and "Priority".`, 4500); continue; }
+        const truthy = (v) => { const t = String(v || "").trim().toLowerCase(); return t && !["0", "no", "n", "false", "off"].includes(t) && (isNaN(+t) || +t >= 1); };
         for (const r of rows.slice(1)) {
           const who = (iR >= 0 && r[iR]) ? r[iR].trim() : file.name.replace(/\.csv$/i, "");
-          const s = num(r[iS]); if (s == null) continue;
-          imports[who] = imports[who] || {}; imports[who][r[idCol].trim()] = { s: Math.max(1, Math.min(5, Math.round(s))), n: iN >= 0 ? (r[iN] || "") : "" }; added++;
+          if (!truthy(r[iS])) continue;
+          imports[who] = imports[who] || {}; imports[who][r[idCol].trim()] = { s: 1, n: iN >= 0 ? (r[iN] || "") : "" }; added++;
         }
       }
       saveLS(LS_IMPORTS, imports); e.target.value = "";
       renderReviewers(); recompute();
-      if (added) toast(`Imported ${added} score${added === 1 ? "" : "s"}.`);
+      if (added) toast(`Imported ${added} priority pick${added === 1 ? "" : "s"}.`);
     });
     function renderReviewers() {
       const el = $("reviewerChips"); el.innerHTML = "";
       for (const who of Object.keys(imports)) {
         const chip = document.createElement("calcite-chip"); chip.scale = "s"; chip.closable = true; chip.dataset.who = who;
-        chip.textContent = `${who} (${Object.keys(imports[who]).length})`; chip.title = "Imported reviewer scores. Close to remove."; el.appendChild(chip);
+        chip.textContent = `${who} (${Object.keys(imports[who]).length})`; chip.title = "Imported reviewer picks. Close to remove."; el.appendChild(chip);
       }
     }
     $("reviewerChips").addEventListener("calciteChipClose", (e) => { delete imports[e.target.dataset.who]; saveLS(LS_IMPORTS, imports); renderReviewers(); recompute(); });
     $("clearReviewBtn").addEventListener("click", () => {
-      if (!confirm("Clear your scores and notes and remove imported reviewer files from this browser?")) return;
+      if (!confirm("Clear your priority picks and notes and remove imported reviewer lists from this browser?")) return;
       review = { reviewer: $("reviewerName").value, scores: {} }; imports = {}; saveLS(LS_REVIEW, review); saveLS(LS_IMPORTS, imports); renderReviewers(); recompute();
     });
     $("reviewerName").addEventListener("change", () => { review.reviewer = $("reviewerName").value.trim(); saveLS(LS_REVIEW, review); recompute(); });
@@ -1130,7 +1162,7 @@
         r.classList.toggle("off", !(weights[k] > 0));
         const ctx = { actions, juris, area: areaGeom };
         r.classList.toggle("na", weights[k] > 0 && !!c.needsPick && !isPickActive(c, ctx));
-        r.dataset.na = c.needsPick === "panel" ? "off until a project has a reviewer score" : "off until you pick one below";
+        r.dataset.na = c.needsPick === "panel" ? "off until someone has picked a priority project" : "off until you pick one below";
       });
       document.querySelectorAll("#focusWeights input").forEach(i => { i.value = focusW[i.dataset.k]; i.nextElementSibling.textContent = focusW[i.dataset.k]; });
     }
@@ -1156,9 +1188,9 @@
     $("actionSel").addEventListener("calciteComboboxChange", () => { actions = new Set(comboVals($("actionSel"))); syncWeightUI(); recompute(); });
     $("jurisSel").addEventListener("calciteComboboxChange", () => { juris = new Set(comboVals($("jurisSel"))); syncWeightUI(); recompute(); });
     ["programSel", "leadSel", "fundSel", "tagSel"].forEach(id => $(id).addEventListener("calciteComboboxChange", recompute));
-    ["pricedOnly", "needOnly", "nonEip"].forEach(id => $(id).addEventListener("calciteSwitchChange", recompute));
+    ["ltraOnly", "nonEip"].forEach(id => $(id).addEventListener("calciteSwitchChange", recompute));
     $("searchInput").addEventListener("input", recomputeSoon);
-    [$("stageChips"), $("focusChips")].forEach(el => el.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; b.classList.toggle("on"); recompute(); }));
+    [$("stageChips"), $("focusChips"), $("fundChips")].forEach(el => el.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; b.classList.toggle("on"); recompute(); }));
     const segClick = (id, fn) => $(id).addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return;
       $(id).querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b)); fn(b.dataset.v); });
     segClick("stateSeg", () => recompute());
@@ -1168,7 +1200,7 @@
     $("resetFiltersBtn").addEventListener("click", () => {
       $("searchInput").value = ""; $("stageChips").querySelectorAll("button").forEach(b => b.classList.toggle("on", ["Planning/Design", "Implementation"].includes(b.dataset.v)));
       $("focusChips").querySelectorAll("button").forEach(b => b.classList.add("on")); ["programSel", "leadSel", "fundSel", "tagSel"].forEach(id => setCombo($(id), []));
-      $("stateSeg").querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.v === "")); $("pricedOnly").checked = false; $("needOnly").checked = false; $("nonEip").checked = false; recompute();
+      $("stateSeg").querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.v === "")); $("fundChips").querySelectorAll("button").forEach(b => b.classList.add("on")); $("ltraOnly").checked = false; $("nonEip").checked = false; recompute();
     });
     let recomputeT; function recomputeSoon() { clearTimeout(recomputeT); recomputeT = setTimeout(recompute, 180); }
 
@@ -1182,13 +1214,14 @@
     $("drawerToggle").addEventListener("click", () => { document.body.classList.toggle("drawer-collapsed"); $("drawerToggleIcon").icon = document.body.classList.contains("drawer-collapsed") ? "chevron-up" : "chevron-down"; });
     $("panelToggle").addEventListener("click", () => { document.body.classList.toggle("panel-collapsed"); $("panelToggleIcon").icon = document.body.classList.contains("panel-collapsed") ? "chevron-right" : "chevron-left"; });
     $("aboutBtn").addEventListener("click", () => { $("aboutDialog").open = true; });
+    $("weightsToggle").addEventListener("click", () => { const c = $("weightsSec").classList.toggle("collapsed"); $("weightsToggle").textContent = c ? "Show" : "Hide"; });
     window.addEventListener("resize", () => { if (activeTab === "charts") ["chartCum", "chartFocus", "chartLead"].forEach(id => { try { Plotly.Plots.resize(id); } catch {} }); });
 
     // ───────────────────────── Share link ─────────────────────────
     function scenario() {
       return { w: weights, fw: focusW, a: [...actions], j: [...juris], env: envelope, mode: fillMode, pins: [...pins], ex: [...excluded],
         f: { q: $("searchInput").value, st: chipsOn($("stageChips")), fa: chipsOn($("focusChips")), pr: comboVals($("programSel")), ld: comboVals($("leadSel")), fs: comboVals($("fundSel")), tg: comboVals($("tagSel")),
-          s: $("stateSeg").querySelector("button.active").dataset.v, pc: $("pricedOnly").checked, no: $("needOnly").checked, ne: $("nonEip").checked },
+          s: $("stateSeg").querySelector("button.active").dataset.v, fc: chipsOn($("fundChips")), lt: $("ltraOnly").checked, ne: $("nonEip").checked },
         area: areaGeom ? areaGeom.toJSON().rings : null };
     }
     function applyScenario(s) {
@@ -1203,11 +1236,13 @@
         $("focusChips").querySelectorAll("button").forEach(b => b.classList.toggle("on", (s.f.fa || []).includes(b.dataset.v)));
         setCombo($("programSel"), s.f.pr || []); setCombo($("leadSel"), s.f.ld || []); setCombo($("fundSel"), s.f.fs || []); setCombo($("tagSel"), s.f.tg || []);
         $("stateSeg").querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.v === (s.f.s || "")));
-        $("pricedOnly").checked = !!s.f.pc; $("needOnly").checked = !!s.f.no; $("nonEip").checked = !!s.f.ne;
+        if (s.f.fc) $("fundChips").querySelectorAll("button").forEach(b => b.classList.toggle("on", s.f.fc.includes(b.dataset.v)));
+        $("ltraOnly").checked = !!s.f.lt; $("nonEip").checked = !!s.f.ne;
       }
       if (s.area && Polygon) { areaGeom = new Polygon({ rings: s.area, spatialReference: { wkid: 102100 } }); areaLayer.removeAll();
         areaLayer.add(new Graphic({ geometry: areaGeom, symbol: { type: "simple-fill", color: hexA(C.orange, 0.08), outline: { color: C.orange, width: 2, style: "dash" } } })); $("clearAreaBtn").hidden = false; }
       $("presetSel").value = matchPreset(); syncWeightUI();
+      if (matchPreset() !== "balanced" || actions.size || juris.size || areaGeom) { $("weightsSec").classList.remove("collapsed"); $("weightsToggle").textContent = "Hide"; }
     }
     const b64e = (o) => btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     const b64d = (s) => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/")))));
