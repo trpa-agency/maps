@@ -60,7 +60,8 @@
         "Zoning",
         "Permitted Uses",
         "Parcels"
-      ]
+      ],
+      "beta": true
     },
     {
       "id": "districtexplorer",
@@ -73,7 +74,8 @@
         "Zoning",
         "Permitted Uses",
         "Density"
-      ]
+      ],
+      "beta": true
     },
     {
       "id": "transportation",
@@ -108,7 +110,8 @@
         "Housing",
         "Deed Restrictions",
         "ADUs"
-      ]
+      ],
+      "beta": true
     },
     {
       "id": "deedrestrictions",
@@ -121,7 +124,8 @@
         "Housing",
         "Deed Restrictions",
         "Parcels"
-      ]
+      ],
+      "beta": true
     },
     {
       "id": "cccbeis",
@@ -134,7 +138,8 @@
         "Housing",
         "EIS",
         "Scenic"
-      ]
+      ],
+      "beta": true
     },
     {
       "id": "cccbeis-tl",
@@ -147,7 +152,8 @@
         "Housing",
         "EIS",
         "Tahoe Living"
-      ]
+      ],
+      "beta": true
     },
     {
       "id": "shoreline",
