@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 266" width="400" height="266" role="img"
+     aria-label="Public notice list: a subject parcel, a dashed notice buffer, the parcels inside it highlighted, and a sheet of mailing labels">
+  <!-- Basemap -->
+  <rect width="400" height="266" fill="#EEF1F5"/>
+
+  <!-- Parcel grid -->
+  <g stroke="#FFFFFF" stroke-width="2" fill="#DCE2EA">
+    <rect x="14"  y="14"  width="52" height="44"/><rect x="70"  y="14"  width="52" height="44"/><rect x="126" y="14"  width="52" height="44"/><rect x="182" y="14"  width="52" height="44"/>
+    <rect x="14"  y="62"  width="52" height="44"/><rect x="70"  y="62"  width="52" height="44"/><rect x="126" y="62"  width="52" height="44"/><rect x="182" y="62"  width="52" height="44"/>
+    <rect x="14"  y="120" width="52" height="44"/><rect x="70"  y="120" width="52" height="44"/><rect x="126" y="120" width="52" height="44"/><rect x="182" y="120" width="52" height="44"/>
+    <rect x="14"  y="168" width="52" height="44"/><rect x="70"  y="168" width="52" height="44"/><rect x="126" y="168" width="52" height="44"/><rect x="182" y="168" width="52" height="44"/>
+    <rect x="14"  y="216" width="52" height="40"/><rect x="70"  y="216" width="52" height="40"/><rect x="126" y="216" width="52" height="40"/><rect x="182" y="216" width="52" height="40"/>
+  </g>
+  <!-- Streets -->
+  <g stroke="#FFFFFF" stroke-width="6" fill="none">
+    <path d="M6 110 H240 M6 166 H240 M124 6 V260"/>
+  </g>
+  <!-- Parcels on the list -->
+  <g stroke="#0072CE" stroke-width="2" fill="#0072CE" fill-opacity="0.28">
+    <rect x="70"  y="62"  width="52" height="44"/><rect x="126" y="62"  width="52" height="44"/><rect x="182" y="62"  width="52" height="44"/>
+    <rect x="70"  y="120" width="52" height="44"/><rect x="182" y="120" width="52" height="44"/>
+    <rect x="70"  y="168" width="52" height="44"/><rect x="126" y="168" width="52" height="44"/><rect x="182" y="168" width="52" height="44"/>
+    <rect x="14"  y="120" width="52" height="44"/><rect x="14"  y="62"  width="52" height="44"/><rect x="14"  y="168" width="52" height="44"/>
+  </g>
+  <!-- Subject parcel -->
+  <rect x="126" y="120" width="52" height="44" fill="#E87722" fill-opacity="0.5" stroke="#E87722" stroke-width="3"/>
+  <!-- Notice buffer -->
+  <rect x="44" y="40" width="216" height="204" rx="40" fill="none" stroke="#E87722" stroke-width="3" stroke-dasharray="9 6"/>
+
+  <!-- Label sheet -->
+  <rect x="262" y="26" width="122" height="214" rx="6" fill="#FFFFFF" stroke="#DCE2EA"/>
+  <rect x="262" y="26" width="122" height="30" rx="6" fill="#003B71"/>
+  <rect x="262" y="46" width="122" height="10" fill="#003B71"/>
+  <text x="274" y="46" font-family="Open Sans, Arial, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">38 labels</text>
+  <g fill="#B4CBE8">
+    <rect x="274" y="68"  width="44" height="7" rx="2"/><rect x="274" y="79"  width="72" height="5" rx="2"/><rect x="274" y="88"  width="58" height="5" rx="2"/>
+    <rect x="274" y="106" width="44" height="7" rx="2"/><rect x="274" y="117" width="78" height="5" rx="2"/><rect x="274" y="126" width="52" height="5" rx="2"/>
+    <rect x="274" y="144" width="44" height="7" rx="2"/><rect x="274" y="155" width="66" height="5" rx="2"/><rect x="274" y="164" width="60" height="5" rx="2"/>
+    <rect x="274" y="182" width="44" height="7" rx="2"/><rect x="274" y="193" width="80" height="5" rx="2"/><rect x="274" y="202" width="48" height="5" rx="2"/>
+  </g>
+  <g stroke="#DCE2EA" stroke-dasharray="3 3">
+    <line x1="268" y1="99"  x2="378" y2="99"/><line x1="268" y1="137" x2="378" y2="137"/><line x1="268" y1="175" x2="378" y2="175"/>
+  </g>
+  <text x="274" y="228" font-family="Open Sans, Arial, sans-serif" font-size="9" font-weight="700" fill="#E87722">300 FT NOTICE</text>
+</svg>

@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Public Notice List - TRPA Maps</title>
+  <meta name="description" content="Build a public notice mailing list: pick the subject parcels, set a notice distance, review the owners within it, and export a CSV, Avery mailing labels, and a notice map." />
+  <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
+
+  <!-- Calcite Design System -->
+  <script type="module" src="https://js.arcgis.com/calcite-components/5.0"></script>
+  <link rel="stylesheet" href="https://js.arcgis.com/calcite-components/5.0/calcite.css" />
+
+  <!-- AG Grid and jsPDF load BEFORE the ArcGIS SDK: once Dojo defines an AMD
+       loader, UMD bundles register as anonymous modules instead of globals
+       (and Plotly-style multipleDefine errors stop the map from starting). -->
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@33.3.2/dist/ag-grid-community.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+
+  <!-- ArcGIS Maps SDK for JavaScript -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.31/"></script>
+
+  <!-- Brand fonts, self-hosted (shared with the locator) -->
+  <link href="assets/fonts/fonts.css" rel="stylesheet" />
+
+  <style>
+    :root {
+      --trpa-blue:   #0072CE;
+      --trpa-navy:   #003B71;
+      --trpa-orange: #E87722;
+      --trpa-brick:  #9C3E27;
+      --trpa-forest: #4A6118;
+      --gray-bg: #F5F7FA; --gray-border: #E2E6EC; --gray-text: #6B7688; --gray-muted: #8A93A3;
+      --white: #FFFFFF;
+      --shadow: 0 2px 10px rgba(0,59,113,0.16);
+      --font: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --calcite-color-brand: var(--trpa-blue);
+      --calcite-color-brand-hover: var(--trpa-navy);
+      --calcite-color-brand-press: var(--trpa-navy);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; font-family: var(--font); color: var(--trpa-navy); background: var(--gray-bg); overflow: hidden; }
+    body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; font-size: 14px; }
+    a { color: var(--trpa-blue); }
+
+    /* ── Header ── */
+    #appHeader {
+      flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 0.45rem 1rem; background: var(--white); border-bottom: 1px solid var(--gray-border);
+      box-shadow: 0 1px 4px rgba(0,59,113,0.06); z-index: 20;
+    }
+    .hdr-brand { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+    .hdr-brand img { height: 36px; width: auto; }
+    .htitle { display: flex; flex-direction: column; line-height: 1.15; }
+    .hagency { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--trpa-blue); }
+    .hname { font-size: 0.98rem; font-weight: 700; color: var(--trpa-navy); }
+    .hdr-back { font-size: 0.72rem; font-weight: 600; color: var(--gray-muted); text-decoration: none;
+      border-left: 1px solid var(--gray-border); padding-left: 0.7rem; white-space: nowrap; }
+    .hdr-back:hover { color: var(--trpa-blue); }
+    .hdr-links { display: flex; align-items: center; gap: 0.2rem; }
+    .hdr-sep { width: 1px; height: 18px; background: var(--gray-border); margin: 0 0.3rem; }
+    .beta-chip { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--trpa-orange); border: 1px solid var(--trpa-orange); border-radius: 999px; padding: 0.1rem 0.5rem; margin-right: 0.4rem; }
+
+    /* ── Body: side panel + map ── */
+    #appBody { flex: 1 1 auto; display: flex; min-height: 0; }
+    #sidePanel { flex: 0 0 var(--panel-w, clamp(300px, 25vw, 380px)); background: var(--white); border-right: 1px solid var(--gray-border);
+      display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    #panelScroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0.9rem 1rem 1.2rem;
+      display: flex; flex-direction: column; gap: 1.1rem; }
+    #panelFooter { flex: 0 0 auto; padding: 0.55rem 1rem 0.8rem; border-top: 1px solid var(--gray-border);
+      background: var(--white); display: flex; flex-direction: column; gap: 0.35rem; }
+    .foot-status { font-size: 0.7rem; color: var(--gray-text); min-height: 1em; line-height: 1.4; }
+    body.panel-collapsed #sidePanel { display: none; }
+    #panelToggle { flex: 0 0 18px; border: none; border-right: 1px solid var(--gray-border);
+      background: var(--white); cursor: pointer; color: var(--gray-muted); padding: 0; }
+    #panelToggle:hover { background: var(--gray-bg); color: var(--trpa-blue); }
+
+    .panel-sec { display: flex; flex-direction: column; gap: 0.55rem; }
+    .sec-title { display: flex; align-items: center; gap: 0.45rem; margin: 0;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--gray-text); }
+    .sec-num { display: inline-flex; align-items: center; justify-content: center; width: 1.15rem; height: 1.15rem;
+      border-radius: 50%; background: var(--trpa-blue); color: #fff; font-size: 0.66rem; }
+    .sec-tool { margin-left: auto; border: none; background: transparent; cursor: pointer; color: var(--gray-text);
+      padding: 0.1rem 0.2rem; border-radius: 5px; line-height: 0; }
+    .sec-tool:hover { color: var(--trpa-blue); background: var(--gray-bg); }
+    .sec-help { margin: -0.25rem 0 0; font-size: 0.7rem; line-height: 1.45; color: var(--gray-text); }
+    .field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.68rem; font-weight: 600; color: var(--gray-text); }
+    .field-help { font-size: 0.64rem; font-weight: 400; line-height: 1.4; color: var(--gray-text); }
+    .row { display: flex; gap: 0.45rem; align-items: center; }
+    .row > * { min-width: 0; }
+    select, input[type="number"], input[type="text"].plain {
+      font-family: var(--font); font-size: 0.8rem; color: var(--trpa-navy); background: #fff;
+      border: 1.5px solid var(--gray-border); border-radius: 7px; padding: 0.3rem 0.5rem; width: 100%;
+    }
+    select:focus, input:focus { outline: none; border-color: var(--trpa-blue); }
+    .seg { display: flex; border-radius: 7px; overflow: hidden; border: 1px solid var(--gray-border); }
+    .seg button { flex: 1; border: none; background: #fff; cursor: pointer; font-family: var(--font);
+      font-size: 0.74rem; font-weight: 600; color: var(--gray-text); padding: 0.35rem 0.4rem; transition: all 120ms; }
+    .seg button.active { background: var(--trpa-blue); color: #fff; font-weight: 700; }
+    .toggle { display: flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; color: var(--trpa-navy); font-weight: 400; }
+    .toggle .t-help { font-size: 0.64rem; color: var(--gray-text); }
+
+    /* Search */
+    .search-wrap { position: relative; }
+    .search-box { display: flex; align-items: center; gap: 0.5rem; background: var(--gray-bg);
+      border: 1.5px solid var(--gray-border); border-radius: 8px; padding: 0.3rem 0.7rem; }
+    .search-box:focus-within { border-color: var(--trpa-blue); background: #fff; }
+    .search-box calcite-icon { color: var(--trpa-blue); flex-shrink: 0; }
+    .search-box input { flex: 1; border: none; outline: none; background: transparent; font-family: var(--font);
+      font-size: 0.9rem; color: var(--trpa-navy); padding: 0.25rem 0; min-width: 0; }
+    .search-box input::placeholder { color: var(--gray-text); }
+    .search-clear { border: none; background: transparent; cursor: pointer; color: var(--gray-text); padding: 0.2rem; border-radius: 5px; display: none; }
+    .search-clear:hover { background: var(--gray-border); }
+    .suggest-list { position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 60; background: #fff;
+      border-radius: 8px; box-shadow: var(--shadow); max-height: 320px; overflow-y: auto; display: none; }
+    .suggest-list.open { display: block; }
+    .suggest-item { padding: 0.55rem 0.85rem; cursor: pointer; border-bottom: 1px solid #eef1f5; display: flex; flex-direction: column; gap: 2px; }
+    .suggest-item:last-child { border-bottom: none; }
+    .suggest-item:hover, .suggest-item.active { background: var(--gray-bg); }
+    .suggest-item .s-primary { font-size: 0.85rem; font-weight: 600; }
+    .suggest-item .s-secondary { font-size: 0.72rem; color: var(--gray-text); }
+    .suggest-item .s-apn { color: var(--trpa-blue); font-weight: 700; }
+    .suggest-empty { padding: 0.7rem 0.85rem; font-size: 0.8rem; color: var(--gray-text); line-height: 1.45; }
+
+    /* Subject chips */
+    #subjectChips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+    /* Map tool buttons (styled like the Esri Home button) */
+    .map-btn calcite-icon { color: inherit; }
+    .map-btn.active { background: var(--trpa-blue) !important; color: #fff !important; }
+    .map-btn.refine.active { background: var(--trpa-orange) !important; }
+
+    /* ── Map + results drawer ── */
+    #mapWrap { flex: 1 1 auto; position: relative; display: flex; flex-direction: column; min-width: 0; }
+    #viewDiv { flex: 1 1 auto; min-height: 0; position: relative; }
+    #drawer { flex: 0 0 auto; height: 42%; min-height: 160px; display: flex; flex-direction: column;
+      background: var(--white); border-top: 1px solid var(--gray-border); box-shadow: 0 -2px 8px rgba(0,59,113,0.08); z-index: 10; }
+    #drawer[hidden] { display: none; }
+    body.drawer-collapsed #drawer { height: auto; min-height: 0; }
+    body.drawer-collapsed #gridWrap, body.drawer-collapsed #drawerTools { display: none; }
+    .drawer-head { display: flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0.8rem; border-bottom: 1px solid var(--gray-border); }
+    .drawer-head h3 { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--gray-text); }
+    .drawer-head .d-count { font-size: 0.74rem; color: var(--trpa-navy); font-weight: 600; }
+    .drawer-head .spacer { flex: 1; }
+    #drawerTools { display: flex; align-items: center; gap: 0.4rem; }
+    #quickFilter { width: 180px; font-family: var(--font); font-size: 0.76rem; border: 1.5px solid var(--gray-border); border-radius: 7px; padding: 0.22rem 0.5rem; }
+    #quickFilter:focus { outline: none; border-color: var(--trpa-blue); }
+    .d-btn { border: none; background: transparent; cursor: pointer; color: var(--gray-text); padding: 0.15rem 0.3rem; border-radius: 5px; line-height: 0; }
+    .d-btn:hover { color: var(--trpa-blue); background: var(--gray-bg); }
+    #gridWrap { flex: 1 1 auto; min-height: 0; }
+    #grid { height: 100%; width: 100%; }
+    .ag-row.row-excluded { color: var(--gray-muted); }
+    .ag-row.row-excluded .ag-cell { text-decoration: line-through; text-decoration-color: rgba(107,118,136,0.45); }
+    .ag-row.row-excluded .ag-cell[col-id="include"] { text-decoration: none; }
+    .ag-row.row-subject { background: rgba(232,119,34,0.08); }
+    .badge { display: inline-block; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      border-radius: 999px; padding: 0 0.45rem; line-height: 1.5; margin-right: 0.25rem; vertical-align: middle; }
+    .badge.subject { background: var(--trpa-orange); color: #fff; }
+    .badge.owner { background: #E6F0FA; color: var(--trpa-navy); }
+    .badge.incomplete { background: #FBE9E4; color: var(--trpa-brick); }
+    .badge.dup { background: var(--gray-bg); color: var(--gray-text); border: 1px solid var(--gray-border); }
+
+    .toast { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 40;
+      background: var(--trpa-navy); color: #fff; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.82rem;
+      box-shadow: var(--shadow); display: none; max-width: min(92%, 560px); align-items: center; gap: 0.8rem; }
+    .toast.show { display: flex; }
+    .toast button { border: 1px solid rgba(255,255,255,0.55); background: transparent; color: #fff; font-family: var(--font);
+      font-size: 0.76rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+
+    /* Legend card on the map */
+    .legend { position: absolute; top: 12px; right: 56px; z-index: 15; background: rgba(255,255,255,0.94); border-radius: 8px;
+      box-shadow: var(--shadow); padding: 0.4rem 0.7rem; font-size: 0.68rem; color: var(--trpa-navy); display: none; gap: 0.2rem; flex-direction: column; }
+    .legend.show { display: flex; }
+    .legend span { display: flex; align-items: center; gap: 0.4rem; }
+    .legend i { width: 14px; height: 10px; border-radius: 2px; display: inline-block; }
+
+    /* Export dialog + about */
+    .dlg { font-size: 0.86rem; line-height: 1.6; color: var(--trpa-navy); }
+    .dlg p { margin: 0 0 0.6rem; }
+    .dlg h3 { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--gray-text); margin: 0.8rem 0 0.3rem; }
+    .dlg ul, .dlg ol { margin: 0 0 0.6rem; padding-left: 1.2rem; }
+    .dlg li { margin-bottom: 0.3rem; }
+    .dlg .fine { font-size: 0.74rem; color: var(--gray-text); }
+    .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem 0.8rem; margin-bottom: 0.6rem; }
+    .export-grid .field { font-size: 0.66rem; }
+    .lbl-preview { font-family: Helvetica, Arial, sans-serif; font-size: 0.74rem; line-height: 1.3; background: var(--gray-bg);
+      border: 1px dashed var(--gray-border); border-radius: 6px; padding: 0.45rem 0.6rem; white-space: pre-line; color: #222; }
+
+    @media (max-width: 760px) {
+      .hdr-back, .link-label, .hagency, .hdr-sep { display: none; }
+      .hdr-brand img { height: 30px; }
+      #appBody { flex-direction: column; }
+      #mapWrap { order: 1; min-height: 0; }
+      #panelToggle { order: 2; flex: 0 0 28px; width: 100%; height: 28px; border-right: none;
+        border-top: 1px solid var(--gray-border); border-bottom: 1px solid var(--gray-border); }
+      #panelToggleIcon { transform: rotate(-90deg); }
+      #sidePanel { order: 3; flex: 0 0 auto; max-height: 50vh; border-right: none; }
+      #drawer { height: 40%; }
+      .hname { font-size: 0.86rem; white-space: nowrap; }
+      .legend { display: none !important; }
+      .search-box input { font-size: 1rem; }
+    }
+    @media (max-width: 400px) { .beta-chip { display: none; } }
+  </style>
+</head>
+<body>
+
+  <header id="appHeader">
+    <div class="hdr-brand">
+      <img src="../assets/TRPALogo_COLOR.png" alt="Tahoe Regional Planning Agency" />
+      <a href="index.html" class="hdr-back">&larr; Tools</a>
+      <div class="htitle">
+        <span class="hagency">Tahoe Regional Planning Agency</span>
+        <span class="hname">Public Notice List</span>
+      </div>
+    </div>
+    <div class="hdr-links">
+      <span class="beta-chip">Beta</span>
+      <calcite-button id="lnkLtinfo" href="https://parcels.laketahoeinfo.org" target="_blank" rel="noopener" icon-start="parcel"
+        appearance="transparent" kind="neutral" scale="s" title="Parcel and permit records on Lake Tahoe Info" label="Lake Tahoe Info parcels"></calcite-button>
+      <calcite-button id="lnkPermit" href="https://gis.trpa.org/PermitReview/" target="_blank" rel="noopener" icon-start="inspection"
+        appearance="transparent" kind="neutral" scale="s" title="Permit Review Map" label="Permit Review Map"></calcite-button>
+      <span class="hdr-sep" aria-hidden="true"></span>
+      <calcite-button id="shareBtn" icon-start="link" appearance="transparent" kind="neutral" scale="s"
+        title="Copy a link that reopens this list setup (subject parcels and distance)" label="Copy link"></calcite-button>
+      <calcite-button id="aboutBtn" icon-start="information" appearance="transparent" kind="neutral" scale="s"
+        title="About this tool" label="About this tool"></calcite-button>
+      <calcite-button href="index.html" icon-start="apps" appearance="transparent" kind="neutral" scale="s"
+        title="All TRPA map tools" label="All TRPA map tools"></calcite-button>
+    </div>
+  </header>
+
+  <div id="appBody">
+    <aside id="sidePanel" aria-label="Notice list controls">
+    <div id="panelScroll">
+
+      <section class="panel-sec">
+        <h2 class="sec-title"><span class="sec-num">1</span> Subject property
+          <button id="clearSubjectsBtn" class="sec-tool" title="Remove all subject parcels and drawings" aria-label="Remove all subjects" hidden>
+            <calcite-icon icon="trash" scale="s"></calcite-icon>
+          </button>
+        </h2>
+        <p class="sec-help">Search an address or APN, or turn on the arrow button on the map and click
+          parcels. The pencil draws a point, line, or area instead (a road segment, a project footprint).</p>
+        <div class="search-wrap">
+          <div class="search-box">
+            <calcite-icon icon="search" scale="s"></calcite-icon>
+            <input id="searchInput" type="text" autocomplete="off" spellcheck="false" placeholder="Address or APN…"
+                   role="combobox" aria-label="Search an address or APN" aria-autocomplete="list" aria-expanded="false" aria-controls="suggestList" />
+            <calcite-loader id="searchBusy" inline scale="s" label="Searching" hidden></calcite-loader>
+            <button class="search-clear" id="searchClear" title="Clear" aria-label="Clear search"><calcite-icon icon="x" scale="s"></calcite-icon></button>
+          </div>
+          <div class="suggest-list" id="suggestList" role="listbox" aria-label="Parcel suggestions"></div>
+        </div>
+        <div id="subjectChips" aria-label="Subject parcels" hidden></div>
+      </section>
+
+      <section class="panel-sec">
+        <h2 class="sec-title"><span class="sec-num">2</span> Notice distance</h2>
+        <p class="sec-help">Every parcel within this distance of the subject property goes on the list.
+          Zero picks up only the parcels that touch it.</p>
+        <div class="seg" id="distSeg" role="radiogroup" aria-label="Distance presets">
+          <button data-value="300" class="active" role="radio" aria-checked="true">300 ft</button>
+          <button data-value="500" role="radio" aria-checked="false">500 ft</button>
+          <button data-value="1000" role="radio" aria-checked="false">1,000 ft</button>
+          <button data-value="custom" role="radio" aria-checked="false">Custom</button>
+        </div>
+        <div class="row" id="customDist" hidden>
+          <input id="distInput" type="number" min="0" step="10" value="300" aria-label="Distance" />
+          <select id="unitSel" aria-label="Units" style="width: 7rem">
+            <option value="feet">feet</option>
+            <option value="meters">meters</option>
+          </select>
+        </div>
+        <label class="toggle">
+          <calcite-switch id="includeSubject" checked scale="s"></calcite-switch>
+          <span>Include the subject parcels <span class="t-help">(off if the applicant is noticed separately)</span></span>
+        </label>
+        <calcite-button id="findBtn" icon-start="search" appearance="solid" kind="brand" scale="m" width="full" disabled>Find parcels</calcite-button>
+      </section>
+
+      <section class="panel-sec">
+        <h2 class="sec-title"><span class="sec-num">3</span> Review the list</h2>
+        <p class="sec-help">The table under the map lists each parcel. Untick <em>Include</em> to drop one, or turn
+          on the orange arrow on the map to add and remove parcels by clicking them. Click a row to see it on the map.</p>
+        <label class="toggle">
+          <calcite-switch id="dedupeSwitch" checked scale="s"></calcite-switch>
+          <span>One label per mailing address <span class="t-help">(owners of several parcels get one envelope)</span></span>
+        </label>
+        <label class="toggle">
+          <calcite-switch id="occupantSwitch" scale="s"></calcite-switch>
+          <span>Also notice occupants at the property address <span class="t-help">(adds a “Current Resident” label for
+            each parcel whose owner mails elsewhere)</span></span>
+        </label>
+      </section>
+
+      <section class="panel-sec">
+        <h2 class="sec-title"><span class="sec-num">4</span> Export</h2>
+        <label class="field">First line on each owner label
+          <select id="line1Sel">
+            <option value="Property Owner">Property Owner</option>
+            <option value="Owner or Current Occupant">Owner or Current Occupant</option>
+            <option value="">None (address only)</option>
+          </select>
+          <span class="field-help">Owner names are not in the public parcel service, so labels address the owner of record by role.</span>
+        </label>
+        <label class="field">Label sheet
+          <select id="sheetSel">
+            <option value="5160">Avery 5160 (30 per sheet, 1 × 2 5/8 in)</option>
+            <option value="5163">Avery 5163 (10 per sheet, 2 × 4 in)</option>
+          </select>
+        </label>
+        <label class="field">Start at label
+          <input id="startLabel" type="number" min="1" max="30" value="1" />
+          <span class="field-help">Skips used positions on a partly used first sheet.</span>
+        </label>
+      </section>
+    </div><!-- /panelScroll -->
+
+    <div id="panelFooter">
+      <div class="row">
+        <calcite-button id="csvBtn" icon-start="file-csv" appearance="outline" kind="brand" scale="s" width="full" disabled title="Download the included parcels as a CSV">CSV</calcite-button>
+        <calcite-button id="pdfBtn" icon-start="print" appearance="solid" kind="brand" scale="s" width="full" disabled title="Download a PDF of mailing labels">Labels</calcite-button>
+        <calcite-button id="mapBtn" icon-start="image" appearance="outline" kind="brand" scale="s" width="full" disabled title="Download a PNG of the notice map for the staff report">Map</calcite-button>
+      </div>
+      <div class="foot-status" id="footStatus">Loading the map…</div>
+    </div>
+    </aside>
+
+    <button id="panelToggle" title="Show / hide the control panel" aria-label="Show or hide the control panel">
+      <calcite-icon icon="chevron-left" scale="s" id="panelToggleIcon"></calcite-icon>
+    </button>
+
+    <div id="mapWrap">
+      <div id="viewDiv">
+        <div class="legend" id="legend">
+          <span><i style="background:rgba(232,119,34,0.5);border:1.5px solid #E87722"></i> Subject property</span>
+          <span><i style="background:rgba(232,119,34,0.08);border:1.5px dashed #E87722"></i> Notice distance</span>
+          <span><i style="background:rgba(0,114,206,0.25);border:1.5px solid #0072CE"></i> On the list</span>
+          <span><i style="background:transparent;border:1.5px dashed #8A93A3"></i> Removed</span>
+        </div>
+        <div class="toast" id="toast"></div>
+      </div>
+      <div id="drawer" hidden>
+        <div class="drawer-head">
+          <h3>Notice list</h3>
+          <span class="d-count" id="drawerCount"></span>
+          <span class="spacer"></span>
+          <div id="drawerTools">
+            <input id="quickFilter" type="text" placeholder="Filter rows…" aria-label="Filter rows" />
+            <button class="d-btn" id="includeAllBtn" title="Include every row"><calcite-icon icon="check-square" scale="s"></calcite-icon></button>
+            <button class="d-btn" id="excludeAllBtn" title="Exclude every row"><calcite-icon icon="square" scale="s"></calcite-icon></button>
+          </div>
+          <button class="d-btn" id="drawerToggle" title="Collapse / expand the table"><calcite-icon icon="chevron-down" scale="s" id="drawerToggleIcon"></calcite-icon></button>
+        </div>
+        <div id="gridWrap"><div id="grid"></div></div>
+      </div>
+    </div>
+  </div><!-- /appBody -->
+
+  <calcite-dialog id="aboutDialog" modal heading="About the Public Notice List" width-scale="m">
+    <div class="dlg">
+      <p>Builds the owner mailing list for a public notice: the parcels within a set distance of a subject property,
+        with the owner mailing address on file at the county assessor.</p>
+      <ol>
+        <li><strong>Subject property.</strong> Search an address or APN, click parcels with the arrow tool, or draw
+          a point, line, or area with the pencil.</li>
+        <li><strong>Notice distance.</strong> Pick a preset or type a distance. The buffer is drawn on the map, and
+          <em>Find parcels</em> lists everything it touches.</li>
+        <li><strong>Review.</strong> Untick rows, or use the orange arrow to add and remove parcels on the map.
+          Owners of several parcels get one label when de-duplication is on.</li>
+        <li><strong>Export.</strong> CSV for the file, a PDF of Avery labels for the mailing, and a PNG of the map
+          for the staff report.</li>
+      </ol>
+      <h3>Data</h3>
+      <ul>
+        <li><a href="https://maps.trpa.org/server/rest/services/Parcels/FeatureServer/0" target="_blank" rel="noopener">Parcels</a>
+          (TRPA GIS): the live parcel layer with situs and owner mailing addresses from the five county assessors.</li>
+      </ul>
+      <h3>Notes</h3>
+      <ul>
+        <li>Owner names are not published in the parcel service, so labels are addressed to the owner of record by role.</li>
+        <li>Roughly one parcel in a hundred has no usable mailing address on file (most are public agency holdings). Those rows
+          stay in the table and the CSV flagged <em>Incomplete</em>, and are left out of the labels.</li>
+        <li><em>Owner-occupied</em> means the mailing address matches the property address. With the occupant option on,
+          those parcels get one label, not two.</li>
+        <li>Distances are measured on the ground (geodesic) from the subject parcel boundary.</li>
+      </ul>
+    </div>
+  </calcite-dialog>
+
+  <script>
+    // ───────────────────────── Config ─────────────────────────
+    const SVC = "https://maps.trpa.org/server/rest/services/";
+    const PARCELS_URL = SVC + "Parcels/FeatureServer/0";
+    const FIELDS = ["OBJECTID", "APN", "APO_ADDRESS", "PSTL_TOWN", "PSTL_STATE", "PSTL_ZIP5",
+      "MAIL_ADD1", "MAIL_ADD2", "MAIL_CITY", "MAIL_STATE", "MAIL_ZIP5",
+      "JURISDICTION", "COUNTY", "OWNERSHIP_TYPE", "LTINFO_HYPERLINK"];
+    const PERMIT_REVIEW_URL = "https://gis.trpa.org/PermitReview/";
+    const PERMIT_PARCELS_DS = "dataSource_1-18bd6d48e43-layer-73";
+    const BASIN = { center: [-120.04, 39.09], zoom: 9 };
+    const COUNTY_NAMES = { WA: "Washoe County, NV", CC: "Carson City, NV", DG: "Douglas County, NV",
+      EL: "El Dorado County, CA", PL: "Placer County, CA" };
+    const C = { blue: "#0072CE", navy: "#003B71", orange: "#E87722", gray: "#8A93A3" };
+    // Avery templates, inches. Letter sheets; pitch = label size + gutter.
+    const SHEETS = {
+      5160: { cols: 3, rows: 10, w: 2.625, h: 1.0, left: 0.1875, top: 0.5, pitchX: 2.75,   pitchY: 1.0, font: 9,  pad: 0.14 },
+      5163: { cols: 2, rows: 5,  w: 4.0,   h: 2.0, left: 0.1875, top: 0.5, pitchX: 4.1875, pitchY: 2.0, font: 11, pad: 0.22 },
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const escSql  = (s) => s.replace(/'/g, "''");
+    const escLike = (s) => escSql(s).replace(/([\\%_])/g, "\\$1");
+    const escHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+    const hexA = (hex, a) => { const n = parseInt(hex.slice(1), 16); return [(n>>16)&255, (n>>8)&255, n&255, a]; };
+    function toast(msg, ms = 2600, action = null) {
+      const t = $("toast"); t.textContent = msg;
+      if (action) { const b = document.createElement("button"); b.type = "button"; b.textContent = action.label;
+        b.addEventListener("click", () => { t.classList.remove("show"); action.onClick(); }); t.appendChild(b); }
+      t.classList.add("show");
+      clearTimeout(toast._t); if (ms) toast._t = setTimeout(() => t.classList.remove("show"), ms);
+    }
+
+    // ── Address helpers ──
+    const SUFFIX = { ROAD: "RD", STREET: "ST", AVENUE: "AVE", DRIVE: "DR", LANE: "LN", COURT: "CT", BOULEVARD: "BLVD",
+      CIRCLE: "CIR", PLACE: "PL", TRAIL: "TRL", HIGHWAY: "HWY", TERRACE: "TER", PARKWAY: "PKWY", NORTH: "N", SOUTH: "S",
+      EAST: "E", WEST: "W", APARTMENT: "APT", SUITE: "STE", UNIT: "UNIT" };
+    function normAddr(s) {
+      return String(s || "").toUpperCase().replace(/[.,#]/g, " ").split(/\s+/).filter(Boolean)
+        .map(w => SUFFIX[w] || w).join(" ");
+    }
+    const hasSitus = (a) => !!a.APO_ADDRESS && !/^0\s/.test(a.APO_ADDRESS.trim());
+    function mailKey(a) { return [normAddr(a.MAIL_ADD1), normAddr(a.MAIL_ADD2), normAddr(a.MAIL_CITY), String(a.MAIL_ZIP5 || "").slice(0, 5)].join("|"); }
+    function situsKey(a) { return [normAddr(a.APO_ADDRESS), normAddr(a.PSTL_TOWN), String(a.PSTL_ZIP5 || "").slice(0, 5)].join("|"); }
+    function isIncomplete(a) {
+      const zip = String(a.MAIL_ZIP5 || "").trim();
+      return !String(a.MAIL_ADD1 || "").trim() || !String(a.MAIL_CITY || "").trim() || !zip || zip === "00000";
+    }
+    function isOwnerOccupied(a) {
+      if (!hasSitus(a) || !a.MAIL_ADD1) return false;
+      return normAddr(a.MAIL_ADD1) === normAddr(a.APO_ADDRESS);
+    }
+    const cityLine = (city, state, zip) => [String(city || "").trim(), [String(state || "").trim(), String(zip || "").trim()].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+    const countyLabel = (code) => COUNTY_NAMES[code] || (code ? code + " County" : "");
+
+    // ───────────────────────── State ─────────────────────────
+    let map, view, parcelsFL, subjectLayer, bufferLayer, resultLayer, highlightLayer, sketch, GE;
+    let subjects = [];        // { key, kind: parcel|sketch, label, sub, geometry, apn?, oid? }
+    let rows = [];            // result rows (grid data)
+    let bufferGeom = null, lastRun = null;   // lastRun: { distance, unit, includeSubject } the list was built with
+    let clickMode = null;     // null | "select" | "refine"
+    let gridApi = null;
+    let selectBtnEl, refineBtnEl;
+
+    // ── JSONP fallback (office-network CORS, see the locator for the history) ──
+    let jsonpSeq = 0;
+    function jsonp(url, params, timeoutMs = 20000) {
+      return new Promise((resolve, reject) => {
+        const cb = `__pnJsonp${++jsonpSeq}`;
+        const s = document.createElement("script"); let t;
+        const done = (fn) => (v) => { clearTimeout(t); delete window[cb]; s.remove(); fn(v); };
+        window[cb] = done(resolve);
+        s.onerror = done(() => reject(new Error("JSONP request failed")));
+        t = setTimeout(done(() => reject(new Error("JSONP request timed out"))), timeoutMs);
+        s.src = `${url}?${new URLSearchParams({ ...params, f: "json", callback: cb })}`;
+        document.head.appendChild(s);
+      });
+    }
+    function graphicsFromEsriJson(r) {
+      return (r.features || []).map(f => {
+        const g = f.geometry, sr = { wkid: 3857 };
+        const geometry = !g ? null : g.rings ? new window._Polygon({ rings: g.rings, spatialReference: sr })
+          : new window._Point({ x: g.x, y: g.y, spatialReference: sr });
+        return new window._Graphic({ geometry, attributes: f.attributes });
+      }).filter(gr => gr.geometry);
+    }
+    // Parcel query, SDK first, JSONP on failure. opts: { where, orderByFields, num } | { point } | { polygon }
+    // Polygon queries page through every match. The JSONP path sends the
+    // polygon's envelope (a URL-safe size) and filters to the true shape here.
+    async function queryParcels(opts) {
+      const num = opts.num || 2000;
+      const base = { outFields: FIELDS, returnGeometry: true, outSpatialReference: view.spatialReference };
+      try {
+        const out = []; let start = 0;
+        for (;;) {
+          const q = { ...base, num, start };
+          if (opts.where) { q.where = opts.where; if (opts.orderByFields) q.orderByFields = opts.orderByFields; }
+          if (opts.point) { q.geometry = opts.point; q.spatialRelationship = "intersects"; }
+          if (opts.polygon) { q.geometry = opts.polygon; q.spatialRelationship = "intersects"; }
+          const r = await parcelsFL.queryFeatures(q);
+          out.push(...r.features);
+          if (!opts.polygon || !r.exceededTransferLimit || !r.features.length) break;
+          start += r.features.length;
+        }
+        return out;
+      } catch (e) {
+        console.warn("Parcel query failed, retrying as JSONP:", e && e.message);
+        const params = { outFields: FIELDS.join(","), returnGeometry: "true", outSR: "3857", inSR: "3857",
+          resultRecordCount: String(num), spatialRel: "esriSpatialRelIntersects" };
+        if (opts.where) { params.where = opts.where; if (opts.orderByFields) params.orderByFields = opts.orderByFields.join(","); }
+        if (opts.point) { params.geometry = `${opts.point.x},${opts.point.y}`; params.geometryType = "esriGeometryPoint"; }
+        if (opts.polygon) { const e = opts.polygon.extent; params.geometry = `${e.xmin},${e.ymin},${e.xmax},${e.ymax}`; params.geometryType = "esriGeometryEnvelope"; }
+        const out = []; let offset = 0;
+        for (;;) {
+          const r = await jsonp(PARCELS_URL + "/query", { ...params, resultOffset: String(offset) });
+          if (r.error) throw new Error(r.error.message || "Parcel query error");
+          const feats = graphicsFromEsriJson(r);
+          out.push(...feats);
+          if (!opts.polygon || !r.exceededTransferLimit || !feats.length) break;
+          offset += feats.length;
+        }
+        return opts.polygon ? out.filter(g => GE.intersects(opts.polygon, g.geometry)) : out;
+      }
+    }
+
+    // ───────────────────────── Map ─────────────────────────
+    function mapButton(icon, title, cls, onClick) {
+      const b = document.createElement("div");
+      b.className = "esri-widget--button esri-widget esri-interactive map-btn " + (cls || "");
+      b.setAttribute("role", "button"); b.tabIndex = 0; b.setAttribute("aria-pressed", "false"); b.title = title;
+      b.innerHTML = `<calcite-icon icon="${icon}" scale="s"></calcite-icon>`;
+      b.addEventListener("click", onClick);
+      b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } });
+      return b;
+    }
+    function setClickMode(mode) {
+      clickMode = clickMode === mode ? null : mode;
+      const on = (el, m) => { if (!el) return; const a = clickMode === m; el.classList.toggle("active", a); el.setAttribute("aria-pressed", a ? "true" : "false"); };
+      on(selectBtnEl, "select"); on(refineBtnEl, "refine");
+      view.container.style.cursor = clickMode ? "crosshair" : "";
+      if (clickMode === "select") toast("Click parcels to add them to the subject property. Esc to stop.", 3500);
+      if (clickMode === "refine") toast("Click a parcel to add it to the list or remove it. Esc to stop.", 3500);
+    }
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && clickMode) setClickMode(clickMode); });
+
+    const SYM = {
+      subject: { type: "simple-fill", color: hexA(C.orange, 0.35), outline: { color: C.orange, width: 2.5 } },
+      subjectLine: { type: "simple-line", color: C.orange, width: 3 },
+      subjectPoint: { type: "simple-marker", style: "circle", size: 11, color: C.orange, outline: { color: "#fff", width: 1.5 } },
+      buffer: { type: "simple-fill", color: hexA(C.orange, 0.07), outline: { color: C.orange, width: 2, style: "dash" } },
+      included: { type: "simple-fill", color: hexA(C.blue, 0.22), outline: { color: C.blue, width: 1.5 } },
+      excluded: { type: "simple-fill", color: [0, 0, 0, 0], outline: { color: C.gray, width: 1.5, style: "dash" } },
+      highlight: { type: "simple-fill", color: hexA("#FFC20E", 0.35), outline: { color: "#FFC20E", width: 3 } },
+    };
+    const symFor = (geom) => geom.type === "polygon" ? SYM.subject : geom.type === "polyline" ? SYM.subjectLine : SYM.subjectPoint;
+
+    require([
+      "esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/layers/GraphicsLayer", "esri/Graphic",
+      "esri/widgets/ScaleBar", "esri/widgets/Home", "esri/widgets/Sketch", "esri/widgets/Expand", "esri/widgets/BasemapToggle",
+      "esri/geometry/geometryEngine", "esri/geometry/Point", "esri/geometry/Polygon", "esri/geometry/support/webMercatorUtils",
+    ], (Map, MapView, FeatureLayer, GraphicsLayer, Graphic, ScaleBar, Home, Sketch, Expand, BasemapToggle, geometryEngine, Point, Polygon, wmUtils) => {
+      window._Graphic = Graphic; window._Point = Point; window._Polygon = Polygon; window._wm = wmUtils; GE = geometryEngine;
+
+      // Lot lines close in (the queries run server-side and don't need this to draw)
+      parcelsFL = new FeatureLayer({ url: PARCELS_URL, outFields: ["OBJECTID"], legendEnabled: false, listMode: "hide", minScale: 24000,
+        popupEnabled: false, renderer: { type: "simple", symbol: { type: "simple-fill", color: [0, 0, 0, 0], outline: { color: [60, 75, 95, 0.55], width: 0.8 } } } });
+      bufferLayer = new GraphicsLayer({ listMode: "hide" });
+      resultLayer = new GraphicsLayer({ listMode: "hide" });
+      highlightLayer = new GraphicsLayer({ listMode: "hide" });
+      subjectLayer = new GraphicsLayer({ title: "Subject property" });
+
+      map = new Map({ basemap: "gray-vector", layers: [parcelsFL, bufferLayer, resultLayer, highlightLayer, subjectLayer] });
+      view = new MapView({ container: "viewDiv", map, center: BASIN.center, zoom: BASIN.zoom,
+        constraints: { minZoom: 7, maxZoom: 20, snapToZoom: false }, ui: { components: ["zoom", "attribution"] },
+        popup: { autoOpenEnabled: false } });
+
+      view.when(() => {
+        view.ui.move("zoom", "top-left");
+        view.ui.add(new Home({ view }), "top-left");
+        view.ui.add(new ScaleBar({ view, unit: "dual" }), "bottom-left");
+        selectBtnEl = mapButton("cursor", "Select subject parcels: click parcels on the map to add them", "", () => setClickMode("select"));
+        refineBtnEl = mapButton("cursor-plus", "Refine the list: click parcels to add or remove them", "refine", () => setClickMode("refine"));
+        view.ui.add(selectBtnEl, "top-left");
+        view.ui.add(refineBtnEl, "top-left");
+        sketch = new Sketch({ view, layer: subjectLayer, creationMode: "single", layout: "vertical",
+          availableCreateTools: ["point", "polyline", "polygon", "rectangle", "circle"],
+          visibleElements: { settingsMenu: false, selectionTools: { "lasso-selection": false, "rectangle-selection": false }, undoRedoMenu: false } });
+        sketch.viewModel.pointSymbol = SYM.subjectPoint; sketch.viewModel.polylineSymbol = SYM.subjectLine; sketch.viewModel.polygonSymbol = SYM.subject;
+        view.ui.add(new Expand({ view, content: sketch, expandIcon: "pencil", expandTooltip: "Draw the subject area", collapseTooltip: "Close draw tools" }), "top-right");
+        view.ui.add(new BasemapToggle({ view, nextBasemap: "hybrid" }), "bottom-right");
+        let drawn = 0;
+        sketch.on("create", (e) => {
+          if (e.state !== "complete") return;
+          const g = e.graphic; drawn++;
+          g.attributes = { key: "sketch:" + drawn };
+          subjects.push({ key: g.attributes.key, kind: "sketch", graphic: g, geometry: g.geometry,
+            label: `Drawn ${g.geometry.type === "polygon" ? "area" : g.geometry.type === "polyline" ? "line" : "point"} ${drawn}` });
+          refreshSubjects();
+        });
+        sketch.on("update", (e) => {
+          if (e.state !== "complete") return;
+          e.graphics.forEach(g => { const s = subjects.find(x => x.graphic === g); if (s) s.geometry = g.geometry; });
+          refreshSubjects();
+        });
+        sketch.on("delete", (e) => { subjects = subjects.filter(s => !e.graphics.includes(s.graphic)); refreshSubjects(); });
+        view.on("click", (e) => {
+          if (!clickMode || (sketch && sketch.state === "active")) return;
+          e.stopPropagation();
+          if (clickMode === "select") addSubjectAt(e.mapPoint); else refineAt(e.mapPoint);
+        });
+        $("footStatus").textContent = "Add a subject property to begin.";
+        applyShareHash();
+      });
+    });
+
+    // ───────────────────────── Subjects ─────────────────────────
+    let busy = false;
+    async function addSubjectAt(pt) {
+      if (busy) return; busy = true;
+      try {
+        const f = (await queryParcels({ point: pt, num: 1 }))[0];
+        if (!f) { toast("No parcel here."); return; }
+        addSubjectParcel(f, { keepView: true });
+      } catch (e) { console.error(e); toast("Parcel lookup failed, check the network connection and try again.", 4000); }
+      finally { busy = false; }
+    }
+    function addSubjectParcel(g, opts = {}) {
+      const a = g.attributes, apn = a.APN || "N/A";
+      if (subjects.some(s => s.key === "apn:" + apn)) { toast("Already a subject parcel."); return; }
+      const graphic = new window._Graphic({ geometry: g.geometry, symbol: SYM.subject, attributes: { key: "apn:" + apn } });
+      subjectLayer.add(graphic);
+      subjects.push({ key: "apn:" + apn, kind: "parcel", apn, oid: a.OBJECTID, attrs: a, graphic, geometry: g.geometry,
+        label: a.APO_ADDRESS && hasSitus(a) ? a.APO_ADDRESS : `APN ${apn}`,
+        sub: [`APN ${apn}`, countyLabel(a.COUNTY)].filter(Boolean).join(" · ") });
+      refreshSubjects();
+      if (!opts.keepView) view.goTo(g.geometry.extent.expand(3), { duration: 500 }).catch(() => {});
+    }
+    function removeSubject(key) {
+      const s = subjects.find(x => x.key === key); if (!s) return;
+      subjects = subjects.filter(x => x !== s);
+      if (s.graphic) subjectLayer.remove(s.graphic);
+      refreshSubjects();
+    }
+    function clearSubjects() {
+      subjects = []; subjectLayer.removeAll(); if (sketch) sketch.cancel();
+      refreshSubjects();
+    }
+    function refreshSubjects() {
+      const row = $("subjectChips"); row.innerHTML = ""; row.hidden = !subjects.length;
+      $("clearSubjectsBtn").hidden = !subjects.length;
+      subjects.forEach(s => {
+        const chip = document.createElement("calcite-chip");
+        chip.scale = "s"; chip.closable = true; chip.dataset.key = s.key; chip.textContent = s.label;
+        if (s.sub) chip.title = s.sub;
+        row.appendChild(chip);
+      });
+      $("findBtn").disabled = !subjects.length;
+      drawBuffer();
+      invalidateResults();
+      syncLinks();
+    }
+    $("subjectChips").addEventListener("calciteChipClose", (e) => removeSubject(e.target.dataset.key));
+    $("clearSubjectsBtn").addEventListener("click", clearSubjects);
+
+    function syncLinks() {
+      const p = subjects.find(s => s.kind === "parcel");
+      $("lnkLtinfo").href = p ? (p.attrs.LTINFO_HYPERLINK || `https://parcels.laketahoeinfo.org/Parcel/Detail/${encodeURIComponent(p.apn)}`) : "https://parcels.laketahoeinfo.org";
+      $("lnkLtinfo").title = p ? `Parcel ${p.apn} on Lake Tahoe Info` : "Parcel and permit records on Lake Tahoe Info";
+      $("lnkPermit").href = p && p.oid != null ? `${PERMIT_REVIEW_URL}#data_s=id:${PERMIT_PARCELS_DS}:${p.oid}&zoom_to_selection=true` : PERMIT_REVIEW_URL;
+    }
+
+    // ───────────────────────── Distance + buffer ─────────────────────────
+    function distanceSetting() {
+      const custom = $("distSeg").querySelector("button.active").dataset.value === "custom";
+      const unit = custom ? $("unitSel").value : "feet";
+      const distance = custom ? Math.max(0, +$("distInput").value || 0) : +$("distSeg").querySelector("button.active").dataset.value;
+      return { distance, unit };
+    }
+    const fmtDist = ({ distance, unit }) => `${distance.toLocaleString()} ${unit === "feet" ? "ft" : "m"}`;
+    function subjectUnion() {
+      if (!subjects.length) return null;
+      const geoms = subjects.map(s => s.geometry);
+      return geoms.length === 1 ? geoms[0] : (GE.union(geoms) || geoms[0]);
+    }
+    function drawBuffer() {
+      bufferLayer.removeAll(); bufferGeom = null;
+      const u = subjectUnion(); if (!u) { $("legend").classList.remove("show"); return; }
+      const { distance, unit } = distanceSetting();
+      // Distance 0 keeps the subject shape itself (touching parcels). geodesicBuffer
+      // of a point or line with distance 0 is empty, so fall through to the shape.
+      bufferGeom = distance > 0 ? GE.geodesicBuffer(u, distance, unit, true) : u;
+      if (Array.isArray(bufferGeom)) bufferGeom = bufferGeom[0];
+      if (bufferGeom && bufferGeom.type === "polygon") bufferLayer.add(new window._Graphic({ geometry: bufferGeom, symbol: SYM.buffer }));
+      $("legend").classList.add("show");
+    }
+    $("distSeg").addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      $("distSeg").querySelectorAll("button").forEach(x => { const on = x === b; x.classList.toggle("active", on); x.setAttribute("aria-checked", on ? "true" : "false"); });
+      $("customDist").hidden = b.dataset.value !== "custom";
+      if (b.dataset.value !== "custom") $("distInput").value = b.dataset.value;
+      drawBuffer(); invalidateResults();
+    });
+    $("distInput").addEventListener("input", () => { drawBuffer(); invalidateResults(); });
+    $("unitSel").addEventListener("change", () => { drawBuffer(); invalidateResults(); });
+    $("includeSubject").addEventListener("calciteSwitchChange", invalidateResults);
+
+    // The list reflects a specific distance and subject set; after either changes
+    // the footer says so and Find parcels rebuilds it (rows stay visible until then).
+    function invalidateResults() {
+      if (!rows.length || !lastRun) return;
+      const cur = distanceSetting();
+      const stale = subjects.map(s => s.key).join("|") !== lastRun.subjectKeys || cur.distance !== lastRun.distance || cur.unit !== lastRun.unit
+        || $("includeSubject").checked !== lastRun.includeSubject;
+      if (stale) $("footStatus").textContent = "Subject or distance changed. Click Find parcels to rebuild the list.";
+      else updateStatus();
+    }
+
+    // ───────────────────────── Find parcels ─────────────────────────
+    $("findBtn").addEventListener("click", findParcels);
+    async function findParcels() {
+      if (!subjects.length) return;
+      drawBuffer();
+      // a bare drawn point or line with distance 0 has nothing to intersect
+      if (!bufferGeom || bufferGeom.type !== "polygon") { toast("Set a distance greater than zero for a drawn point or line.", 4000); return; }
+      const btn = $("findBtn"); btn.loading = true; btn.disabled = true;
+      $("footStatus").textContent = "Finding parcels…";
+      try {
+        const feats = await queryParcels({ polygon: bufferGeom });
+        const includeSubject = $("includeSubject").checked;
+        const subjectApns = new Set(subjects.filter(s => s.kind === "parcel").map(s => s.apn));
+        const prevRows = rows;
+        const prevInclude = new Map(rows.map(r => [r.apn, r.include]));   // keep manual exclusions across a re-run
+        rows = feats.map(g => {
+          const a = g.attributes, apn = a.APN || String(a.OBJECTID);
+          const isSubject = subjectApns.has(apn);
+          const r = {
+            apn, oid: a.OBJECTID, geometry: g.geometry, attrs: a, isSubject,
+            situs: hasSitus(a) ? a.APO_ADDRESS : "", situsCity: a.PSTL_TOWN || "", situsState: a.PSTL_STATE || "", situsZip: a.PSTL_ZIP5 || "",
+            mail1: (a.MAIL_ADD1 || "").trim(), mail2: (a.MAIL_ADD2 || "").trim(), mailCity: (a.MAIL_CITY || "").trim(),
+            mailState: (a.MAIL_STATE || "").trim(), mailZip: String(a.MAIL_ZIP5 || "").trim(),
+            jurisdiction: a.JURISDICTION || "", county: a.COUNTY || "", ownership: a.OWNERSHIP_TYPE || "",
+            incomplete: isIncomplete(a), ownerOccupied: isOwnerOccupied(a), mailKey: mailKey(a),
+            ltinfo: a.LTINFO_HYPERLINK || `https://parcels.laketahoeinfo.org/Parcel/Detail/${encodeURIComponent(apn)}`,
+          };
+          r.mailing = [r.mail2, r.mail1].filter(Boolean).join(", ");
+          r.include = prevInclude.has(apn) ? prevInclude.get(apn) : (isSubject ? includeSubject : true);
+          if (isSubject && !includeSubject) r.include = false;
+          return r;
+        });
+        // parcels added by hand on the map stay on the list across a rebuild
+        const have = new Set(rows.map(r => r.apn));
+        prevRows.filter(r => r.added && !have.has(r.apn)).forEach(r => rows.push(r));
+        rows.sort((a, b) => (b.isSubject - a.isSubject) || a.apn.localeCompare(b.apn));
+        markDuplicates();
+        const cur = distanceSetting();
+        lastRun = { subjectKeys: subjects.map(s => s.key).join("|"), distance: cur.distance, unit: cur.unit, includeSubject };
+        renderResults();
+        $("drawer").hidden = false; setDrawerCollapsed(false);
+        if (bufferGeom.extent) view.goTo(bufferGeom.extent.expand(1.4), { duration: 500 }).catch(() => {});
+        if (!rows.length) toast("No parcels within that distance.", 4000);
+      } catch (e) {
+        console.error(e); $("footStatus").textContent = "The parcel query failed.";
+        toast("Couldn't query parcels, check the network connection and try again.", 5000);
+      } finally { btn.loading = false; btn.disabled = !subjects.length; }
+    }
+    // Among included rows with a complete address, later rows that share a
+    // mailing address point at the first one (used by dedupe and the badges).
+    function markDuplicates() {
+      const seen = new Map();
+      rows.forEach(r => {
+        r.dupOf = null;
+        if (!r.include || r.incomplete) return;
+        if (seen.has(r.mailKey)) r.dupOf = seen.get(r.mailKey); else seen.set(r.mailKey, r.apn);
+      });
+    }
+
+    // ───────────────────────── Refine on the map ─────────────────────────
+    async function refineAt(pt) {
+      if (busy) return; busy = true;
+      try {
+        const f = (await queryParcels({ point: pt, num: 1 }))[0];
+        if (!f) { toast("No parcel here."); return; }
+        const apn = f.attributes.APN;
+        const r = rows.find(x => x.apn === apn);
+        if (r) { r.include = !r.include; toast(`${r.situs || "APN " + apn} ${r.include ? "added back to" : "removed from"} the list.`); }
+        else {
+          const a = f.attributes;
+          rows.push({ apn, oid: a.OBJECTID, geometry: f.geometry, attrs: a, isSubject: false, added: true,
+            situs: hasSitus(a) ? a.APO_ADDRESS : "", situsCity: a.PSTL_TOWN || "", situsState: a.PSTL_STATE || "", situsZip: a.PSTL_ZIP5 || "",
+            mail1: (a.MAIL_ADD1 || "").trim(), mail2: (a.MAIL_ADD2 || "").trim(), mailCity: (a.MAIL_CITY || "").trim(),
+            mailState: (a.MAIL_STATE || "").trim(), mailZip: String(a.MAIL_ZIP5 || "").trim(),
+            mailing: [(a.MAIL_ADD2 || "").trim(), (a.MAIL_ADD1 || "").trim()].filter(Boolean).join(", "),
+            jurisdiction: a.JURISDICTION || "", county: a.COUNTY || "", ownership: a.OWNERSHIP_TYPE || "",
+            incomplete: isIncomplete(a), ownerOccupied: isOwnerOccupied(a), mailKey: mailKey(a), include: true,
+            ltinfo: a.LTINFO_HYPERLINK || `https://parcels.laketahoeinfo.org/Parcel/Detail/${encodeURIComponent(apn)}` });
+          toast(`${hasSitus(a) ? a.APO_ADDRESS : "APN " + apn} added to the list.`);
+          if (!lastRun) lastRun = { subjectKeys: subjects.map(s => s.key).join("|"), ...distanceSetting(), includeSubject: $("includeSubject").checked };
+        }
+        markDuplicates(); renderResults(); $("drawer").hidden = false;
+      } catch (e) { console.error(e); toast("Parcel lookup failed, check the network connection and try again.", 4000); }
+      finally { busy = false; }
+    }
+
+    // ───────────────────────── Results: map + grid ─────────────────────────
+    function renderResults() {
+      resultLayer.removeAll();
+      rows.forEach(r => resultLayer.add(new window._Graphic({ geometry: r.geometry, symbol: r.include ? SYM.included : SYM.excluded, attributes: { apn: r.apn } })));
+      ensureGrid();
+      gridApi.setGridOption("rowData", rows.map(r => ({ ...r })));
+      updateStatus();
+    }
+    function updateStatus() {
+      const inc = rows.filter(r => r.include);
+      const incomplete = inc.filter(r => r.incomplete).length;
+      const labels = countLabels();
+      $("drawerCount").textContent = rows.length ? `${inc.length} of ${rows.length} included` : "";
+      const bits = [];
+      if (lastRun) bits.push(`Within ${fmtDist(lastRun)}: ${rows.length} parcel${rows.length === 1 ? "" : "s"}, ${inc.length} included.`);
+      bits.push(`${labels.owner} owner label${labels.owner === 1 ? "" : "s"}${labels.occupant ? ` + ${labels.occupant} occupant` : ""}.`);
+      if (incomplete) bits.push(`${incomplete} without a usable mailing address.`);
+      $("footStatus").textContent = bits.join(" ");
+      ["csvBtn", "pdfBtn", "mapBtn"].forEach(id => { $(id).disabled = !inc.length; });
+    }
+    function ensureGrid() {
+      if (gridApi) return;
+      const theme = agGrid.themeQuartz.withParams({ accentColor: C.blue, fontFamily: "Open Sans, system-ui, sans-serif", fontSize: 12,
+        headerFontSize: 11, rowHeight: 30, headerHeight: 32, spacing: 5, borderColor: "#E2E6EC", headerTextColor: "#6B7688" });
+      const notes = (p) => {
+        const r = p.data, b = [];
+        if (r.isSubject) b.push('<span class="badge subject">Subject</span>');
+        if (r.added) b.push('<span class="badge dup">Added</span>');
+        if (r.incomplete) b.push('<span class="badge incomplete" title="No usable mailing address on file; left out of the labels">Incomplete</span>');
+        else if (r.ownerOccupied) b.push('<span class="badge owner" title="Mailing address matches the property address">Owner-occupied</span>');
+        if (r.dupOf) b.push(`<span class="badge dup" title="Same mailing address as APN ${escHtml(r.dupOf)}">Same as ${escHtml(r.dupOf)}</span>`);
+        return b.join("");
+      };
+      gridApi = agGrid.createGrid($("grid"), {
+        theme, rowData: [], getRowId: (p) => p.data.apn, animateRows: false, suppressCellFocus: true,
+        rowClassRules: { "row-excluded": (p) => !p.data.include, "row-subject": (p) => p.data.isSubject },
+        defaultColDef: { sortable: true, resizable: true, filter: false, suppressMovable: true },
+        columnDefs: [
+          { field: "include", headerName: "Include", width: 84, editable: true, cellDataType: "boolean", pinned: "left" },
+          { field: "apn", headerName: "APN", width: 118, pinned: "left",
+            cellRenderer: (p) => `<a href="${escHtml(p.data.ltinfo)}" target="_blank" rel="noopener" title="Open on Lake Tahoe Info">${escHtml(p.value)}</a>` },
+          { field: "situs", headerName: "Property address", flex: 1.2, minWidth: 150, valueFormatter: (p) => p.value || "(no situs address)" },
+          { field: "mailing", headerName: "Mailing address", flex: 1.4, minWidth: 170 },
+          { field: "mailCity", headerName: "City", width: 130 },
+          { field: "mailState", headerName: "State", width: 66 },
+          { field: "mailZip", headerName: "ZIP", width: 76 },
+          { field: "jurisdiction", headerName: "Juris.", width: 78 },
+          { headerName: "Notes", flex: 1.2, minWidth: 160, sortable: false, cellRenderer: notes },
+        ],
+        onCellValueChanged: (e) => {
+          if (e.colDef.field !== "include") return;
+          const r = rows.find(x => x.apn === e.data.apn); if (!r) return;
+          r.include = !!e.newValue; markDuplicates(); renderResults();
+        },
+        onRowClicked: (e) => {
+          if (e.event && e.event.target.closest("a, .ag-cell[col-id='include']")) return;
+          const r = rows.find(x => x.apn === e.data.apn); if (!r) return;
+          highlightLayer.removeAll();
+          highlightLayer.add(new window._Graphic({ geometry: r.geometry, symbol: SYM.highlight }));
+          view.goTo(r.geometry.extent.expand(2.5), { duration: 400 }).catch(() => {});
+          clearTimeout(ensureGrid._hl); ensureGrid._hl = setTimeout(() => highlightLayer.removeAll(), 2500);
+        },
+      });
+    }
+    $("quickFilter").addEventListener("input", (e) => gridApi && gridApi.setGridOption("quickFilterText", e.target.value));
+    $("includeAllBtn").addEventListener("click", () => { rows.forEach(r => r.include = true); markDuplicates(); renderResults(); });
+    $("excludeAllBtn").addEventListener("click", () => { rows.forEach(r => r.include = false); markDuplicates(); renderResults(); });
+    function setDrawerCollapsed(c) { document.body.classList.toggle("drawer-collapsed", c); $("drawerToggleIcon").icon = c ? "chevron-up" : "chevron-down"; }
+    $("drawerToggle").addEventListener("click", () => setDrawerCollapsed(!document.body.classList.contains("drawer-collapsed")));
+    ["dedupeSwitch", "occupantSwitch"].forEach(id => $(id).addEventListener("calciteSwitchChange", updateStatus));
+    $("line1Sel").addEventListener("change", updateStatus);
+    $("sheetSel").addEventListener("change", () => { $("startLabel").max = SHEETS[$("sheetSel").value].cols * SHEETS[$("sheetSel").value].rows; });
+
+    // ───────────────────────── Labels ─────────────────────────
+    // Returns { labels: [[line, line, ...]], owner, occupant, skipped }
+    function buildLabels() {
+      const dedupe = $("dedupeSwitch").checked, occupants = $("occupantSwitch").checked, line1 = $("line1Sel").value;
+      const inc = rows.filter(r => r.include);
+      const labels = [], seenMail = new Set(), seenSitus = new Set();
+      let owner = 0, occupant = 0, skipped = 0;
+      // USPS style: address lines in capitals. Some assessors repeat the
+      // care-of line inside address line 1, so a redundant line 2 is dropped.
+      const up = (s) => String(s || "").toUpperCase();
+      for (const r of inc) {
+        if (r.incomplete) { skipped++; continue; }
+        if (dedupe) { if (seenMail.has(r.mailKey)) continue; seenMail.add(r.mailKey); }
+        const add2 = r.mail2 && !normAddr(r.mail1).startsWith(normAddr(r.mail2)) ? up(r.mail2) : "";
+        labels.push([line1, add2, up(r.mail1), up(cityLine(r.mailCity, r.mailState, r.mailZip))].filter(Boolean)); owner++;
+      }
+      if (occupants) {
+        for (const r of inc) {
+          if (!r.situs || r.ownerOccupied) continue;
+          const k = situsKey(r.attrs); if (seenSitus.has(k)) continue; seenSitus.add(k);
+          labels.push(["Current Resident", up(r.situs), up(cityLine(r.situsCity, r.situsState, r.situsZip))].filter(Boolean)); occupant++;
+        }
+      }
+      return { labels, owner, occupant, skipped };
+    }
+    function countLabels() { const b = buildLabels(); return { owner: b.owner, occupant: b.occupant }; }
+
+    function exportSlug() {
+      const p = subjects.find(s => s.kind === "parcel");
+      const n = new Date(), d = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+      return `public-notice_${p ? p.apn : "drawn-area"}_${lastRun ? lastRun.distance + (lastRun.unit === "feet" ? "ft" : "m") : "list"}_${d}`;
+    }
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    $("pdfBtn").addEventListener("click", () => {
+      const { labels, owner, occupant, skipped } = buildLabels();
+      if (!labels.length) { toast("No labels to print: every included parcel is missing a mailing address.", 4000); return; }
+      const T = SHEETS[$("sheetSel").value];
+      const perPage = T.cols * T.rows;
+      const start = Math.min(perPage, Math.max(1, +$("startLabel").value || 1)) - 1;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: "in", format: "letter" });
+      doc.setFont("helvetica", "normal");
+      let i = start;
+      labels.forEach((lines, n) => {
+        if (n > 0 && i % perPage === 0) doc.addPage();
+        const slot = i % perPage, col = slot % T.cols, row = Math.floor(slot / T.cols);
+        const x = T.left + col * T.pitchX + T.pad, w = T.w - 2 * T.pad, maxH = T.h - 2 * T.pad;
+        // Long lines wrap; if the wrapped block is taller than the label the
+        // font shrinks (7pt floor) until it fits.
+        let size = T.font, wrapped, lh;
+        for (;;) {
+          doc.setFontSize(size); lh = size / 72 * 1.22;
+          wrapped = lines.flatMap(l => doc.splitTextToSize(l, w));
+          if (wrapped.length * lh <= maxH || size <= 7) break;
+          size -= 0.5;
+        }
+        let y = T.top + row * T.pitchY + (T.h - wrapped.length * lh) / 2 + lh * 0.8;   // vertically centered in the label
+        wrapped.forEach(l => { doc.text(l, x, y); y += lh; });
+        i++;
+      });
+      doc.save(exportSlug() + "_labels-" + $("sheetSel").value + ".pdf");
+      const note = skipped ? ` ${skipped} parcel${skipped === 1 ? "" : "s"} skipped for missing addresses.` : "";
+      toast(`${labels.length} labels (${owner} owner${occupant ? `, ${occupant} occupant` : ""}) on ${Math.ceil((labels.length + start) / perPage)} sheet${labels.length + start > perPage ? "s" : ""}.${note}`, 6000);
+    });
+
+    // ───────────────────────── CSV ─────────────────────────
+    $("csvBtn").addEventListener("click", () => {
+      const inc = rows.filter(r => r.include);
+      const cols = [["APN", r => r.apn], ["Property Address", r => r.situs], ["Property City", r => r.situsCity], ["Property State", r => r.situsState],
+        ["Property ZIP", r => r.situsZip], ["Mail Address 1", r => r.mail1], ["Mail Address 2", r => r.mail2], ["Mail City", r => r.mailCity],
+        ["Mail State", r => r.mailState], ["Mail ZIP", r => r.mailZip], ["Jurisdiction", r => r.jurisdiction], ["County", r => r.county],
+        ["Ownership Type", r => r.ownership], ["Subject Parcel", r => r.isSubject ? "Yes" : ""], ["Owner Occupied", r => r.ownerOccupied ? "Yes" : ""],
+        ["Mailing Address Complete", r => r.incomplete ? "No" : "Yes"], ["Same Mailing Address As", r => r.dupOf || ""], ["Lake Tahoe Info", r => r.ltinfo]];
+      const q = (v) => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+      const meta = [`# Public notice list`, `# Subject: ${subjects.map(s => s.label).join("; ")}`,
+        `# Distance: ${lastRun ? fmtDist(lastRun) : "n/a"}`, `# Generated: ${new Date().toLocaleString()} from maps.trpa.org Parcels`];
+      const lines = [...meta, cols.map(c => q(c[0])).join(","), ...inc.map(r => cols.map(c => q(c[1](r))).join(","))];
+      downloadBlob(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }), exportSlug() + ".csv");
+      toast(`CSV saved, ${inc.length} parcels.`);
+    });
+
+    // ───────────────────────── Map PNG ─────────────────────────
+    function loadImage(src) { return new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; }); }
+    $("mapBtn").addEventListener("click", async () => {
+      const btn = $("mapBtn"); btn.loading = true;
+      try {
+        highlightLayer.removeAll();
+        if (bufferGeom && bufferGeom.extent) await view.goTo(bufferGeom.extent.expand(1.35), { duration: 0 }).catch(() => {});
+        await new Promise(r => setTimeout(r, 900));   // let tiles settle
+        const W = Math.round(view.width * 2), H = Math.round(view.height * 2);
+        const shot = await view.takeScreenshot({ format: "png", width: W, height: H });
+        const img = await loadImage(shot.dataUrl), logo = await loadImage("../assets/TRPALogo_COLOR.png");
+        const cap = 150, cv = document.createElement("canvas"); cv.width = W; cv.height = H + cap;
+        const ctx = cv.getContext("2d");
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H + cap); ctx.drawImage(img, 0, 0);
+        ctx.strokeStyle = "#E2E6EC"; ctx.lineWidth = 2; ctx.strokeRect(1, 1, W - 2, H - 2);
+        let x = 40;
+        if (logo) { const lh = 90, lw = logo.width * lh / logo.height; ctx.drawImage(logo, x, H + 30, lw, lh); x += lw + 36; }
+        const inc = rows.filter(r => r.include).length;
+        ctx.fillStyle = C.navy; ctx.font = "700 34px 'Open Sans', sans-serif"; ctx.textBaseline = "top";
+        ctx.fillText("Public Notice Area", x, H + 32);
+        ctx.font = "400 24px 'Open Sans', sans-serif"; ctx.fillStyle = "#3b4a5e";
+        const subj = subjects.map(s => s.label).join("; ");
+        ctx.fillText(`Subject: ${subj.length > 90 ? subj.slice(0, 88) + "…" : subj}`, x, H + 76);
+        ctx.fillText(`Notice distance ${lastRun ? fmtDist(lastRun) : fmtDist(distanceSetting())}  ·  ${inc} parcels on the list  ·  ${new Date().toLocaleDateString()}`, x, H + 108);
+        ctx.font = "400 18px 'Open Sans', sans-serif"; ctx.fillStyle = "#6B7688"; ctx.textAlign = "right";
+        ctx.fillText("Parcels: TRPA GIS  ·  Basemap: Esri", W - 36, H + 112);
+        cv.toBlob(b => downloadBlob(b, exportSlug() + "_map.png"), "image/png");
+        toast("Map saved.");
+      } catch (e) { console.error(e); toast("Map export failed, try again once the map has finished drawing.", 4000); }
+      finally { btn.loading = false; }
+    });
+
+    // ───────────────────────── Search ─────────────────────────
+    const input = $("searchInput"), list = $("suggestList"), clearBtn = $("searchClear");
+    let suggestItems = [], debounceT = null, activeSugg = -1, suggestSeq = 0;
+    async function runSuggest(termRaw) {
+      const term = termRaw.trim();
+      if (term.length < 3 || !parcelsFL) { closeSuggest(); return; }
+      const seq = ++suggestSeq; $("searchBusy").hidden = false;
+      try {
+        const t = escLike(term.toUpperCase());
+        const clauses = [`UPPER(APO_ADDRESS) LIKE '%${t}%' ESCAPE '\\'`, `UPPER(APN) LIKE '${t}%' ESCAPE '\\'`];
+        if (/^\d{4,}$/.test(term)) clauses.push(`APN LIKE '${term.split("").join("%")}%'`);
+        let feats = [], err = false;
+        try { feats = await queryParcels({ where: clauses.join(" OR "), num: 8, orderByFields: ["APO_ADDRESS ASC"] }); }
+        catch (e) { console.error(e); err = true; }
+        if (seq !== suggestSeq) return;
+        suggestItems = feats;
+        if (err) { list.innerHTML = `<div class="suggest-empty">Parcel search is unavailable right now (maps.trpa.org didn't answer). Check the connection and try again.</div>`; openSuggest(); return; }
+        renderSuggest(term);
+      } finally { if (seq === suggestSeq) $("searchBusy").hidden = true; }
+    }
+    function renderSuggest(term) {
+      activeSugg = -1;
+      if (!suggestItems.length) { list.innerHTML = `<div class="suggest-empty">No matches for “${escHtml(term)}”, try an address or APN.</div>`; openSuggest(); return; }
+      list.innerHTML = suggestItems.map((g, i) => {
+        const a = g.attributes;
+        const juris = escHtml([a.JURISDICTION, countyLabel(a.COUNTY)].filter(Boolean).join(" · "));
+        return `<div class="suggest-item" role="option" id="sugg-${i}" data-i="${i}" aria-selected="false">
+          <span class="s-primary">${escHtml(a.APO_ADDRESS || "(no address on file)")}</span>
+          <span class="s-secondary">APN <span class="s-apn">${escHtml(a.APN || "N/A")}</span>${juris ? " · " + juris : ""}</span></div>`;
+      }).join("");
+      openSuggest();
+    }
+    function openSuggest()  { list.classList.add("open"); input.setAttribute("aria-expanded", "true"); }
+    function closeSuggest() { list.classList.remove("open"); list.innerHTML = ""; activeSugg = -1; input.setAttribute("aria-expanded", "false"); input.removeAttribute("aria-activedescendant"); }
+    function pickSuggest(i) { const g = suggestItems[i]; if (!g) return; closeSuggest(); input.value = ""; clearBtn.style.display = "none"; addSubjectParcel(g); }
+    list.addEventListener("click", (e) => { const el = e.target.closest(".suggest-item"); if (el) pickSuggest(+el.dataset.i); });
+    function setActiveSugg(i) {
+      const items = list.querySelectorAll(".suggest-item"); if (!items.length) return;
+      activeSugg = (i + items.length) % items.length;
+      items.forEach((el, k) => { el.classList.toggle("active", k === activeSugg); el.setAttribute("aria-selected", k === activeSugg ? "true" : "false"); });
+      input.setAttribute("aria-activedescendant", `sugg-${activeSugg}`); items[activeSugg].scrollIntoView({ block: "nearest" });
+    }
+    input.addEventListener("input", () => { clearBtn.style.display = input.value ? "block" : "none"; clearTimeout(debounceT); debounceT = setTimeout(() => runSuggest(input.value), 280); });
+    input.addEventListener("keydown", (e) => {
+      const open = list.classList.contains("open");
+      if (e.key === "ArrowDown") { e.preventDefault(); if (open) setActiveSugg(activeSugg + 1); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); if (open) setActiveSugg(activeSugg - 1); }
+      else if (e.key === "Enter") { if (open && suggestItems.length) { e.preventDefault(); pickSuggest(activeSugg >= 0 ? activeSugg : 0); } }
+      else if (e.key === "Escape") closeSuggest();
+    });
+    clearBtn.addEventListener("click", () => { input.value = ""; clearBtn.style.display = "none"; closeSuggest(); input.focus(); });
+    document.addEventListener("click", (e) => { if (!e.target.closest(".search-wrap")) closeSuggest(); });
+
+    // ───────────────────────── Share link ─────────────────────────
+    // #v=1&apn=a|b&d=300&u=feet&sub=1&dd=1&occ=0&l1=Property+Owner  (drawn shapes can't be linked)
+    $("shareBtn").addEventListener("click", async () => {
+      const apns = subjects.filter(s => s.kind === "parcel").map(s => s.apn);
+      const { distance, unit } = distanceSetting();
+      const p = new URLSearchParams({ v: "1", d: distance, u: unit, sub: $("includeSubject").checked ? 1 : 0,
+        dd: $("dedupeSwitch").checked ? 1 : 0, occ: $("occupantSwitch").checked ? 1 : 0, l1: $("line1Sel").value, sheet: $("sheetSel").value });
+      if (apns.length) p.set("apn", apns.join("|"));
+      const url = location.origin + location.pathname + "#" + p.toString().replace(/%7C/g, "|");
+      const drawn = subjects.length - apns.length;
+      const note = drawn ? ` ${drawn} drawn shape${drawn === 1 ? "" : "s"} can't be linked.` : "";
+      try { await navigator.clipboard.writeText(url); toast("Link copied." + note, 4000); } catch (e) { window.prompt("Copy this link:", url); }
+    });
+    async function applyShareHash() {
+      const h = location.hash.replace(/^#/, ""); if (!/(^|&)v=1(&|$)/.test(h)) return;
+      const p = new URLSearchParams(h);
+      if (p.has("d")) {
+        const d = Math.max(0, +p.get("d") || 0), u = p.get("u") === "meters" ? "meters" : "feet";
+        const preset = [...$("distSeg").querySelectorAll("button")].find(b => b.dataset.value === String(d) && u === "feet");
+        const target = preset || $("distSeg").querySelector('[data-value="custom"]');
+        $("distSeg").querySelectorAll("button").forEach(x => { const on = x === target; x.classList.toggle("active", on); x.setAttribute("aria-checked", on ? "true" : "false"); });
+        $("customDist").hidden = !!preset; $("distInput").value = d; $("unitSel").value = u;
+      }
+      if (p.has("sub")) $("includeSubject").checked = p.get("sub") === "1";
+      if (p.has("dd")) $("dedupeSwitch").checked = p.get("dd") === "1";
+      if (p.has("occ")) $("occupantSwitch").checked = p.get("occ") === "1";
+      if (p.has("l1") && [...$("line1Sel").options].some(o => o.value === p.get("l1"))) $("line1Sel").value = p.get("l1");
+      if (p.has("sheet") && SHEETS[p.get("sheet")]) $("sheetSel").value = p.get("sheet");
+      const apns = (p.get("apn") || "").split("|").map(s => s.trim()).filter(Boolean);
+      let missing = 0;
+      for (const apn of apns) {
+        try { const f = (await queryParcels({ where: `APN = '${escSql(apn)}'`, num: 1 }))[0]; if (f) addSubjectParcel(f, { keepView: true }); else missing++; }
+        catch (e) { console.error("share link parcel failed:", apn, e); missing++; }
+      }
+      if (missing) toast(`${missing} linked parcel${missing === 1 ? "" : "s"} couldn't be found.`, 5000);
+      if (subjects.length) await findParcels();
+    }
+
+    // ───────────────────────── Panel + about ─────────────────────────
+    function setPanelCollapsed(c) { document.body.classList.toggle("panel-collapsed", c); $("panelToggleIcon").icon = c ? "chevron-right" : "chevron-left"; }
+    $("panelToggle").addEventListener("click", () => setPanelCollapsed(!document.body.classList.contains("panel-collapsed")));
+    $("aboutBtn").addEventListener("click", () => { $("aboutDialog").open = true; });
+  </script>
+</body>
+</html>

@@ -184,6 +184,20 @@
       "beta": true
     },
     {
+      "id": "publicnotice",
+      "title": "Public Notice List",
+      "category": "tools",
+      "url": "tools/public-notice.html",
+      "thumbnail": "assets/thumbs/public-notice.svg",
+      "description": "Build the owner mailing list for a public notice. Pick the subject parcels, set a notice distance, review who is inside it, and export a CSV, Avery mailing labels, and a map of the notice area.",
+      "tags": [
+        "Permitting",
+        "Parcels",
+        "Mailing Labels"
+      ],
+      "beta": true
+    },
+    {
       "id": "eiplocator",
       "title": "Project Locator",
       "category": "tools",
