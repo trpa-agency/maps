@@ -802,11 +802,45 @@
         return `<button class="flag-btn pin ${d.pinned ? "on" : ""}" data-act="pin" title="${d.pinned ? "Unpin" : "Pin: fund this project first"}"><calcite-icon icon="pin" scale="s"></calcite-icon></button>` +
           `<button class="flag-btn ex ${d.excluded ? "on" : ""}" data-act="ex" title="${d.excluded ? "Return to the pool" : "Exclude from the pool"}"><calcite-icon icon="x-circle" scale="s"></calcite-icon></button>`;
       };
+      // Header tooltips: what each column means and where it comes from. Hover a header to read it.
+      const HEADER_TIPS = {
+        "#": "Rank in the current scenario: pinned projects first, then score, then smaller unfunded need. Excluded projects have no rank.",
+        "": "Pin a project to fund it first, or exclude it from the pool. Click again to undo.",
+        "Project #": "EIP project number. Opens the project's fact sheet on the EIP Project Tracker.",
+        "Project": "Project name as entered on the Tracker. Click a row to see details and the score breakdown on the map.",
+        "Focus area": "EIP focus area the Tracker assigns the project to: Watersheds and Water Quality, Forest Health, Sustainable Recreation and Transportation, or Science, Stewardship, and Accountability.",
+        "Lead implementer": "Organization listed as lead implementer on the Tracker.",
+        "Stage": "Project stage on the Tracker. The pool holds Planning/Design and Implementation.",
+        "Score": "0 to 100: the weighted average of the scoring criteria that have data for this project. Hover a score for the breakdown; change weights under Scoring weights.",
+        "vs Balanced": "Rank change against the Balanced preset with no picks. Up means your weights moved the project up the list.",
+        "Est. cost": "Estimated total cost as reported on the Tracker.",
+        "Secured": "Funding the implementer reports as secured on the Tracker.",
+        "LTRA ask": "Targeted (not yet secured) funding from Lake Tahoe Restoration Act sources in the project's expected funding table on the Tracker. A plus sign means some LTRA funding is already secured.",
+        "Targeted": "All targeted (not yet secured) funding identified on the Tracker, across every source.",
+        "Funding status": "From the Tracker: Fully funded (secured covers the cost), Partially funded (some secured, some needed), Unfunded (cost known, nothing secured), or Unpriced (no cost estimate).",
+        "Unfunded need": "What the envelope counts: estimated cost minus secured funding, as the Tracker computes it. An asterisk means secured funding is not reported and cost minus expenditures stands in.",
+        "Spent": "Expenditures reported to the Tracker to date, all sources.",
+        "Remaining": "Estimated total cost minus expenditures to date.",
+        "Envelope": "Whether this scenario's funding envelope covers the project's unfunded need, in rank order. Shown only when an envelope is set.",
+        "Priority project": "Tick the projects your agency wants funded this round. Picks stay in this browser; export them from Priority projects in the panel.",
+        "Priority votes": "How many reviewers picked this project, out of everyone whose list is loaded (you plus imported files). Hover for names and notes.",
+        "Note": "Your note on the project. Exported with your picks.",
+        "Data": "Share of the active scoring weight this project had data for. Low values mean the score rests on fewer criteria.",
+        "Thresholds": "Threshold categories the project reports against on the Tracker.",
+        "Action priority": "The one EIP action priority the Tracker assigns the project for reporting.",
+        "Funding sources": "Funding sources with expenditures on the project, from the Tracker.",
+        "Tags": "Public Tracker tags on the project.",
+        "Years": "Implementation start year to completion year, as reported on the Tracker.",
+        "5-Year List": "Whether the project is on the EIP 5-Year Project List.",
+        "Funding requests": "Secured and targeted amounts by funding source, from the project's expected funding table on the Tracker.",
+      };
+      const withHeaderTips = (defs) => defs.map(c => ({ headerTooltip: HEADER_TIPS[c.headerName], ...c }));
       gridApi = agGrid.createGrid($("grid"), {
         theme, rowData: [], getRowId: (p) => p.data.id, animateRows: false, suppressCellFocus: true, singleClickEdit: true, stopEditingWhenCellsLoseFocus: true,
+        tooltipShowDelay: 300, tooltipHideDelay: 20000,
         rowClassRules: { "row-excluded": (p) => p.data.excluded, "row-pinned-proj": (p) => p.data.pinned, "row-selected-proj": (p) => p.data.id === selectedId },
         defaultColDef: { sortable: true, resizable: true, suppressMovable: true, tooltipValueGetter: (p) => p.valueFormatted ?? p.value },
-        columnDefs: [
+        columnDefs: withHeaderTips([
           { headerName: "#", field: "rank", width: 54, type: "rightAligned", pinned: "left", valueFormatter: (p) => p.value ?? "", comparator: (a, b) => (a ?? 1e9) - (b ?? 1e9), sort: "asc" },
           { headerName: "", field: "flags", width: 62, sortable: false, cellRenderer: flags, pinned: "left" },
           { headerName: "Project #", field: "id", width: 118, cellRenderer: (p) => `<a href="${escHtml(p.data.factUrl || p.data.url)}" target="_blank" rel="noopener" title="Fact sheet on the EIP Project Tracker">${escHtml(p.value)}</a>` },
@@ -843,8 +877,8 @@
           { headerName: "Tags", field: "tags", width: 150, valueFormatter: (p) => (p.value || []).join("; ") },
           { headerName: "Years", width: 90, valueGetter: (p) => [p.data.implStart, p.data.end].filter(v => v != null).join(" – ") },
           { headerName: "5-Year List", field: "fiveYear", width: 96, valueFormatter: (p) => p.value ? "yes" : "" },
-          { headerName: "Funding requests", field: "requests", width: 260, headerTooltip: "Secured and targeted amounts by source, from the Tracker" },
-        ],
+          { headerName: "Funding requests", field: "requests", width: 260 },
+        ]),
         onCellClicked: (e) => {
           if (e.column.getColId() === "flags") { const b = e.event.target.closest("button"); if (b) toggleFlag(e.data.id, b.dataset.act); return; }
           if (e.column.getColId() === "my") { setMyScore(e.data.id, review.scores[e.data.id]?.s ? null : 1, undefined); recompute(); return; }
