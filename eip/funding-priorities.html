@@ -194,6 +194,7 @@
     .badge.funded { background: var(--eip-green-light); color: #2F6B13; }
     .badge.cut { background: var(--eip-orange-light); color: #B5430E; }
     .badge.unpriced { background: var(--gray-bg); color: var(--gray-text); border: 1px solid var(--gray-border); }
+    .badge.fully { background: #fff; color: #2F6B13; border: 1px solid var(--eip-green); }
     .badge.pinned { background: var(--eip-blue-light); color: var(--eip-blue); }
     .flag-btn { border: none; background: transparent; cursor: pointer; color: #B8C0CC; padding: 0 0.15rem; line-height: 0; vertical-align: middle; border-radius: 999px; }
     .flag-btn:hover { color: var(--eip-blue); background: var(--gray-bg); }
@@ -317,6 +318,8 @@
             <button data-v="Implementation" class="on">Implementation</button>
             <button data-v="Post-Implementation">Post-Implementation</button>
             <button data-v="Completed">Completed</button>
+            <button data-v="Deferred">Deferred</button>
+            <button data-v="Terminated">Terminated</button>
           </div>
         </label>
         <label class="field">Focus area
@@ -331,6 +334,9 @@
         <label class="field">Funding source already on the project
           <calcite-combobox id="fundSel" selection-mode="multiple" scale="s" placeholder="Any source" max-items="7" overlay-positioning="fixed"></calcite-combobox>
         </label>
+        <label class="field">Tag
+          <calcite-combobox id="tagSel" selection-mode="multiple" scale="s" placeholder="Any tag (LTRA, Climate Resilience, and others)" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+        </label>
         <label class="field">State
           <div class="seg" id="stateSeg" role="radiogroup">
             <button data-v="" class="active">All</button>
@@ -341,6 +347,10 @@
         <label class="toggle">
           <calcite-switch id="pricedOnly" scale="s"></calcite-switch>
           <span>Only projects with a cost estimate <span class="t-help">(the ones an envelope can count)</span></span>
+        </label>
+        <label class="toggle">
+          <calcite-switch id="needOnly" scale="s"></calcite-switch>
+          <span>Only projects with unfunded need <span class="t-help">(drops fully funded ones)</span></span>
         </label>
         <label class="toggle">
           <calcite-switch id="nonEip" scale="s"></calcite-switch>
@@ -375,8 +385,8 @@
 
       <section class="panel-sec">
         <h2 class="sec-title"><span class="sec-num">3</span> Funding envelope</h2>
-        <p class="sec-help">How much is on the table this round. Projects are funded in rank order by their remaining need
-          (estimated cost minus expenditures to date). Pinned projects are funded first.</p>
+        <p class="sec-help">How much is on the table this round. Projects are funded in rank order by their unfunded need
+          (estimated cost minus secured funding, as reported to the Tracker). Pinned projects are funded first.</p>
         <div class="pill-input">
           <span class="pre">$</span>
           <input id="envInput" type="number" min="0" step="1" placeholder="0" aria-label="Funding envelope in millions of dollars" />
@@ -449,8 +459,8 @@
             <div class="tiles" id="tiles"></div>
             <div class="charts-grid">
               <div class="chart-card"><h4>Where the envelope runs out</h4><div class="plot" id="chartCum"></div></div>
-              <div class="chart-card"><h4>Remaining need by focus area</h4><div class="plot" id="chartFocus"></div></div>
-              <div class="chart-card"><h4>Remaining need by lead implementer</h4><div class="plot" id="chartLead"></div></div>
+              <div class="chart-card"><h4>Unfunded need by focus area</h4><div class="plot" id="chartFocus"></div></div>
+              <div class="chart-card"><h4>Unfunded need by lead implementer</h4><div class="plot" id="chartLead"></div></div>
             </div>
           </div>
         </div>
@@ -468,8 +478,9 @@
         <li><strong>Priorities.</strong> Weight the criteria. Each is scored 0 to 1 per project from Tracker data; the project score is the weighted
           average of the criteria that have data, times 100. Criteria without data for a project are left out of its average, and the
           <em>Data</em> column shows how much of the active weight had data.</li>
-        <li><strong>Funding envelope.</strong> Enter a dollar amount. Projects are funded in rank order by remaining need (estimated cost minus
-          expenditures to date). Pinned projects go first; excluded projects leave the pool.</li>
+        <li><strong>Funding envelope.</strong> Enter a dollar amount. Projects are funded in rank order by unfunded need (estimated cost minus
+          secured funding, as the implementer reported it to the Tracker). Where secured funding is not reported, cost minus expenditures
+          stands in and the row is marked with an asterisk. Pinned projects go first; excluded projects leave the pool.</li>
         <li><strong>Panel review.</strong> Reviewers score 1 to 5 in the table and export a file. Import the files to average them into the score.
           Scores and notes are kept in this browser only.</li>
       </ol>
@@ -482,10 +493,10 @@
       </ul>
       <h3>Caveats</h3>
       <ul id="aboutCaveats">
-        <li>Estimated total cost is reported for only part of the pool, so the envelope can only count those projects. The rest are ranked but marked
-          <em>Unpriced</em>. Turn on <em>Only projects with a cost estimate</em> to see the envelope against priced projects alone.</li>
-        <li>Remaining need is cost minus expenditures reported to the Tracker. It is not the same as unfunded need: committed but unspent
-          funding is not in the data.</li>
+        <li>Projects without an estimated total cost are ranked but marked <em>Unpriced</em>, and the envelope cannot count them. Turn on
+          <em>Only projects with a cost estimate</em> to see the envelope against priced projects alone.</li>
+        <li>Unfunded need, secured funding, and cost are self-reported by implementers and are only as current as their last Tracker update.
+          Projects whose secured funding equals their cost show zero need and are funded at no cost to the envelope.</li>
         <li>The Tracker assigns each project one action priority for reporting, so multi-benefit projects may not match the action priority you pick.</li>
         <li>This tool does not write to the Tracker. Export the ranked list and panel scores to carry results forward.</li>
       </ul>
@@ -494,7 +505,7 @@
 
   <script>
     // ───────────────────────── Config ─────────────────────────
-    const DATA_BASE = "https://trpa-agency.github.io/EIP/data/";
+    const DATA_BASE = new URLSearchParams(location.search).get("data") || "https://trpa-agency.github.io/EIP/data/";
     const BASIN = { center: [-120.02, 39.09], zoom: 9.6 };
     const YEAR = new Date().getFullYear();
     const C = { blue: "#007DC3", green: "#6EBE44", orange: "#F16022", navy: "#0B1F41", gray: "#8A93A3" };
@@ -530,11 +541,14 @@
       { key: "prog", label: "Progress to date", help: "Share of the estimated cost already spent. Rewards finishing what is under way.",
         about: "Expenditures to date divided by estimated total cost, capped at 1. No data without a cost estimate.",
         fn: p => p.cost > 0 ? Math.min((p.spent || 0) / p.cost, 1) : null },
+      { key: "secured", label: "Funding already secured", help: "Share of the cost the implementer reports as secured. Rewards projects close to fully funded.",
+        about: "Secured funding divided by estimated total cost, capped at 1. No data unless both are reported.",
+        fn: p => p.cost > 0 && p.secured != null ? Math.min(p.secured / p.cost, 1) : null },
       { key: "urg", label: "Schedule urgency", help: "Finishing within two years scores full; later end dates score less.",
         about: "End date within two years 1, within five years 0.6, later 0.3. No data without an end date.",
         fn: p => p.end == null ? null : p.end <= YEAR + 2 ? 1 : p.end <= YEAR + 5 ? 0.6 : 0.3 },
-      { key: "afford", label: "Smaller remaining need", help: "Lower remaining cost scores higher, so more projects fit the envelope.",
-        about: "One minus the project's percentile rank by remaining need among priced projects in the pool. No data without a cost estimate.",
+      { key: "afford", label: "Smaller unfunded need", help: "Lower unfunded need scores higher, so more projects fit the envelope.",
+        about: "One minus the project's percentile rank by unfunded need among priced projects in the pool. No data without a cost estimate.",
         fn: (p, ctx) => p.need == null ? null : ctx.needPct(p) },
       { key: "focus", label: "Focus area emphasis", help: "Your weights for the four focus areas, below.",
         about: "The focus-area weight you set, divided by the largest focus-area weight.",
@@ -557,18 +571,18 @@
     ];
     const EQUAL_FOCUS = { "Watersheds and Water Quality": 3, "Forest Health": 3, "Sustainable Recreation and Transportation": 3, "Science, Stewardship, and Accountability": 3, "Unassigned": 1 };
     const PRESETS = {
-      balanced: { label: "Balanced", w: { thr: 3, multi: 2, ready: 3, lev: 2, prog: 1, urg: 1, afford: 0, focus: 2, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
-      ready: { label: "Shovel ready", w: { thr: 1, multi: 1, ready: 5, lev: 3, prog: 3, urg: 2, afford: 1, focus: 1, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
-      clarity: { label: "Lake clarity", w: { thr: 2, multi: 4, ready: 2, lev: 2, prog: 1, urg: 1, afford: 0, focus: 4, act: 3, geo: 3, panel: 3 },
+      balanced: { label: "Balanced", w: { thr: 3, multi: 2, ready: 3, lev: 2, prog: 1, secured: 1, urg: 1, afford: 0, focus: 2, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
+      ready: { label: "Shovel ready", w: { thr: 1, multi: 1, ready: 5, lev: 3, prog: 3, secured: 3, urg: 2, afford: 1, focus: 1, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
+      clarity: { label: "Lake clarity", w: { thr: 2, multi: 4, ready: 2, lev: 2, prog: 1, secured: 1, urg: 1, afford: 0, focus: 4, act: 3, geo: 3, panel: 3 },
         fw: { "Watersheds and Water Quality": 5, "Forest Health": 2, "Sustainable Recreation and Transportation": 1, "Science, Stewardship, and Accountability": 2, "Unassigned": 0 } },
-      wildfire: { label: "Wildfire resilience", w: { thr: 2, multi: 1, ready: 3, lev: 2, prog: 1, urg: 2, afford: 0, focus: 4, act: 4, geo: 3, panel: 3 },
+      wildfire: { label: "Wildfire resilience", w: { thr: 2, multi: 1, ready: 3, lev: 2, prog: 1, secured: 1, urg: 2, afford: 0, focus: 4, act: 4, geo: 3, panel: 3 },
         fw: { "Watersheds and Water Quality": 1, "Forest Health": 5, "Sustainable Recreation and Transportation": 1, "Science, Stewardship, and Accountability": 1, "Unassigned": 0 },
         actions: ["Reduce Hazardous Fuels", "Implement Prescribed Fire", "Implement Defensible Space on Public and Private Parcels and Utility Corridors",
           "Upgrade Priority Water Infrastructure to Fight Catastrophic Wildfire", "Restore Native Vegetation and Forest Communities"] },
-      recreation: { label: "Recreation and transportation", w: { thr: 2, multi: 3, ready: 3, lev: 3, prog: 1, urg: 1, afford: 0, focus: 4, act: 3, geo: 3, panel: 3 },
+      recreation: { label: "Recreation and transportation", w: { thr: 2, multi: 3, ready: 3, lev: 3, prog: 1, secured: 1, urg: 1, afford: 0, focus: 4, act: 3, geo: 3, panel: 3 },
         fw: { "Watersheds and Water Quality": 1, "Forest Health": 1, "Sustainable Recreation and Transportation": 5, "Science, Stewardship, and Accountability": 1, "Unassigned": 0 } },
-      closeout: { label: "Finish what is started", w: { thr: 1, multi: 1, ready: 3, lev: 2, prog: 5, urg: 4, afford: 2, focus: 1, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
-      spread: { label: "Spread the dollars", w: { thr: 3, multi: 2, ready: 3, lev: 3, prog: 1, urg: 1, afford: 4, focus: 2, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
+      closeout: { label: "Finish what is started", w: { thr: 1, multi: 1, ready: 3, lev: 2, prog: 5, secured: 4, urg: 4, afford: 2, focus: 1, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
+      spread: { label: "Spread the dollars", w: { thr: 3, multi: 2, ready: 3, lev: 3, prog: 1, secured: 1, urg: 1, afford: 4, focus: 2, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
     };
 
     // ───────────────────────── Helpers ─────────────────────────
@@ -623,7 +637,7 @@
     function normalize(p, geom) {
       const focus = p.EIPFocusArea || "Unassigned";
       const jur = JURIS.filter(j => String(p.ProjectJurisdiction || "").includes(j));
-      const cost = num(p.EstimatedTotalCost), spent = num(p.TotalExpenditure);
+      const cost = num(p.EstimatedTotalCost), spent = num(p.TotalExpenditure), secured = num(p.SecuredFunding), unfunded = num(p.UnfundedNeed);
       const lon = geom && geom.coordinates ? geom.coordinates[0] : null, lat = geom && geom.coordinates ? geom.coordinates[1] : null;
       return {
         id: p.EIPProjectNumber || String(p.ProjectID), pid: p.ProjectID, name: p.ProjectName || "", focus, program: p.EIPProgram || "",
@@ -631,7 +645,13 @@
         lead: (p.LeadImplementer || "").replace(/�/g, "-").trim(), planStart: num(p.PlanningStartDate), implStart: num(p.ImplementationStartDate), end: num(p.EndDate),
         stage: p.Stage || "", state: p.ProjectState && p.ProjectState !== "n/a" ? p.ProjectState : "", region: p.ProjectRegion || "",
         jurisdictions: jur, basinWide: jur.length >= 5 || /basin-wide|lake-wide/i.test(p.ProjectRegion || ""),
-        watersheds: splitList(p.ProjectWatershed, ","), cost, spent, need: cost != null ? Math.max(cost - (spent || 0), 0) : null,
+        watersheds: splitList(p.ProjectWatershed, ","), cost, spent, secured, unfunded,
+        // Need for the envelope: the Tracker's unfunded need (cost minus secured funding)
+        // when reported, otherwise cost minus expenditures to date.
+        need: unfunded != null ? Math.max(unfunded, 0) : cost != null ? Math.max(cost - (spent || 0), 0) : null,
+        needBasis: unfunded != null ? "unfunded" : cost != null ? "spent" : null,
+        remaining: cost != null ? Math.max(cost - (spent || 0), 0) : null,
+        tags: splitList(p.Tags, ";"), locArea: p.ProjectLocationArea || "",
         funding: splitList(p.FundingSources, ";"), lakeClarity: !!p.IsLakeClarityProject, transport: !!p.IsTransportationProject,
         tmdl: !!p.TMDLPollutantSourceCategory, isEip: p.IsEIPProject !== false,
         url: p.ProjectSummaryUrl || p.ProjectURL || "", factUrl: p.ProjectFactSheetUrl || "", lon, lat,
@@ -668,6 +688,8 @@
       const prog = comboVals($("programSel")); if (prog.length && !prog.includes(p.program)) return false;
       const lead = comboVals($("leadSel")); if (lead.length && !lead.includes(p.lead)) return false;
       const fs = comboVals($("fundSel")); if (fs.length && !p.funding.some(f => fs.includes(f))) return false;
+      const tg = comboVals($("tagSel")); if (tg.length && !p.tags.some(t => tg.includes(t))) return false;
+      if ($("needOnly").checked && !(p.need > 0)) return false;
       const st = $("stateSeg").querySelector("button.active").dataset.v; if (st && !p.state.includes(st)) return false;
       if ($("pricedOnly").checked && p.need == null) return false;
       const q = $("searchInput").value.trim().toLowerCase();
@@ -734,6 +756,7 @@
       const env = envelope != null && envelope > 0 ? envelope * 1e6 : null;
       let left = env, stopped = false;
       for (const p of active) {
+        if (p.need === 0) { p.fund = "fully"; continue; }          // secured funding covers the cost: nothing to allocate
         if (env == null) { p.fund = p.need == null ? "unpriced" : "none"; continue; }
         if (p.need == null) { p.fund = "unpriced"; continue; }
         if (p.pinned) { p.fund = "funded"; left -= p.need; continue; }
@@ -746,6 +769,7 @@
     // ───────────────────────── Grid ─────────────────────────
     const fundBadge = (f, pinned) => {
       const b = f === "funded" ? '<span class="badge funded">Funded</span>' : f === "cut" ? '<span class="badge cut">Not funded</span>'
+        : f === "fully" ? '<span class="badge fully" title="Secured funding already covers the estimated cost; needs nothing from the envelope">Fully funded</span>'
         : f === "unpriced" ? '<span class="badge unpriced" title="No estimated total cost on the Tracker">Unpriced</span>' : f === "excluded" ? '<span class="badge unpriced">Excluded</span>' : "";
       return (pinned ? '<span class="badge pinned" title="Pinned: funded first">Pinned</span> ' : "") + b;
     };
@@ -775,9 +799,11 @@
           { headerName: "vs Balanced", field: "delta", width: 100, type: "rightAligned", valueGetter: (p) => p.data.rank && p.data.baseRank ? p.data.baseRank - p.data.rank : null,
             cellRenderer: (p) => p.value == null ? "" : p.value > 0 ? `<span class="delta up">▲ ${p.value}</span>` : p.value < 0 ? `<span class="delta down">▼ ${-p.value}</span>` : `<span class="delta flat">–</span>`,
             headerTooltip: "Rank change against the Balanced preset with no picks: up means your priorities moved this project up the list" },
-          { headerName: "Est. cost", field: "cost", ...money }, { headerName: "Spent", field: "spent", ...money },
-          { headerName: "Remaining", field: "need", ...money, headerTooltip: "Estimated total cost minus expenditures to date" },
-          { headerName: "Envelope", field: "fund", width: 128, cellRenderer: (p) => fundBadge(p.value, p.data.pinned), comparator: (a, b) => ["funded", "cut", "none", "unpriced", "excluded"].indexOf(a) - ["funded", "cut", "none", "unpriced", "excluded"].indexOf(b) },
+          { headerName: "Est. cost", field: "cost", ...money }, { headerName: "Secured", field: "secured", ...money, headerTooltip: "Funding the implementer reports as secured" },
+          { headerName: "Unfunded need", field: "need", ...money, width: 118, headerTooltip: "What the envelope counts: the Tracker's unfunded need (cost minus secured funding), or cost minus expenditures when secured funding is not reported",
+            cellRenderer: (p) => p.value == null ? "" : `${fmtUSD(p.value)}${p.data.needBasis === "spent" ? ' <span class="cov" title="Secured funding not reported; cost minus expenditures">*</span>' : ""}` },
+          { headerName: "Spent", field: "spent", ...money }, { headerName: "Remaining", field: "remaining", ...money, headerTooltip: "Estimated total cost minus expenditures to date" },
+          { headerName: "Envelope", field: "fund", width: 128, cellRenderer: (p) => fundBadge(p.value, p.data.pinned), comparator: (a, b) => ["funded", "cut", "fully", "none", "unpriced", "excluded"].indexOf(a) - ["funded", "cut", "fully", "none", "unpriced", "excluded"].indexOf(b) },
           { headerName: "Panel avg", field: "panelAvg", width: 96, type: "rightAligned", valueGetter: (p) => panelAvg(p.data.id),
             valueFormatter: (p) => p.value == null ? "" : `${p.value.toFixed(1)} (${panelScores(p.data.id).length})`, tooltipValueGetter: (p) => panelScores(p.data.id).map(s => `${s.who}: ${s.s}${s.n ? " – " + s.n : ""}`).join("\n") || "No reviewer scores yet" },
           { headerName: "My score", field: "my", width: 90, editable: true, cellEditor: "agNumberCellEditor", cellEditorParams: { min: 1, max: 5, precision: 0 }, type: "rightAligned",
@@ -789,6 +815,7 @@
           { headerName: "Thresholds", field: "thresholds", width: 150, valueFormatter: (p) => (p.value || []).join(", "), hide: false },
           { headerName: "Action priority", field: "action", width: 200 },
           { headerName: "Funding sources", field: "funding", width: 200, valueFormatter: (p) => (p.value || []).join("; ") },
+          { headerName: "Tags", field: "tags", width: 150, valueFormatter: (p) => (p.value || []).join("; ") },
           { headerName: "Years", width: 90, valueGetter: (p) => [p.data.implStart, p.data.end].filter(v => v != null).join(" – ") },
         ],
         onCellClicked: (e) => {
@@ -926,10 +953,12 @@
         <dl class="dc-grid">
           <dt>Lead</dt><dd>${escHtml(p.lead)}</dd>
           <dt>Stage</dt><dd>${escHtml(p.stage)}${p.implStart || p.end ? ` · ${[p.implStart, p.end].filter(v => v != null).join(" to ")}` : ""}</dd>
-          <dt>Cost</dt><dd>${p.cost != null ? `${fmtUSD(p.cost)} estimated, ${fmtUSD(p.spent || 0)} spent, <b>${fmtUSD(p.need)} remaining</b>` : `no estimate${p.spent ? `, ${fmtUSD(p.spent)} spent` : ""}`}</dd>
+          <dt>Cost</dt><dd>${p.cost != null ? `${fmtUSD(p.cost)} estimated${p.secured != null ? `, ${fmtUSD(p.secured)} secured` : ""}, ${fmtUSD(p.spent || 0)} spent` : `no estimate${p.spent ? `, ${fmtUSD(p.spent)} spent` : ""}`}</dd>
+          ${p.need != null ? `<dt>Need</dt><dd><b>${fmtUSD(p.need)}</b> ${p.needBasis === "unfunded" ? "unfunded, per the Tracker" : "remaining (cost minus expenditures; secured funding not reported)"}</dd>` : ""}
+          ${p.tags.length ? `<dt>Tags</dt><dd>${escHtml(p.tags.join("; "))}</dd>` : ""}
           <dt>Funding</dt><dd>${p.funding.length ? escHtml(p.funding.join("; ")) : "none reported"}</dd>
           <dt>Thresholds</dt><dd>${p.thresholds.length ? escHtml(p.thresholds.join(", ")) : "none listed"}</dd>
-          ${p.jurisdictions.length ? `<dt>Where</dt><dd>${p.basinWide ? "Basin-wide" : escHtml(p.jurisdictions.join("; "))}</dd>` : ""}
+          ${p.locArea || p.jurisdictions.length ? `<dt>Where</dt><dd>${escHtml(p.locArea || (p.basinWide ? "Basin-wide" : p.jurisdictions.join("; ")))}</dd>` : ""}
           ${panel.length ? `<dt>Panel</dt><dd>${panel.map(s => `${escHtml(s.who)} ${s.s}${s.n ? ` <span style="color:var(--gray-text)">${escHtml(s.n)}</span>` : ""}`).join("<br>")}</dd>` : ""}
         </dl>
         <div class="dc-desc" id="dcDesc" title="Click to expand">${escHtml(p.desc)}</div>
@@ -956,11 +985,12 @@
       const priced = active.filter(p => p.need != null);
       const totalNeed = priced.reduce((a, p) => a + p.need, 0);
       const funded = active.filter(p => p.fund === "funded"), fundedNeed = funded.reduce((a, p) => a + p.need, 0);
+      const fully = active.filter(p => p.fund === "fully").length;
       const t = [
-        [active.length, "in the pool"], [priced.length, "with a cost estimate"], [fmtM(totalNeed), "total remaining need"],
+        [active.length, "in the pool"], [priced.length, "with a cost estimate"], [fully, "already fully funded"], [fmtM(totalNeed), "total unfunded need"],
       ];
       if (envelope > 0) t.push([fmtM(envelope * 1e6), "envelope"], [funded.length, "projects funded", "hi"], [fmtM(fundedNeed), "committed", "hi"],
-        [fmtM(Math.max(totalNeed - fundedNeed, 0)), "priced need not funded"]);
+        [fmtM(Math.max(totalNeed - fundedNeed, 0)), "need left unfunded"]);
       $("tiles").innerHTML = t.map(([v, l, cls]) => `<div class="tile ${cls || ""}"><b>${typeof v === "number" ? v.toLocaleString() : v}</b><span>${l}</span></div>`).join("");
     }
     function renderCharts() {
@@ -968,10 +998,10 @@
       const active = pool.filter(p => !p.excluded);
       renderTiles(active);
       // Cumulative remaining need by rank (priced projects, in rank order)
-      const priced = active.filter(p => p.need != null);
+      const priced = active.filter(p => p.need > 0);   // fully funded projects add nothing to the curve
       let cum = 0; const xs = [], ys = [], cols = [], txt = [];
       priced.forEach((p, i) => { cum += p.need; xs.push(i + 1); ys.push(cum / 1e6); cols.push(p.fund === "funded" ? C.green : envelope > 0 ? "#C9CFD8" : C.blue);
-        txt.push(`<b>${escHtml(p.name)}</b><br>rank ${p.rank} · ${fmtUSD(p.need)} remaining<br>cumulative ${fmtM(cum)}`); });
+        txt.push(`<b>${escHtml(p.name)}</b><br>rank ${p.rank} · ${fmtUSD(p.need)} unfunded<br>cumulative ${fmtM(cum)}`); });
       const shapes = envelope > 0 ? [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: envelope, y1: envelope, line: { color: C.orange, width: 2, dash: "dash" } }] : [];
       // A few very large projects dwarf everything else, so cap the axis: enough to show
       // the envelope with room above it, or the first dozen priced projects, whichever is more.
@@ -991,7 +1021,7 @@
         keys.reverse();
         const lab = keys.map(labelFn);
         const traces = [{ type: "bar", orientation: "h", y: lab, x: keys.map(k => agg[k].f / 1e6), name: "Funded", marker: { color: C.green }, hovertemplate: "%{y}<br>funded $%{x:.1f}M<extra></extra>" },
-          { type: "bar", orientation: "h", y: lab, x: keys.map(k => agg[k].u / 1e6), name: envelope > 0 ? "Not funded" : "Remaining need", marker: { color: envelope > 0 ? "#C9CFD8" : C.blue }, hovertemplate: "%{y}<br>$%{x:.1f}M<extra></extra>" }];
+          { type: "bar", orientation: "h", y: lab, x: keys.map(k => agg[k].u / 1e6), name: envelope > 0 ? "Not funded" : "Unfunded need", marker: { color: envelope > 0 ? "#C9CFD8" : C.blue }, hovertemplate: "%{y}<br>$%{x:.1f}M<extra></extra>" }];
         return { traces, n: keys.length };
       };
       const f = stack(p => p.focus, k => (FOCUS.find(x => x.key === k) || {}).short || k);
@@ -1003,7 +1033,8 @@
     // ───────────────────────── Status + exports ─────────────────────────
     function renderStatus() {
       const active = pool.filter(p => !p.excluded), priced = active.filter(p => p.need != null);
-      let s = `${active.length.toLocaleString()} projects ranked, ${priced.length} with a cost estimate (${fmtM(priced.reduce((a, p) => a + p.need, 0))} remaining need).`;
+      const fully = active.filter(p => p.fund === "fully").length;
+      let s = `${active.length.toLocaleString()} projects ranked, ${priced.length} with a cost estimate (${fmtM(priced.reduce((a, p) => a + p.need, 0))} unfunded need${fully ? `, ${fully} already fully funded` : ""}).`;
       if (envelope > 0) {
         const funded = active.filter(p => p.fund === "funded");
         s += ` Envelope ${fmtM(envelope * 1e6)} funds ${funded.length} (${fmtM(funded.reduce((a, p) => a + p.need, 0))})${allocate.left < 0 ? ", pinned projects exceed it" : allocate.left > 0 ? `, ${fmtM(allocate.left)} left` : ""}.`;
@@ -1012,15 +1043,15 @@
     }
     $("csvBtn").addEventListener("click", () => {
       const head = ["Rank", "Project #", "Project", "Focus area", "Program", "Action priority", "Lead implementer", "Stage", "Implementation start", "End", "Score", "Rank vs Balanced",
-        "Estimated cost", "Expenditures to date", "Remaining need", "Envelope status", "Pinned", "Excluded", "Panel average", "Panel scores", "My score", "My note", "Data coverage",
-        ...CRITERIA.map(c => `${c.label} (w${weights[c.key]})`), "Threshold categories", "Funding sources", "Jurisdictions", "Fact sheet"];
+        "Estimated cost", "Secured funding", "Unfunded need", "Need basis", "Expenditures to date", "Cost minus expenditures", "Envelope status", "Pinned", "Excluded", "Panel average", "Panel scores", "My score", "My note", "Data coverage",
+        ...CRITERIA.map(c => `${c.label} (w${weights[c.key]})`), "Threshold categories", "Funding sources", "Tags", "Jurisdictions", "Fact sheet"];
       const lines = [head.map(csvCell).join(",")];
       for (const p of pool) {
         const mine = review.scores[p.id] || {};
         lines.push([p.rank ?? "", p.id, p.name, p.focus, p.program, p.action, p.lead, p.stage, p.implStart ?? "", p.end ?? "", p.score.toFixed(1), p.rank && p.baseRank ? p.baseRank - p.rank : "",
-          p.cost ?? "", p.spent ?? "", p.need ?? "", p.fund, p.pinned ? "yes" : "", p.excluded ? "yes" : "", panelAvg(p.id)?.toFixed(2) ?? "", panelScores(p.id).map(s => `${s.who}: ${s.s}`).join("; "),
+          p.cost ?? "", p.secured ?? "", p.need ?? "", p.needBasis ?? "", p.spent ?? "", p.remaining ?? "", p.fund, p.pinned ? "yes" : "", p.excluded ? "yes" : "", panelAvg(p.id)?.toFixed(2) ?? "", panelScores(p.id).map(s => `${s.who}: ${s.s}`).join("; "),
           mine.s ?? "", mine.n ?? "", Math.round(p.coverage * 100) + "%",
-          ...CRITERIA.map(c => p.parts[c.key] == null ? "" : (p.parts[c.key] * 100).toFixed(0)), p.thresholds.join(", "), p.funding.join("; "), p.jurisdictions.join("; "), p.factUrl || p.url].map(csvCell).join(","));
+          ...CRITERIA.map(c => p.parts[c.key] == null ? "" : (p.parts[c.key] * 100).toFixed(0)), p.thresholds.join(", "), p.funding.join("; "), p.tags.join("; "), p.jurisdictions.join("; "), p.factUrl || p.url].map(csvCell).join(","));
       }
       const meta = `# EIP Funding Priorities ${new Date().toISOString().slice(0, 10)} · envelope ${envelope > 0 ? fmtM(envelope * 1e6) : "none"} · weights ${CRITERIA.map(c => `${c.key}=${weights[c.key]}`).join(" ")}`;
       download(`eip-priorities-${new Date().toISOString().slice(0, 10)}.csv`, "﻿" + lines.join("\r\n") + "\r\n" + meta + "\r\n");
@@ -1085,6 +1116,7 @@
       fill($("programSel"), uniq(projects.map(p => p.program)));
       fill($("leadSel"), uniq(projects.map(p => p.lead)));
       fill($("fundSel"), uniq(projects.flatMap(p => p.funding)));
+      fill($("tagSel"), uniq(projects.flatMap(p => p.tags)));
       fill($("actionSel"), uniq(projects.map(p => p.action)));
       fill($("jurisSel"), JURIS);
       // about table
@@ -1123,8 +1155,8 @@
     $("resetWeightsBtn").addEventListener("click", () => { setCombo($("actionSel"), []); actions = new Set(); setCombo($("jurisSel"), []); juris = new Set(); applyPreset("balanced"); });
     $("actionSel").addEventListener("calciteComboboxChange", () => { actions = new Set(comboVals($("actionSel"))); syncWeightUI(); recompute(); });
     $("jurisSel").addEventListener("calciteComboboxChange", () => { juris = new Set(comboVals($("jurisSel"))); syncWeightUI(); recompute(); });
-    ["programSel", "leadSel", "fundSel"].forEach(id => $(id).addEventListener("calciteComboboxChange", recompute));
-    ["pricedOnly", "nonEip"].forEach(id => $(id).addEventListener("calciteSwitchChange", recompute));
+    ["programSel", "leadSel", "fundSel", "tagSel"].forEach(id => $(id).addEventListener("calciteComboboxChange", recompute));
+    ["pricedOnly", "needOnly", "nonEip"].forEach(id => $(id).addEventListener("calciteSwitchChange", recompute));
     $("searchInput").addEventListener("input", recomputeSoon);
     [$("stageChips"), $("focusChips")].forEach(el => el.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; b.classList.toggle("on"); recompute(); }));
     const segClick = (id, fn) => $(id).addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return;
@@ -1135,8 +1167,8 @@
     $("envPresets").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; $("envInput").value = b.dataset.v; envelope = b.dataset.v ? +b.dataset.v : null; recompute(); });
     $("resetFiltersBtn").addEventListener("click", () => {
       $("searchInput").value = ""; $("stageChips").querySelectorAll("button").forEach(b => b.classList.toggle("on", ["Planning/Design", "Implementation"].includes(b.dataset.v)));
-      $("focusChips").querySelectorAll("button").forEach(b => b.classList.add("on")); ["programSel", "leadSel", "fundSel"].forEach(id => setCombo($(id), []));
-      $("stateSeg").querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.v === "")); $("pricedOnly").checked = false; $("nonEip").checked = false; recompute();
+      $("focusChips").querySelectorAll("button").forEach(b => b.classList.add("on")); ["programSel", "leadSel", "fundSel", "tagSel"].forEach(id => setCombo($(id), []));
+      $("stateSeg").querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.v === "")); $("pricedOnly").checked = false; $("needOnly").checked = false; $("nonEip").checked = false; recompute();
     });
     let recomputeT; function recomputeSoon() { clearTimeout(recomputeT); recomputeT = setTimeout(recompute, 180); }
 
@@ -1155,8 +1187,8 @@
     // ───────────────────────── Share link ─────────────────────────
     function scenario() {
       return { w: weights, fw: focusW, a: [...actions], j: [...juris], env: envelope, mode: fillMode, pins: [...pins], ex: [...excluded],
-        f: { q: $("searchInput").value, st: chipsOn($("stageChips")), fa: chipsOn($("focusChips")), pr: comboVals($("programSel")), ld: comboVals($("leadSel")), fs: comboVals($("fundSel")),
-          s: $("stateSeg").querySelector("button.active").dataset.v, pc: $("pricedOnly").checked, ne: $("nonEip").checked },
+        f: { q: $("searchInput").value, st: chipsOn($("stageChips")), fa: chipsOn($("focusChips")), pr: comboVals($("programSel")), ld: comboVals($("leadSel")), fs: comboVals($("fundSel")), tg: comboVals($("tagSel")),
+          s: $("stateSeg").querySelector("button.active").dataset.v, pc: $("pricedOnly").checked, no: $("needOnly").checked, ne: $("nonEip").checked },
         area: areaGeom ? areaGeom.toJSON().rings : null };
     }
     function applyScenario(s) {
@@ -1169,9 +1201,9 @@
         $("searchInput").value = s.f.q || "";
         $("stageChips").querySelectorAll("button").forEach(b => b.classList.toggle("on", (s.f.st || []).includes(b.dataset.v)));
         $("focusChips").querySelectorAll("button").forEach(b => b.classList.toggle("on", (s.f.fa || []).includes(b.dataset.v)));
-        setCombo($("programSel"), s.f.pr || []); setCombo($("leadSel"), s.f.ld || []); setCombo($("fundSel"), s.f.fs || []);
+        setCombo($("programSel"), s.f.pr || []); setCombo($("leadSel"), s.f.ld || []); setCombo($("fundSel"), s.f.fs || []); setCombo($("tagSel"), s.f.tg || []);
         $("stateSeg").querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.v === (s.f.s || "")));
-        $("pricedOnly").checked = !!s.f.pc; $("nonEip").checked = !!s.f.ne;
+        $("pricedOnly").checked = !!s.f.pc; $("needOnly").checked = !!s.f.no; $("nonEip").checked = !!s.f.ne;
       }
       if (s.area && Polygon) { areaGeom = new Polygon({ rings: s.area, spatialReference: { wkid: 102100 } }); areaLayer.removeAll();
         areaLayer.add(new Graphic({ geometry: areaGeom, symbol: { type: "simple-fill", color: hexA(C.orange, 0.08), outline: { color: C.orange, width: 2, style: "dash" } } })); $("clearAreaBtn").hidden = false; }
@@ -1204,7 +1236,7 @@
       if (sc && sc.area && !Polygon) { const t = setInterval(() => { if (Polygon && areaLayer) { clearInterval(t); applyWhenReady(); } }, 100); } else applyWhenReady();
       const active = projects.filter(p => p.isEip && ["Planning/Design", "Implementation"].includes(p.stage));
       $("aboutData").textContent = `${projects.length.toLocaleString()} projects in the snapshot${snapshotDate ? `, refreshed ${snapshotDate.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}` : ""}. ` +
-        `${active.length} EIP projects are in planning or implementation; ${active.filter(p => p.cost != null).length} of those report an estimated total cost.`;
+        `${active.length} EIP projects are in planning or implementation; ${active.filter(p => p.cost != null).length} report an estimated total cost and ${active.filter(p => p.unfunded != null).length} an unfunded need.`;
     })();
   </script>
 </body>
