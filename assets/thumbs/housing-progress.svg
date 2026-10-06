@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 266" width="400" height="266" role="img"
+     aria-label="Housing progress since 2012: stacked bars of units by jurisdiction beside a map of project locations">
+  <!-- Background, Tahoe Living palette -->
+  <rect width="400" height="266" fill="#F3F5F7"/>
+
+  <!-- Chart card -->
+  <rect x="14" y="14" width="232" height="238" rx="8" fill="#FFFFFF" stroke="#E2E2E2"/>
+  <rect x="14" y="14" width="232" height="30" rx="8" fill="#075481"/>
+  <rect x="14" y="34" width="232" height="10" fill="#075481"/>
+  <text x="26" y="34" font-family="Open Sans, Arial, sans-serif" font-size="11" font-weight="700" fill="#FFFFFF">UNITS BUILT SINCE 2012</text>
+
+  <!-- Legend -->
+  <g font-family="Open Sans, Arial, sans-serif" font-size="8" font-weight="600" fill="#404040">
+    <rect x="26" y="54" width="9" height="9" rx="2" fill="#0A7EC2"/><text x="39" y="62">Multifamily</text>
+    <rect x="96" y="54" width="9" height="9" rx="2" fill="#5F57A5"/><text x="109" y="62">Deed-restricted</text>
+    <rect x="184" y="54" width="9" height="9" rx="2" fill="#93A959"/><text x="197" y="62">ADU</text>
+  </g>
+
+  <!-- Horizontal stacked bars by jurisdiction -->
+  <g font-family="Open Sans, Arial, sans-serif" font-size="8" font-weight="600" fill="#404040">
+    <text x="26" y="88">South Lake Tahoe</text>
+    <rect x="26" y="92" width="118" height="12" rx="2" fill="#0A7EC2"/>
+    <rect x="144" y="92" width="52" height="12" rx="2" fill="#5F57A5"/>
+    <rect x="196" y="92" width="26" height="12" rx="2" fill="#93A959"/>
+
+    <text x="26" y="122">Placer County</text>
+    <rect x="26" y="126" width="74" height="12" rx="2" fill="#0A7EC2"/>
+    <rect x="100" y="126" width="38" height="12" rx="2" fill="#5F57A5"/>
+    <rect x="138" y="126" width="30" height="12" rx="2" fill="#93A959"/>
+
+    <text x="26" y="156">Washoe County</text>
+    <rect x="26" y="160" width="46" height="12" rx="2" fill="#0A7EC2"/>
+    <rect x="72" y="160" width="30" height="12" rx="2" fill="#5F57A5"/>
+    <rect x="102" y="160" width="18" height="12" rx="2" fill="#93A959"/>
+
+    <text x="26" y="190">Douglas County</text>
+    <rect x="26" y="194" width="34" height="12" rx="2" fill="#0A7EC2"/>
+    <rect x="60" y="194" width="24" height="12" rx="2" fill="#5F57A5"/>
+    <rect x="84" y="194" width="12" height="12" rx="2" fill="#93A959"/>
+
+    <text x="26" y="224">El Dorado County</text>
+    <rect x="26" y="228" width="28" height="12" rx="2" fill="#0A7EC2"/>
+    <rect x="54" y="228" width="14" height="12" rx="2" fill="#5F57A5"/>
+    <rect x="68" y="228" width="22" height="12" rx="2" fill="#93A959"/>
+  </g>
+
+  <!-- Map card -->
+  <rect x="258" y="14" width="128" height="238" rx="8" fill="#FFFFFF" stroke="#E2E2E2"/>
+  <!-- Lake outline -->
+  <path d="M292 44 C318 36 352 44 362 70 C372 100 366 150 350 184 C340 206 316 214 300 198 C282 180 276 140 280 104 C282 78 282 52 292 44 Z"
+        fill="#71B1D6" fill-opacity="0.45" stroke="#0A7EC2" stroke-width="1.5"/>
+  <!-- Basin boundary hint -->
+  <path d="M270 40 C300 22 360 24 380 56 C392 110 388 180 372 230 C340 248 300 246 272 226 C262 170 260 100 270 40 Z"
+        fill="none" stroke="#E2E2E2" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <!-- Project dots, sized by units -->
+  <g fill="#5F57A5" fill-opacity="0.85" stroke="#FFFFFF" stroke-width="1.5">
+    <circle cx="318" cy="206" r="9"/>
+    <circle cx="336" cy="214" r="6"/>
+    <circle cx="302" cy="216" r="5"/>
+    <circle cx="298" cy="60" r="7"/>
+    <circle cx="312" cy="48" r="4"/>
+    <circle cx="364" cy="96" r="4"/>
+    <circle cx="360" cy="150" r="5"/>
+    <circle cx="282" cy="150" r="4"/>
+  </g>
+  <g fill="#93A959" stroke="#FFFFFF" stroke-width="1.5">
+    <circle cx="326" cy="196" r="4"/>
+    <circle cx="290" cy="76" r="3.5"/>
+    <circle cx="356" cy="130" r="3.5"/>
+  </g>
+</svg>

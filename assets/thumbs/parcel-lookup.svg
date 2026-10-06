@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 266" width="400" height="266" role="img"
+     aria-label="Parcel lookup: a search box, a highlighted parcel on a zoning map, and a result card listing the zoning district and permitted uses">
+  <!-- Basemap -->
+  <rect width="400" height="266" fill="#EEF1F5"/>
+
+  <!-- Zoning map blocks -->
+  <g stroke="#FFFFFF" stroke-width="2">
+    <rect x="14"  y="52"  width="70" height="52" fill="#B4CBE8"/>
+    <rect x="88"  y="52"  width="58" height="52" fill="#0072CE" fill-opacity="0.55"/>
+    <rect x="150" y="52"  width="64" height="52" fill="#B4CBE8"/>
+    <rect x="14"  y="108" width="46" height="60" fill="#4A6118" fill-opacity="0.45"/>
+    <rect x="64"  y="108" width="82" height="60" fill="#0072CE" fill-opacity="0.55"/>
+    <rect x="150" y="108" width="64" height="60" fill="#E87722" fill-opacity="0.5"/>
+    <rect x="14"  y="172" width="70" height="46" fill="#B4CBE8"/>
+    <rect x="88"  y="172" width="58" height="46" fill="#4A6118" fill-opacity="0.45"/>
+    <rect x="150" y="172" width="64" height="46" fill="#B4CBE8"/>
+    <rect x="14"  y="222" width="200" height="30" fill="#7B6A8A" fill-opacity="0.4"/>
+  </g>
+  <!-- Streets -->
+  <g stroke="#FFFFFF" stroke-width="6" fill="none" stroke-linecap="round">
+    <path d="M8 106 H220 M8 170 H220 M148 46 V258"/>
+  </g>
+  <!-- Selected parcel -->
+  <rect x="64" y="108" width="82" height="60" fill="none" stroke="#003B71" stroke-width="4"/>
+  <!-- Pin -->
+  <path d="M105 120 C97 120 92 126 92 133 C92 143 105 156 105 156 C105 156 118 143 118 133 C118 126 113 120 105 120 Z" fill="#E87722" stroke="#FFFFFF" stroke-width="2"/>
+  <circle cx="105" cy="133" r="4" fill="#FFFFFF"/>
+
+  <!-- Search box -->
+  <rect x="14" y="14" width="200" height="28" rx="6" fill="#FFFFFF" stroke="#0072CE" stroke-width="1.5"/>
+  <circle cx="30" cy="28" r="5" fill="none" stroke="#0072CE" stroke-width="2"/>
+  <line x1="34" y1="32" x2="38" y2="36" stroke="#0072CE" stroke-width="2" stroke-linecap="round"/>
+  <text x="46" y="32" font-family="Open Sans, Arial, sans-serif" font-size="10" fill="#404040">1234 Lake Tahoe Blvd</text>
+
+  <!-- Result card -->
+  <rect x="226" y="14" width="160" height="238" rx="8" fill="#FFFFFF" stroke="#DCE2EA"/>
+  <rect x="226" y="14" width="160" height="30" rx="8" fill="#003B71"/>
+  <rect x="226" y="34" width="160" height="10" fill="#003B71"/>
+  <text x="238" y="34" font-family="Open Sans, Arial, sans-serif" font-size="11" font-weight="700" fill="#FFFFFF">APN 023-101-04</text>
+
+  <g font-family="Open Sans, Arial, sans-serif">
+    <text x="238" y="62" font-size="7.5" font-weight="700" fill="#6B7688">ZONING DISTRICT</text>
+    <text x="238" y="76" font-size="10" font-weight="700" fill="#003B71">Tourist Core</text>
+    <text x="238" y="96" font-size="7.5" font-weight="700" fill="#6B7688">TOLERANCE DISTRICT</text>
+    <text x="238" y="110" font-size="10" font-weight="700" fill="#003B71">4</text>
+
+    <text x="238" y="132" font-size="7.5" font-weight="700" fill="#6B7688">PERMITTED USES</text>
+    <rect x="238" y="140" width="9" height="9" rx="2" fill="#4A6118"/><text x="252" y="148" font-size="8.5" fill="#404040">Multiple family dwelling</text>
+    <rect x="238" y="156" width="9" height="9" rx="2" fill="#4A6118"/><text x="252" y="164" font-size="8.5" fill="#404040">Hotel, motel, and other</text>
+    <rect x="238" y="172" width="9" height="9" rx="2" fill="#4A6118"/><text x="252" y="180" font-size="8.5" fill="#404040">Retail</text>
+    <rect x="238" y="188" width="9" height="9" rx="2" fill="#E87722"/><text x="252" y="196" font-size="8.5" fill="#404040">Eating and drinking</text>
+    <rect x="238" y="204" width="9" height="9" rx="2" fill="#E87722"/><text x="252" y="212" font-size="8.5" fill="#404040">Office</text>
+  </g>
+  <g font-family="Open Sans, Arial, sans-serif" font-size="7" font-weight="700">
+    <rect x="238" y="226" width="34" height="12" rx="6" fill="#4A6118"/><text x="255" y="235" text-anchor="middle" fill="#FFFFFF">ALLOWED</text>
+    <rect x="278" y="226" width="42" height="12" rx="6" fill="#E87722"/><text x="299" y="235" text-anchor="middle" fill="#FFFFFF">SPECIAL</text>
+  </g>
+</svg>

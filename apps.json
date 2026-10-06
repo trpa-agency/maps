@@ -50,6 +50,32 @@
       ]
     },
     {
+      "id": "parcellookup",
+      "title": "What Can I Do on My Parcel?",
+      "category": "planning",
+      "url": "https://trpa-agency.github.io/Planning/LongRange/html/parcel-lookup.html",
+      "thumbnail": "assets/thumbs/parcel-lookup.svg",
+      "description": "Enter an address or APN to see the zoning district, tolerance district, special designations, and the full list of permitted uses for any parcel in the Basin.",
+      "tags": [
+        "Zoning",
+        "Permitted Uses",
+        "Parcels"
+      ]
+    },
+    {
+      "id": "districtexplorer",
+      "title": "Where Can I Build?",
+      "category": "planning",
+      "url": "https://trpa-agency.github.io/Planning/LongRange/html/district-explorer.html",
+      "thumbnail": "assets/thumbs/district-explorer.svg",
+      "description": "Pick a use category, then a specific use type, to see every zoning district in the Basin where that use is permitted or conditionally approved, with density limits and plan details.",
+      "tags": [
+        "Zoning",
+        "Permitted Uses",
+        "Density"
+      ]
+    },
+    {
       "id": "transportation",
       "title": "Transportation Map",
       "category": "planning",
@@ -69,6 +95,58 @@
       "description": "Housing resources web map for the Tahoe Region.",
       "tags": [
         "Housing"
+      ]
+    },
+    {
+      "id": "housingprogress",
+      "title": "Housing Progress Since 2012",
+      "category": "planning",
+      "url": "https://trpa-agency.github.io/Planning/LongRange/html/multifamily-housing.html",
+      "thumbnail": "assets/thumbs/housing-progress.svg",
+      "description": "Multifamily, deed-restricted, and accessory dwelling units built since the 2012 Regional Plan, by jurisdiction, plus the project pipeline. Map, charts, featured projects, and a filterable table joined live to parcel and vacation home rental services.",
+      "tags": [
+        "Housing",
+        "Deed Restrictions",
+        "ADUs"
+      ]
+    },
+    {
+      "id": "deedrestrictions",
+      "title": "Deed Restriction Explorer",
+      "category": "planning",
+      "url": "https://trpa-agency.github.io/Planning/LongRange/html/deed-restriction-explorer.html",
+      "thumbnail": "assets/thumbs/deed-restrictions.svg",
+      "description": "Map and grid for browsing deed-restricted parcels across the Basin. Filter by restriction type, status, and county; search by APN, description, or address; export to CSV.",
+      "tags": [
+        "Housing",
+        "Deed Restrictions",
+        "Parcels"
+      ]
+    },
+    {
+      "id": "cccbeis",
+      "title": "CCCB EIS Cumulative Projects",
+      "category": "planning",
+      "url": "https://trpa-agency.github.io/Planning/LongRange/html/CCCB_EIS_Webmap_trpabrand.html",
+      "thumbnail": "assets/thumbs/cccb-eis.svg",
+      "description": "Cumulative project parcels and the five focal scenic viewpoints from the visual analysis in the Cultivating Community, Conserving the Basin (CCCB) Environmental Impact Statement.",
+      "tags": [
+        "Housing",
+        "EIS",
+        "Scenic"
+      ]
+    },
+    {
+      "id": "cccbeis-tl",
+      "title": "CCCB EIS Cumulative Projects (Tahoe Living)",
+      "category": "planning",
+      "url": "https://trpa-agency.github.io/Planning/LongRange/html/CCCB_EIS_Webmap_tahoelivingbrand.html",
+      "thumbnail": "assets/thumbs/cccb-eis-tl.svg",
+      "description": "The same cumulative project parcels and focal viewpoints, styled in the Tahoe Living brand for housing and community engagement contexts.",
+      "tags": [
+        "Housing",
+        "EIS",
+        "Tahoe Living"
       ]
     },
     {
