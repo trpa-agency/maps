@@ -9,7 +9,13 @@
       "slug": "planning",
       "name": "Planning",
       "color": "#0072CE",
-      "description": "Zoning, local plans, transportation, housing, and shoreline maps supporting the Regional Plan."
+      "description": "Zoning, local plans, housing, and shoreline maps supporting the Regional Plan."
+    },
+    {
+      "slug": "transportation",
+      "name": "Transportation",
+      "color": "#003B71",
+      "description": "Transit, active transportation, safety, and travel data for the Regional Transportation Plan."
     },
     {
       "slug": "permitting",
@@ -33,7 +39,7 @@
       "slug": "data",
       "name": "Data & Developers",
       "color": "#B47E00",
-      "description": "Open data, service directories, and resources for GIS users and developers."
+      "description": "Open data, monitoring dashboards, service directories, and resources for GIS users and developers."
     }
   ],
   "apps": [
@@ -80,13 +86,25 @@
     {
       "id": "transportation",
       "title": "Transportation Map",
-      "category": "planning",
+      "category": "transportation",
       "url": "https://gis.trpa.org/transportation/",
       "thumbnail": "assets/thumbs/transportation.png",
       "description": "Existing and proposed transit routes, active transportation facilities, areas identified for safety improvements, crash locations, and electric vehicle charging stations.",
       "tags": [
         "Transportation"
       ]
+    },
+    {
+      "id": "transportationtracker",
+      "title": "Transportation Tracker",
+      "category": "transportation",
+      "url": "https://transportation.laketahoeinfo.org",
+      "description": "Lake Tahoe Info module tracking progress on the Regional Transportation Plan: transit ridership, trail use, vehicle miles traveled, and other performance measures.",
+      "tags": [
+        "Transportation",
+        "Lake Tahoe Info"
+      ],
+      "external": true
     },
     {
       "id": "housing",
@@ -185,9 +203,23 @@
       "description": "Look up parcel details, permit records, land capability, and coverage information on Lake Tahoe Info.",
       "tags": [
         "Parcels",
-        "Permits"
+        "Permits",
+        "Lake Tahoe Info"
       ],
       "external": true
+    },
+    {
+      "id": "completeness",
+      "title": "Permit Completeness Review",
+      "category": "permitting",
+      "url": "https://emulatecities.com/trpa/completeness",
+      "description": "Enter a TRPA application file number to pull the parcel details on record and check a permit application for completeness. Built with Emulate Cities.",
+      "tags": [
+        "Permits",
+        "Parcels"
+      ],
+      "external": true,
+      "beta": true
     },
     {
       "id": "eipprojects",
@@ -215,6 +247,31 @@
         "Prioritization"
       ],
       "beta": true
+    },
+    {
+      "id": "eiptracker",
+      "title": "EIP Project Tracker",
+      "category": "eip",
+      "url": "https://eip.laketahoeinfo.org",
+      "description": "Lake Tahoe Info module with the full record of Environmental Improvement Program (EIP) projects: descriptions, partners, funding, accomplishments, and the EIP 5-Year Project List.",
+      "tags": [
+        "EIP",
+        "Projects",
+        "Lake Tahoe Info"
+      ],
+      "external": true
+    },
+    {
+      "id": "stormwatertools",
+      "title": "Stormwater Tools",
+      "category": "eip",
+      "url": "https://stormwater.laketahoeinfo.org",
+      "description": "Lake Tahoe Info module for the Lake Clarity Crediting Program: urban catchments, stormwater treatment and load reduction modeling, and jurisdiction credit tracking.",
+      "tags": [
+        "Stormwater",
+        "Lake Tahoe Info"
+      ],
+      "external": true
     },
     {
       "id": "bmp",
@@ -368,6 +425,58 @@
         "Developers"
       ],
       "beta": true
+    },
+    {
+      "id": "thresholds",
+      "title": "Threshold Dashboard",
+      "category": "data",
+      "url": "https://thresholds.laketahoeinfo.org",
+      "description": "Lake Tahoe Info module reporting status and trend for every environmental threshold standard adopted for the Tahoe Region, from the most recent Threshold Evaluation.",
+      "tags": [
+        "Thresholds",
+        "Monitoring",
+        "Lake Tahoe Info"
+      ],
+      "external": true
+    },
+    {
+      "id": "monitoring",
+      "title": "Monitoring Dashboard",
+      "category": "data",
+      "url": "https://monitoring.laketahoeinfo.org",
+      "description": "Lake Tahoe Info module with the environmental monitoring indicators tracked by TRPA and partners, including data downloads and method documentation.",
+      "tags": [
+        "Monitoring",
+        "Indicators",
+        "Lake Tahoe Info"
+      ],
+      "external": true
+    },
+    {
+      "id": "climate",
+      "title": "Climate Resilience Dashboard",
+      "category": "data",
+      "url": "https://climate.laketahoeinfo.org",
+      "description": "Lake Tahoe Info module tracking 33 climate resilience metrics across greenhouse gas emissions, air quality, forest health, and resilient systems for the Tahoe Basin.",
+      "tags": [
+        "Climate",
+        "Monitoring",
+        "Lake Tahoe Info"
+      ],
+      "external": true
+    },
+    {
+      "id": "clarity",
+      "title": "Lake Clarity Tracker",
+      "category": "data",
+      "url": "https://clarity.laketahoeinfo.org",
+      "description": "Lake Tahoe Info module on Lake Tahoe clarity: annual Secchi depth, the drivers of clarity loss, and progress toward the clarity restoration target.",
+      "tags": [
+        "Lake Clarity",
+        "Monitoring",
+        "Lake Tahoe Info"
+      ],
+      "external": true
     },
     {
       "id": "opendata",
