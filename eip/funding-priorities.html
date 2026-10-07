@@ -93,7 +93,7 @@
     .toggle .lbl { cursor: help; }
     .row { display: flex; gap: 0.45rem; align-items: center; }
     .row > * { min-width: 0; }
-    select, input[type="number"], input[type="text"].plain {
+    select, input[type="number"], input[type="text"].plain, input[type="email"].plain {
       font-family: var(--font); font-size: 0.8rem; color: var(--eip-navy); background: #fff;
       border: 1.5px solid var(--gray-border); border-radius: 999px; padding: 0.3rem 0.7rem; width: 100%;
     }
@@ -103,7 +103,18 @@
       font-size: 0.72rem; font-weight: 600; color: var(--gray-text); padding: 0.35rem 0.4rem; transition: all 120ms; }
     .seg button.active { background: var(--eip-blue); color: #fff; font-weight: 700; }
     .toggle { display: flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; color: var(--eip-navy); font-weight: 400; }
-    .toggle .t-help { font-size: 0.64rem; color: var(--gray-text); }
+    .toggle .t-help { display: block; font-size: 0.64rem; color: var(--gray-text); line-height: 1.35; }
+    .sec-count { font-weight: 600; color: var(--eip-blue); text-transform: none; letter-spacing: 0; font-size: 0.68rem; }
+    details.more { border-top: 1px dashed var(--gray-border); padding-top: 0.4rem; display: flex; flex-direction: column; gap: 0.55rem; }
+    details.more > summary { cursor: pointer; font-size: 0.7rem; font-weight: 700; color: var(--eip-blue); list-style: none; display: flex; align-items: center; gap: 0.3rem; }
+    details.more > summary::before { content: ""; width: 0; height: 0; border-left: 5px solid currentColor; border-top: 4px solid transparent; border-bottom: 4px solid transparent; transition: transform 120ms; }
+    details.more[open] > summary::before { transform: rotate(90deg); }
+    details.more > summary::-webkit-details-marker { display: none; }
+    .ag-tooltip { white-space: pre-line !important; max-width: 380px; line-height: 1.4; }
+    .d-txt { border: 1px solid var(--gray-border); background: #fff; cursor: pointer; color: var(--gray-text); font-family: var(--font);
+      font-size: 0.68rem; font-weight: 700; padding: 0.18rem 0.6rem; border-radius: 999px; white-space: nowrap; }
+    .d-txt:hover { color: var(--eip-blue); border-color: var(--eip-blue); }
+    .d-txt.on { background: var(--eip-blue); color: #fff; border-color: var(--eip-blue); }
 
     /* multi-toggle chips (stage, focus area) */
     .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
@@ -157,7 +168,9 @@
     /* ── Map + drawer ── */
     #mapWrap { flex: 1 1 auto; position: relative; display: flex; flex-direction: column; min-width: 0; }
     #viewDiv { flex: 1 1 auto; min-height: 0; position: relative; }
-    #drawer { flex: 0 0 auto; height: 48%; min-height: 180px; display: flex; flex-direction: column;
+    body.drawer-max #viewDiv { display: none; }
+    body.drawer-max #drawer { height: 100%; }
+    #drawer { flex: 0 0 auto; height: 58%; min-height: 180px; display: flex; flex-direction: column;
       background: var(--white); border-top: 1px solid var(--gray-border); box-shadow: 0 -2px 8px rgba(11,31,65,0.08); z-index: 10; }
     body.drawer-collapsed #drawer { height: auto; min-height: 0; }
     body.drawer-collapsed #drawerBody, body.drawer-collapsed #drawerTools { display: none; }
@@ -261,7 +274,7 @@
     .dlg th { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gray-text); }
 
     @media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr 1fr; } .charts-grid .chart-card:first-child { grid-column: 1 / -1; } }
-    @media (max-width: 760px) {
+    @media (max-width: 1024px) {
       .hdr-back, .link-label, .hagency, .hdr-sep { display: none; }
       .hdr-brand img { height: 30px; }
       #appBody { flex-direction: column; }
@@ -309,43 +322,60 @@
     <aside id="sidePanel" aria-label="Prioritization controls">
     <div id="panelScroll">
 
+      <section class="panel-sec" id="pickSec">
+        <h2 class="sec-title"><span class="sec-num">1</span> Priority projects <span class="sec-count" id="pickCount"></span>
+          <button id="clearReviewBtn" class="sec-tool" title="Clear your picks, notes, and any imported CSV lists from this browser">Clear</button>
+        </h2>
+        <p class="sec-help">In the table, tick up to ten projects your agency wants funded (the <em>Priority project</em> column), put them in
+          order with <em>My rank</em>, and add a note if you like. Then press <em>Send my picks</em> at the bottom of this panel. You can
+          send again; only your latest submission counts.</p>
+        <div class="row">
+          <label class="field" style="flex:1"><span class="lbl" title="Shown next to your picks for the other reviewers.">Your name <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+            <input id="reviewerName" type="text" class="plain" placeholder="First Last" autocomplete="name" />
+          </label>
+          <label class="field" style="flex:1"><span class="lbl" title="Your organization, shown with your name.">Agency <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+            <input id="reviewerAgency" type="text" class="plain" placeholder="e.g. CTC, USFS, TRPA" autocomplete="organization" />
+          </label>
+        </div>
+        <label class="field"><span class="lbl" title="Used only to match your submissions so your latest one counts. It goes to TRPA's ArcGIS Online with the form and is not shown to other reviewers.">Email <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <input id="reviewerEmail" type="email" class="plain" placeholder="you@agency.gov" autocomplete="email" />
+        </label>
+        <div class="row" id="surveyRow" style="align-items:center">
+          <div class="foot-status" id="surveyStatus" style="flex:1" hidden></div>
+          <calcite-button id="refreshPicksBtn" icon-start="refresh" appearance="outline" kind="brand" scale="s" title="Reload everyone's submitted picks" label="Refresh picks"></calcite-button>
+        </div>
+        <div id="reviewerChips" aria-label="Reviewers whose picks are loaded"></div>
+        <details class="more">
+          <summary>If the form is blocked: CSV fallback</summary>
+          <div class="row">
+            <calcite-button id="exportScoresBtn" icon-start="file-csv" appearance="transparent" kind="neutral" scale="s" width="full" title="Download your picks and notes as a CSV to email to the convener">CSV of my picks</calcite-button>
+            <calcite-button id="importScoresBtn" icon-start="upload" appearance="transparent" kind="neutral" scale="s" width="full" title="Convener: import one or more reviewers' CSV files">Import CSV</calcite-button>
+            <input id="importFile" type="file" accept=".csv,text/csv" multiple hidden />
+          </div>
+        </details>
+      </section>
+
       <section class="panel-sec">
-        <h2 class="sec-title"><span class="sec-num">1</span> Candidate pool
+        <h2 class="sec-title"><span class="sec-num">2</span> Candidate pool
           <button id="resetFiltersBtn" class="sec-tool" title="Reset the pool to the default: EIP projects in planning or implementation">Reset</button>
         </h2>
-        <p class="sec-help">Which projects compete. The pool is EIP projects in planning or implementation, the forward-looking set
-          behind the Project Tracker's 5-Year List.</p>
+        <p class="sec-help">Which projects are in the running: EIP projects in planning or implementation, the set behind the Project
+          Tracker's 5-Year List. Narrow it here.</p>
         <div class="search-box">
           <calcite-icon icon="search" scale="s"></calcite-icon>
-          <input id="searchInput" type="text" autocomplete="off" spellcheck="false" placeholder="Project name, number, or implementer…" aria-label="Search projects"
+          <input id="searchInput" type="text" autocomplete="off" spellcheck="false" placeholder="Search projects" aria-label="Search projects"
                    title="Narrows the pool to projects whose name, EIP number, or lead implementer contains this text." />
         </div>
-        <label class="field"><span class="lbl" title="Project stage on the Tracker. The pool holds the two forward-looking stages; turn one off to see the other alone.">Stage <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <div class="chips" id="stageChips">
-            <button data-v="Planning/Design" class="on">Planning / Design</button>
-            <button data-v="Implementation" class="on">Implementation</button>
-          </div>
-        </label>
         <label class="field"><span class="lbl" title="The EIP focus area the Tracker assigns each project. Click to turn a focus area on or off; Unassigned holds projects with no focus area.">Focus area <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <div class="chips" id="focusChips"></div>
-        </label>
-        <label class="field"><span class="lbl" title="The program under the focus area (for example Stormwater Management, Forest Restoration, Transportation). Pick one or more; empty means any.">EIP program <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <calcite-combobox id="programSel" selection-mode="multiple" scale="s" placeholder="Any program" max-items="7" overlay-positioning="fixed"></calcite-combobox>
         </label>
         <label class="field"><span class="lbl" title="The organization listed as lead implementer on the Tracker. Pick one or more; empty means any.">Lead implementer <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <calcite-combobox id="leadSel" selection-mode="multiple" scale="s" placeholder="Any implementer" max-items="7" overlay-positioning="fixed"></calcite-combobox>
         </label>
-        <label class="field"><span class="lbl" title="Funding sources with expenditures reported on the project. Pick one or more to see projects those sources have already invested in.">Funding source already on the project <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <calcite-combobox id="fundSel" selection-mode="multiple" scale="s" placeholder="Any source" max-items="7" overlay-positioning="fixed"></calcite-combobox>
-        </label>
-        <label class="field"><span class="lbl" title="Public tags applied on the Tracker, such as Climate Resilience or a corridor plan. Pick one or more; empty means any.">Tag <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <calcite-combobox id="tagSel" selection-mode="multiple" scale="s" placeholder="Any public tag (Climate Resilience, corridor plans, and others)" max-items="7" overlay-positioning="fixed"></calcite-combobox>
-        </label>
-        <label class="field"><span class="lbl" title="Where the project is. California and Nevada each include projects that span both states.">State <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <div class="seg" id="stateSeg" role="radiogroup">
-            <button data-v="" class="active">All</button>
-            <button data-v="CA">California</button>
-            <button data-v="NV">Nevada</button>
+        <label class="field"><span class="lbl" title="Project stage on the Tracker. The pool holds the two forward-looking stages; turn one off to see the other alone.">Stage <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <div class="chips" id="stageChips">
+            <button data-v="Planning/Design" class="on">Planning / Design</button>
+            <button data-v="Implementation" class="on">Implementation</button>
           </div>
         </label>
         <label class="field"><span class="lbl" title="From the Tracker: Unfunded has a cost and nothing secured; Partially funded has some secured and some needed; Fully funded has secured funding covering the cost; Unpriced has no cost estimate. Click to turn a status on or off.">Funding status <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
@@ -358,21 +388,42 @@
         </label>
         <label class="toggle">
           <calcite-switch id="ltraOnly" scale="s"></calcite-switch>
-          <span class="lbl" title="Keeps projects where a Lake Tahoe Restoration Act source has secured funding, targeted funding, or expenditures on the Tracker.">Only projects with an LTRA funding source <span class="t-help">(Lake Tahoe Restoration Act: secured, targeted, or spent)</span></span>
+          <span class="lbl" title="Keeps projects where a Lake Tahoe Restoration Act source has secured funding, a pending request, or expenditures on the Tracker.">Only projects with LTRA funding <span class="t-help">Lake Tahoe Restoration Act: secured, requested, or spent</span></span>
         </label>
-        <label class="toggle">
-          <calcite-switch id="nonEip" scale="s"></calcite-switch>
-          <span class="lbl" title="Lake Tahoe Info tracks a few dozen projects that are not part of the EIP. They are left out unless you turn this on.">Include non-EIP projects tracked on Lake Tahoe Info</span>
-        </label>
+        <details class="more">
+          <summary>More filters</summary>
+          <label class="field"><span class="lbl" title="The program under the focus area (for example Stormwater Management, Forest Restoration, Transportation). Pick one or more; empty means any.">EIP program <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+            <calcite-combobox id="programSel" selection-mode="multiple" scale="s" placeholder="Any program" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+          </label>
+          <label class="field"><span class="lbl" title="Public tags applied on the Tracker, such as Climate Resilience or a corridor plan. Pick one or more; empty means any.">Tag <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+            <calcite-combobox id="tagSel" selection-mode="multiple" scale="s" placeholder="Any public tag" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+          </label>
+          <label class="field"><span class="lbl" title="Funding sources with expenditures reported on the project. Pick one or more to see projects those sources have already invested in.">Funding source already on the project <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+            <calcite-combobox id="fundSel" selection-mode="multiple" scale="s" placeholder="Any source" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+          </label>
+          <label class="field"><span class="lbl" title="Where the project is. California and Nevada each include projects that span both states.">State <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+            <div class="seg" id="stateSeg" role="radiogroup">
+              <button data-v="" class="active">All</button>
+              <button data-v="CA">California</button>
+              <button data-v="NV">Nevada</button>
+            </div>
+          </label>
+          <label class="toggle">
+            <calcite-switch id="nonEip" scale="s"></calcite-switch>
+            <span class="lbl" title="Lake Tahoe Info tracks a few dozen projects that are not part of the EIP. They are left out unless you turn this on.">Include non-EIP projects tracked on Lake Tahoe Info</span>
+          </label>
+        </details>
       </section>
 
-      <section class="panel-sec">
-        <h2 class="sec-title"><span class="sec-num">2</span> Funding envelope</h2>
-        <p class="sec-help">Select the amount of available funds. Projects are funded in rank order by their unfunded need
-          (estimated cost minus secured funding, as reported to the Tracker). Pinned projects are funded first.</p>
+      <section class="panel-sec collapsed" id="envSec">
+        <h2 class="sec-title"><span class="sec-num">3</span> Available funding
+          <button id="envToggle" class="sec-tool" title="Show or hide the available funding settings">Show</button>
+        </h2>
+        <p class="sec-help">For the convener. Enter the dollars available this round and the table shows which projects it covers, in rank
+          order, by each project's unfunded need (estimated cost minus secured funding, as reported to the Tracker).</p>
         <div class="pill-input">
           <span class="pre">$</span>
-          <input id="envInput" type="number" min="0" step="1" placeholder="0" aria-label="Funding envelope in millions of dollars"
+          <input id="envInput" type="number" min="0" step="1" placeholder="0" aria-label="Available funding in millions of dollars"
                  title="Dollars available this round, in millions. Projects are funded in rank order by unfunded need until this runs out." />
           <span class="post">million</span>
         </div>
@@ -380,45 +431,12 @@
           <button data-v="10">$10M</button><button data-v="25">$25M</button><button data-v="50">$50M</button>
           <button data-v="100">$100M</button><button data-v="250">$250M</button><button data-v="">Clear</button>
         </div>
-        <label class="field"><span class="lbl" title="Keep filling skips a project that does not fit and keeps going down the list, so smaller projects can still be funded. Stop at the cut line funds nothing past the first project that does not fit.">When the next project does not fit <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <label class="field"><span class="lbl" title="Skip it and keep going funds smaller projects further down the list with what is left. Stop there funds nothing past the first project that does not fit.">When the next project does not fit <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <div class="seg" id="modeSeg" role="radiogroup">
-            <button data-v="skip" class="active" title="Skip it and keep filling with smaller projects further down the list">Keep filling</button>
-            <button data-v="strict" title="Stop there: a strict cut line in rank order">Stop at the cut line</button>
+            <button data-v="skip" class="active" title="Skip the project that does not fit and keep funding smaller ones further down">Skip it and keep going</button>
+            <button data-v="strict" title="A strict cut line: nothing past the first project that does not fit">Stop there</button>
           </div>
         </label>
-      </section>
-
-      <section class="panel-sec">
-        <h2 class="sec-title"><span class="sec-num">3</span> Priority projects
-          <button id="clearReviewBtn" class="sec-tool" title="Clear your priority picks and any imported reviewer files from this browser">Clear</button>
-        </h2>
-        <p class="sec-help">Tick up to ten <em>Priority project</em>s in the table, put them in order with <em>My rank</em>, add notes, then
-          <em>Send my picks</em>: the form opens filled in and you press Submit. Everyone's latest picks load here and are combined by
-          Borda count: a first pick earns 10 points, a tenth earns 1. <em>Votes</em>, <em>Points</em>, and the <em>Reviewer points</em>
-          criterion show the result.</p>
-        <div class="row">
-          <label class="field" style="flex:1"><span class="lbl" title="Shown next to your picks for the other reviewers.">Your name <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-            <input id="reviewerName" type="text" class="plain" placeholder="First Last" autocomplete="name" />
-          </label>
-          <label class="field" style="flex:1"><span class="lbl" title="Your organization, shown with your name.">Agency <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-            <input id="reviewerAgency" type="text" class="plain" placeholder="e.g. CTC, USFS, TRPA" autocomplete="organization" />
-          </label>
-        </div>
-        <label class="field"><span class="lbl" title="Tells your submissions apart so your latest one counts. It goes to TRPA's ArcGIS Online with the form and is not shown in the tool.">Email <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <input id="reviewerEmail" type="email" class="plain" placeholder="you@agency.gov" autocomplete="email" />
-        </label>
-        <div class="row" id="surveyRow">
-          <calcite-button id="sendPicksBtn" icon-start="send" appearance="solid" kind="brand" scale="s" width="full"
-            title="Opens the picks form with your name, email, and ticked projects filled in. Press Submit there.">Send my picks</calcite-button>
-          <calcite-button id="refreshPicksBtn" icon-start="refresh" appearance="outline" kind="brand" scale="s" title="Reload everyone's submitted picks" label="Refresh picks"></calcite-button>
-        </div>
-        <div class="foot-status" id="surveyStatus" hidden></div>
-        <div class="row">
-          <calcite-button id="exportScoresBtn" icon-start="file-csv" appearance="transparent" kind="neutral" scale="s" width="full" title="Fallback: download your picks and notes as a CSV">CSV of my picks</calcite-button>
-          <calcite-button id="importScoresBtn" icon-start="upload" appearance="transparent" kind="neutral" scale="s" width="full" title="Fallback: import one or more reviewers' CSV files">Import CSV</calcite-button>
-          <input id="importFile" type="file" accept=".csv,text/csv" multiple hidden />
-        </div>
-        <div id="reviewerChips" aria-label="Reviewers whose picks are loaded"></div>
       </section>
       <section class="panel-sec collapsed" id="weightsSec">
         <h2 class="sec-title"><span class="sec-num">4</span> Scoring weights
@@ -449,8 +467,11 @@
 
     <div id="panelFooter">
       <div class="row">
-        <calcite-button id="csvBtn" icon-start="file-csv" appearance="solid" kind="brand" scale="s" width="full" disabled title="Download the ranked list with scores, criteria values, costs, and funding status">Ranked list CSV</calcite-button>
+        <calcite-button id="sendPicksBtn" icon-start="send" appearance="solid" kind="brand" scale="s" width="full" disabled
+          title="Opens the picks form with your name, email, and ranked picks filled in. Press Submit there.">Send my picks</calcite-button>
+        <calcite-button id="csvBtn" icon-start="file-csv" appearance="outline" kind="brand" scale="s" width="full" disabled title="Download the ranked list with scores, votes, costs, and funding status">Ranked list CSV</calcite-button>
       </div>
+      <div class="foot-status" id="sendReason"></div>
       <div class="foot-status" id="footStatus">Loading EIP projects…</div>
     </div>
     </aside>
@@ -475,6 +496,8 @@
           <span class="spacer"></span>
           <div id="drawerTools">
             <input id="quickFilter" type="text" placeholder="Filter rows…" aria-label="Filter rows" />
+            <button class="d-txt" id="colsBtn" title="Show every column, including costs, criteria, and Tracker details">All columns</button>
+            <button class="d-txt" id="maxBtn" title="Give the table the full height and hide the map">Table only</button>
           </div>
           <button class="d-btn" id="drawerToggle" title="Collapse / expand"><calcite-icon icon="chevron-down" scale="s" id="drawerToggleIcon"></calcite-icon></button>
         </div>
@@ -499,20 +522,21 @@
         records the <a href="https://eip.laketahoeinfo.org/" target="_blank" rel="noopener">EIP Project Tracker</a> publishes, scores them against
         criteria you weight, tests a funding envelope, and collects panel scores from partner agencies.</p>
       <ol>
-        <li><strong>Candidate pool.</strong> Filter to the projects that compete: EIP projects in planning or implementation, by focus area,
-          program, implementer, funding source, tag, state, funding status, and Lake Tahoe Restoration Act (LTRA) involvement.</li>
-        <li><strong>Funding envelope.</strong> Enter a dollar amount. Projects are funded in rank order by unfunded need (estimated cost minus
-          secured funding, as the implementer reported it to the Tracker). Where secured funding is not reported, cost minus expenditures
-          stands in and the row is marked with an asterisk. Pinned projects go first; excluded projects leave the pool.</li>
         <li><strong>Priority projects.</strong> Each reviewer ticks up to ten projects, ranks them, adds notes, and clicks
           <em>Send my picks</em>, which opens a Survey123 form already filled in. Submissions land in TRPA's ArcGIS Online; the tool reads
           everyone's latest picks back (without email addresses) and combines them by Borda count: rank 1 earns 10 points, rank 10 earns 1,
           summed across reviewers. The cap gives every agency the same influence whatever the length of its list. <em>Votes</em> counts
-          reviewers, <em>Points</em> is the Borda total, and the <em>Reviewer points</em> criterion carries it into the composite score.
-          CSV export and import remain as a fallback. Your own picks and notes are also kept in this browser.</li>
+          reviewers, <em>Points</em> is the Borda total, and the <em>Reviewer points</em> criterion can carry it into the composite score.
+          Picks count once they are sent. CSV export and import remain as a fallback, and your own picks and notes are kept in this browser.</li>
+        <li><strong>Candidate pool.</strong> Filter to the projects that compete: EIP projects in planning or implementation, by focus area,
+          implementer, stage, funding status, Lake Tahoe Restoration Act (LTRA) involvement, program, tag, funding source, and state.</li>
+        <li><strong>Available funding.</strong> Enter a dollar amount. Projects are funded in rank order by unfunded need (estimated cost minus
+          secured funding, as the implementer reported it to the Tracker). Where secured funding is not reported, cost minus expenditures
+          stands in and the row is marked with an asterisk. Pinned projects go first; excluded projects leave the pool.</li>
         <li><strong>Scoring weights</strong> (optional). The list is ordered by a 0 to 100 score: the weighted average of the criteria below
-          that have data for a project. The Balanced preset applies unless you change it. Criteria without data for a project are left out of its
-          average, and the <em>Data</em> column shows how much of the active weight had data.</li>
+          that have data for a project. The Balanced preset applies unless you change it and gives reviewer points no weight, so early
+          submissions do not steer later reviewers; the convener switches to <em>Reviewer points lead</em> for the meeting. Criteria without
+          data for a project are left out of its average, and the <em>Score coverage</em> column shows how much of the active weight had data.</li>
       </ol>
       <h3>Criteria</h3>
       <table id="aboutCriteria"><thead><tr><th>Criterion</th><th>How it is scored</th></tr></thead><tbody></tbody></table>
@@ -525,11 +549,12 @@
       <ul id="aboutCaveats">
         <li>Projects without an estimated total cost are ranked but marked <em>Unpriced</em>, and the envelope cannot count them. Turn off
           <em>Unpriced</em> under Funding status to see the envelope against priced projects alone.</li>
-        <li><em>LTRA ask</em> is the targeted (not yet secured) amount from Lake Tahoe Restoration Act funding sources in a project's expected
-          funding table on the Tracker. <em>Targeted</em> is the same across all sources. Only public tags are shown.</li>
+        <li><em>LTRA request</em> is the amount requested but not yet secured from Lake Tahoe Restoration Act funding sources in a project's
+          expected funding table on the Tracker. <em>Requested, not secured</em> is the same across all sources. Only public tags are shown.</li>
         <li>Unfunded need, secured funding, and cost are self-reported by implementers and are only as current as their last Tracker update.
           Projects whose secured funding equals their cost show zero need and are funded at no cost to the envelope.</li>
         <li>The Tracker assigns each project one action priority for reporting, so multi-benefit projects may not match the action priority you pick.</li>
+        <li>The table opens in a reviewer view. <em>All columns</em> above the table shows costs, criteria values, and Tracker details.</li>
         <li>This tool does not write to the Tracker. Export the ranked list and panel scores to carry results forward.</li>
       </ul>
     </div>
@@ -609,13 +634,13 @@
           if (inJ || inA) return p.basinWide && !inA ? 0.5 : 1;
           return p.basinWide ? 0.5 : 0;
         } },
-      { key: "panel", label: "Reviewer points", help: "Borda points from reviewers' ranked picks: a first pick earns 10, a tenth earns 1.", needsPick: "panel",
+      { key: "panel", label: "Reviewer points", help: "Points from reviewers' sent picks: a first pick earns 10, a tenth earns 1. Zero in Balanced so drafts are not steered by early submissions.", needsPick: "panel",
         about: "Each reviewer ranks up to ten picks; rank 1 earns 10 points, rank 10 earns 1. Points are summed across reviewers and divided by ten times the number of reviewers, so a project every reviewer ranks first scores 1. Off until someone has picked a project.",
         fn: (p, ctx) => ctx.panelAvg(p.id) },
     ];
     const EQUAL_FOCUS = { "Watersheds and Water Quality": 3, "Forest Health": 3, "Sustainable Recreation and Transportation": 3, "Science, Stewardship, and Accountability": 3, "Unassigned": 1 };
     const PRESETS = {
-      balanced: { label: "Balanced", w: { thr: 3, multi: 2, ready: 3, lev: 2, prog: 1, secured: 1, urg: 1, afford: 0, focus: 2, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
+      balanced: { label: "Balanced", w: { thr: 3, multi: 2, ready: 3, lev: 2, prog: 1, secured: 1, urg: 1, afford: 0, focus: 2, act: 3, geo: 3, panel: 0 }, fw: EQUAL_FOCUS },
       ready: { label: "Shovel ready", w: { thr: 1, multi: 1, ready: 5, lev: 3, prog: 3, secured: 3, urg: 2, afford: 1, focus: 1, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
       clarity: { label: "Lake clarity", w: { thr: 2, multi: 4, ready: 2, lev: 2, prog: 1, secured: 1, urg: 1, afford: 0, focus: 4, act: 3, geo: 3, panel: 3 },
         fw: { "Watersheds and Water Quality": 5, "Forest Health": 2, "Sustainable Recreation and Transportation": 1, "Science, Stewardship, and Accountability": 2, "Unassigned": 0 } },
@@ -735,15 +760,13 @@
     const myPicks = () => Object.entries(review.scores).filter(([, v]) => v.s).sort((a, b) => (a[1].r || 99) - (b[1].r || 99) || a[0].localeCompare(b[0])).map(([id]) => id);
     // Keep my ranks a clean 1..n sequence after any change
     function renumberMine() { myPicks().forEach((id, i) => { review.scores[id].r = i + 1; }); saveLS(LS_REVIEW, review); }
-    // Remote submissions that count, leaving out my own once I have picks in this browser
-    // (otherwise my submitted copy would double-count me).
-    const remoteOthers = () => Object.entries(remote).filter(([k]) => !(haveLocalPicks() && k === myKey()));
-    // Every loaded reviewer list: [{ who, picks: { id: { s, r, n } } }]
+    // Every list that counts toward Votes and Points: submitted forms and imported CSVs.
+    // Picks in this browser count once they are sent (the submission comes back as a remote list),
+    // so an unsent draft never skews the group result or double-counts its own submission.
     function reviewerLists() {
       const out = [];
-      if (haveLocalPicks()) out.push({ who: (review.reviewer || review.agency) ? whoLabel(review.reviewer, review.agency) : "Me", picks: review.scores });
-      for (const [who, m] of Object.entries(imports)) if (who !== (review.reviewer || "")) out.push({ who, picks: m });
-      for (const [, rv] of remoteOthers()) out.push({ who: whoLabel(rv.who, rv.agency), picks: rv.picks });
+      for (const [who, m] of Object.entries(imports)) out.push({ who, picks: m });
+      for (const [, rv] of Object.entries(remote)) out.push({ who: whoLabel(rv.who, rv.agency), picks: rv.picks });
       return out;
     }
     // Who picked this project, with rank, points, and note
@@ -828,7 +851,7 @@
       list.filter(p => p.excluded).forEach(p => { p.rank = null; p.baseRank = null; p.fund = "excluded"; });
       allocate(active);
       pool = [...active, ...list.filter(p => p.excluded).sort((a, b) => b.score - a.score)];
-      renderGrid(); renderMap(); renderLegend(); renderStatus(); syncWeightUI(); chartsDirty = true;
+      renderGrid(); renderMap(); renderLegend(); renderStatus(); syncWeightUI(); updateSendState(); chartsDirty = true;
       if (activeTab === "charts") renderCharts();
       if (selectedId) showDetail(selectedId, false);
       $("csvBtn").disabled = !pool.length;
@@ -882,19 +905,19 @@
         "vs Balanced": "Rank change against the Balanced preset with no picks. Up means your weights moved the project up the list.",
         "Est. cost": "Estimated total cost as reported on the Tracker.",
         "Secured": "Funding the implementer reports as secured on the Tracker.",
-        "LTRA ask": "Targeted (not yet secured) funding from Lake Tahoe Restoration Act sources in the project's expected funding table on the Tracker. A plus sign means some LTRA funding is already secured.",
-        "Targeted": "All targeted (not yet secured) funding identified on the Tracker, across every source.",
+        "LTRA request": "Lake Tahoe Restoration Act funding the project has requested but not yet secured, from its expected funding table on the Tracker. A plus sign means some LTRA funding is already secured.",
+        "Requested, not secured": "All funding the project has requested but not yet secured, across every source, from the Tracker.",
         "Funding status": "From the Tracker: Fully funded (secured covers the cost), Partially funded (some secured, some needed), Unfunded (cost known, nothing secured), or Unpriced (no cost estimate).",
         "Unfunded need": "What the envelope counts: estimated cost minus secured funding, as the Tracker computes it. An asterisk means secured funding is not reported and cost minus expenditures stands in.",
         "Spent": "Expenditures reported to the Tracker to date, all sources.",
         "Remaining": "Estimated total cost minus expenditures to date.",
-        "Envelope": "Whether this scenario's funding envelope covers the project's unfunded need, in rank order. Shown only when an envelope is set.",
+        "Envelope": "Whether the available funding entered in the panel covers this project's unfunded need, going down the list in rank order. Shown only when an amount is set.",
         "Priority project": "Tick up to ten projects your agency wants funded this round. New picks go to the bottom of your ranking; set the order in My rank.",
         "My rank": "Your order of preference, 1 (top) to 10. Type a number to move a pick there; the others shift. Typing a rank on an unticked project picks it.",
-        "Votes": "How many reviewers picked this project, out of everyone whose list is loaded (you, imported CSVs, and submitted forms). Hover for names, ranks, and notes.",
+        "Votes": "How many reviewers picked this project, out of everyone whose list has been sent or imported. Your own picks count once you send them. Hover for names, ranks, and notes.",
         "Points": "Borda points across reviewers: a reviewer's first pick earns 10, second 9, down to 1 for tenth. Hover to see who gave what.",
         "Note": "Your note on the project. Exported with your picks.",
-        "Data": "Share of the active scoring weight this project had data for. Low values mean the score rests on fewer criteria.",
+        "Score coverage": "Share of the active scoring weight this project had data for. Low values mean the score rests on fewer criteria.",
         "Thresholds": "Threshold categories the project reports against on the Tracker.",
         "Action priority": "The one EIP action priority the Tracker assigns the project for reporting.",
         "Funding sources": "Funding sources with expenditures on the project, from the Tracker.",
@@ -907,51 +930,54 @@
       gridApi = agGrid.createGrid($("grid"), {
         theme, rowData: [], getRowId: (p) => p.data.id, animateRows: false, suppressCellFocus: true, singleClickEdit: true, stopEditingWhenCellsLoseFocus: true,
         tooltipShowDelay: 300, tooltipHideDelay: 20000,
+        overlayNoRowsTemplate: '<span style="padding:1rem;color:#5F6B7E">No projects match these filters. Reset the pool or clear the search.</span>',
         rowClassRules: { "row-excluded": (p) => p.data.excluded, "row-pinned-proj": (p) => p.data.pinned, "row-selected-proj": (p) => p.data.id === selectedId },
         defaultColDef: { sortable: true, resizable: true, suppressMovable: true, tooltipValueGetter: (p) => p.valueFormatted ?? p.value },
         columnDefs: withHeaderTips([
+          // Reviewer-first order. The reviewer's own controls sit next to the rank; costs, criteria,
+          // and Tracker detail follow and most are hidden until "All columns" (applyColumnVisibility).
           { headerName: "#", field: "rank", width: 54, type: "rightAligned", pinned: "left", valueFormatter: (p) => p.value ?? "", comparator: (a, b) => (a ?? 1e9) - (b ?? 1e9), sort: "asc" },
-          { headerName: "", field: "flags", width: 62, sortable: false, cellRenderer: flags, pinned: "left" },
-          { headerName: "Project #", field: "id", width: 118, cellRenderer: (p) => `<a href="${escHtml(p.data.factUrl || p.data.url)}" target="_blank" rel="noopener" title="Fact sheet on the EIP Project Tracker">${escHtml(p.value)}</a>` },
-          { headerName: "Project", field: "name", flex: 2, minWidth: 220 },
-          { headerName: "Focus area", field: "focus", width: 170, cellRenderer: (p) => `<i class="fdot" style="background:${FOCUS_COLOR[p.value] || C.gray}"></i>${escHtml((FOCUS.find(f => f.key === p.value) || {}).short || p.value)}` },
-          { headerName: "Lead implementer", field: "lead", flex: 1.2, minWidth: 160 },
-          { headerName: "Stage", field: "stage", width: 118 },
-          { headerName: "Score", field: "score", width: 120, cellRenderer: (p) => `<div class="sbar"><div class="bar"><i style="width:${Math.max(0, Math.min(100, p.value))}%"></i></div><b>${Math.round(p.value)}</b></div>`,
-            tooltipValueGetter: (p) => breakdownText(p.data) },
-          { headerName: "vs Balanced", field: "delta", width: 100, type: "rightAligned", valueGetter: (p) => p.data.rank && p.data.baseRank ? p.data.baseRank - p.data.rank : null,
-            cellRenderer: (p) => p.value == null ? "" : p.value > 0 ? `<span class="delta up">▲ ${p.value}</span>` : p.value < 0 ? `<span class="delta down">▼ ${-p.value}</span>` : `<span class="delta flat">–</span>`,
-            headerTooltip: "Rank change against the Balanced preset with no picks: up means your priorities moved this project up the list" },
-          { headerName: "Est. cost", field: "cost", ...money }, { headerName: "Secured", field: "secured", ...money, headerTooltip: "Funding the implementer reports as secured" },
-          { headerName: "LTRA ask", field: "ltraAsk", ...money, headerTooltip: "Targeted (not yet secured) funding from Lake Tahoe Restoration Act sources in the Tracker's expected funding table",
-            cellRenderer: (p) => p.value == null ? "" : `${fmtUSD(p.value)}${p.data.ltraSecured > 0 ? ` <span class="cov" title="${fmtUSD(p.data.ltraSecured)} LTRA already secured">+</span>` : ""}` },
-          { headerName: "Targeted", field: "targeted", ...money, headerTooltip: "All targeted (not yet secured) funding identified in the Tracker" },
-          { headerName: "Funding status", field: "fstatus", width: 128, cellRenderer: (p) => statusBadge(p.value),
-            comparator: (a, b) => ["unfunded", "partial", "fully", "unpriced"].indexOf(a) - ["unfunded", "partial", "fully", "unpriced"].indexOf(b) },
-          { headerName: "Unfunded need", field: "need", ...money, width: 118, headerTooltip: "What the envelope counts: the Tracker's unfunded need (cost minus secured funding), or cost minus expenditures when secured funding is not reported",
-            cellRenderer: (p) => p.value == null ? "" : `${fmtUSD(p.value)}${p.data.needBasis === "spent" ? ' <span class="cov" title="Secured funding not reported; cost minus expenditures">*</span>' : ""}` },
-          { headerName: "Spent", field: "spent", ...money }, { headerName: "Remaining", field: "remaining", ...money, headerTooltip: "Estimated total cost minus expenditures to date" },
-          { headerName: "Envelope", field: "fund", width: 128, hide: true, cellRenderer: (p) => fundBadge(p.value, p.data.pinned), comparator: (a, b) => ["funded", "cut", "fully", "none", "unpriced", "excluded"].indexOf(a) - ["funded", "cut", "fully", "none", "unpriced", "excluded"].indexOf(b) },
-          { headerName: "Priority project", field: "my", width: 118, sortable: true, valueGetter: (p) => review.scores[p.data.id]?.s ? 1 : 0,
+          { headerName: "Priority project", field: "my", width: 112, pinned: "left", sortable: true, valueGetter: (p) => review.scores[p.data.id]?.s ? 1 : 0,
             // A span, not a label: a label forwards the click to its input, which bubbles back as a second
             // cell click and toggles the pick straight back off. The cell click handler owns the toggle.
             cellRenderer: (p) => `<span class="pp"><input type="checkbox" ${p.value ? "checked" : ""} tabindex="-1" aria-label="Priority project" /></span>`,
             cellStyle: { background: "rgba(0,125,195,0.05)" } },
-          { headerName: "My rank", field: "myRank", width: 84, type: "rightAligned", editable: true, cellEditor: "agNumberCellEditor", cellEditorParams: { min: 1, max: CAP, precision: 0 },
+          { headerName: "My rank", field: "myRank", width: 82, pinned: "left", type: "rightAligned", editable: true, cellEditor: "agNumberCellEditor", cellEditorParams: { min: 1, max: CAP, precision: 0 },
             valueGetter: (p) => review.scores[p.data.id]?.r ?? null, valueSetter: (p) => { if (p.newValue == null || p.newValue === "") { setMyScore(p.data.id, null, undefined); return true; } return setMyRank(p.data.id, p.newValue); },
             cellStyle: { background: "rgba(0,125,195,0.05)" }, comparator: (a, b) => (a ?? 99) - (b ?? 99) },
-          { headerName: "Votes", field: "votes", width: 92, type: "rightAligned", valueGetter: (p) => panelPicks(p.data.id).length,
-            valueFormatter: (p) => reviewerCount() ? `${p.value} of ${reviewerCount()}` : "", tooltipValueGetter: (p) => panelPicks(p.data.id).map(pickLabel).join("\n") || "Nobody has picked this project yet" },
-          { headerName: "Points", field: "points", width: 84, type: "rightAligned", valueGetter: (p) => points(p.data.id), valueFormatter: (p) => reviewerCount() ? String(p.value) : "",
-            cellRenderer: (p) => reviewerCount() ? `<b>${p.value}</b>` : "", tooltipValueGetter: (p) => panelPicks(p.data.id).map(x => `${pickLabel(x)} (${x.pts} pts)`).join("\n") || "No points yet" },
+          { headerName: "Project", field: "name", flex: 2, minWidth: 220 },
+          { headerName: "Project #", field: "id", width: 112, cellRenderer: (p) => `<a href="${escHtml(p.data.factUrl || p.data.url)}" target="_blank" rel="noopener" title="Fact sheet on the EIP Project Tracker">${escHtml(p.value)}</a>` },
+          { headerName: "Focus area", field: "focus", width: 170, cellRenderer: (p) => `<i class="fdot" style="background:${FOCUS_COLOR[p.value] || C.gray}"></i>${escHtml((FOCUS.find(f => f.key === p.value) || {}).short || p.value)}` },
+          { headerName: "Lead implementer", field: "lead", flex: 1.2, minWidth: 160 },
+          { headerName: "Stage", field: "stage", width: 118 },
+          { headerName: "Est. cost", field: "cost", ...money },
+          { headerName: "Unfunded need", field: "need", ...money, width: 118,
+            cellRenderer: (p) => p.value == null ? "" : `${fmtUSD(p.value)}${p.data.needBasis === "spent" ? ' <span class="cov" title="Secured funding not reported; cost minus expenditures">*</span>' : ""}` },
+          { headerName: "Funding status", field: "fstatus", width: 128, cellRenderer: (p) => statusBadge(p.value),
+            comparator: (a, b) => ["unfunded", "partial", "fully", "unpriced"].indexOf(a) - ["unfunded", "partial", "fully", "unpriced"].indexOf(b) },
+          { headerName: "Score", field: "score", width: 120, cellRenderer: (p) => `<div class="sbar"><div class="bar"><i style="width:${Math.max(0, Math.min(100, p.value))}%"></i></div><b>${Math.round(p.value)}</b></div>`,
+            tooltipValueGetter: (p) => breakdownText(p.data) },
           { headerName: "Note", field: "note", flex: 1.2, minWidth: 150, editable: true, cellEditor: "agTextCellEditor", valueGetter: (p) => review.scores[p.data.id]?.n ?? "",
             valueSetter: (p) => { setMyScore(p.data.id, undefined, p.newValue); return true; }, cellStyle: { background: "rgba(0,125,195,0.05)" } },
-          { headerName: "Data", field: "coverage", width: 70, type: "rightAligned", valueFormatter: (p) => `${Math.round(p.value * 100)}%`, cellClass: "cov", headerTooltip: "Share of the active criteria weight this project had data for" },
-          { headerName: "Thresholds", field: "thresholds", width: 150, valueFormatter: (p) => (p.value || []).join(", "), hide: false },
+          { headerName: "Votes", field: "votes", width: 92, type: "rightAligned", valueGetter: (p) => panelPicks(p.data.id).length,
+            valueFormatter: (p) => reviewerCount() && p.value ? `${p.value} of ${reviewerCount()}` : "", tooltipValueGetter: (p) => panelPicks(p.data.id).map(pickLabel).join("\n") || "Nobody has picked this project yet" },
+          { headerName: "Points", field: "points", width: 84, type: "rightAligned", valueGetter: (p) => points(p.data.id), valueFormatter: (p) => p.value ? String(p.value) : "",
+            cellRenderer: (p) => p.value ? `<b>${p.value}</b>` : "", tooltipValueGetter: (p) => panelPicks(p.data.id).map(x => `${pickLabel(x)} (${x.pts} pts)`).join("\n") || "No points yet" },
+          { headerName: "Envelope", field: "fund", width: 128, cellRenderer: (p) => fundBadge(p.value, p.data.pinned), comparator: (a, b) => ["funded", "cut", "fully", "none", "unpriced", "excluded"].indexOf(a) - ["funded", "cut", "fully", "none", "unpriced", "excluded"].indexOf(b) },
+          { headerName: "", field: "flags", width: 62, sortable: false, cellRenderer: flags },
+          { headerName: "LTRA request", field: "ltraAsk", ...money,
+            cellRenderer: (p) => p.value == null ? "" : `${fmtUSD(p.value)}${p.data.ltraSecured > 0 ? ` <span class="cov" title="${fmtUSD(p.data.ltraSecured)} LTRA already secured">+</span>` : ""}` },
+          { headerName: "Secured", field: "secured", ...money },
+          { headerName: "Requested, not secured", field: "targeted", ...money, width: 150 },
+          { headerName: "vs Balanced", field: "delta", width: 100, type: "rightAligned", valueGetter: (p) => p.data.rank && p.data.baseRank ? p.data.baseRank - p.data.rank : null,
+            cellRenderer: (p) => p.value == null ? "" : p.value > 0 ? `<span class="delta up">▲ ${p.value}</span>` : p.value < 0 ? `<span class="delta down">▼ ${-p.value}</span>` : `<span class="delta flat">–</span>` },
+          { headerName: "Spent", field: "spent", ...money }, { headerName: "Remaining", field: "remaining", ...money },
+          { headerName: "Score coverage", field: "coverage", width: 110, type: "rightAligned", valueFormatter: (p) => `${Math.round(p.value * 100)}%`, cellClass: "cov" },
+          { headerName: "Thresholds", field: "thresholds", width: 150, valueFormatter: (p) => (p.value || []).join(", ") },
           { headerName: "Action priority", field: "action", width: 200 },
           { headerName: "Funding sources", field: "funding", width: 200, valueFormatter: (p) => (p.value || []).join("; ") },
           { headerName: "Tags", field: "tags", width: 150, valueFormatter: (p) => (p.value || []).join("; ") },
-          { headerName: "Years", width: 90, valueGetter: (p) => [p.data.implStart, p.data.end].filter(v => v != null).join(" – ") },
+          { headerName: "Years", colId: "years", width: 90, valueGetter: (p) => [p.data.implStart, p.data.end].filter(v => v != null).join(" – ") },
           { headerName: "5-Year List", field: "fiveYear", width: 96, valueFormatter: (p) => p.value ? "yes" : "" },
           { headerName: "Funding requests", field: "requests", width: 260 },
         ]),
@@ -965,11 +991,26 @@
         onCellValueChanged: (e) => { if (e.column.getColId() === "note") gridApi.refreshCells({ rowNodes: [e.node], force: true }); if (e.column.getColId() === "myRank") recompute(); },
       });
       $("quickFilter").addEventListener("input", () => gridApi.setGridOption("quickFilterText", $("quickFilter").value));
+      $("colsBtn").addEventListener("click", () => { fullView = !fullView; $("colsBtn").classList.toggle("on", fullView); $("colsBtn").textContent = fullView ? "Fewer columns" : "All columns"; applyColumnVisibility(); });
+    }
+    // Reviewer view shows the columns a reviewer needs; the rest appear with "All columns",
+    // or when they become relevant (votes once lists arrive, the envelope once an amount is set).
+    let fullView = false;
+    const REVIEWER_COLS = ["rank", "my", "myRank", "name", "id", "focus", "lead", "stage", "cost", "need", "fstatus", "score", "note"];
+    function applyColumnVisibility() {
+      if (!gridApi) return;
+      const all = gridApi.getAllGridColumns().map(c => c.getColId());
+      const show = new Set(fullView ? all : REVIEWER_COLS);
+      if (fullView || reviewerCount() > 0) { show.add("votes"); show.add("points"); }
+      if (fullView || envelope > 0 || pins.size || excluded.size) { show.add("fund"); show.add("flags"); }   // pin/exclude are scenario tools
+      if (fullView || $("ltraOnly").checked) show.add("ltraAsk");
+      gridApi.setColumnsVisible(all.filter(c => show.has(c)), true);
+      gridApi.setColumnsVisible(all.filter(c => !show.has(c)), false);
     }
     function renderGrid() {
       if (!gridApi) return;
       gridApi.setGridOption("rowData", pool);
-      gridApi.setColumnsVisible(["fund"], envelope > 0);
+      applyColumnVisibility();
       gridApi.refreshCells({ force: true });
       const n = pool.filter(p => !p.excluded).length, nx = pool.length - n;
       $("drawerCount").textContent = `${n.toLocaleString()} project${n === 1 ? "" : "s"} in the pool${nx ? `, ${nx} excluded` : ""}`;
@@ -1088,8 +1129,8 @@
       selectedId = id; renderHighlight(); showDetail(id, true);
       if (gridApi) { gridApi.redrawRows(); const node = gridApi.getRowNode(id); if (node && !fromGrid) gridApi.ensureNodeVisible(node, "middle"); }
       const p = pool.find(x => x.id === id);
-      if (p && p.pt && fromGrid && view) view.goTo({ center: [p.lon, p.lat], zoom: Math.max(view.zoom, 12) }, { duration: 500 }).catch(() => {});
     }
+    function zoomToSelected() { const p = pool.find(x => x.id === selectedId); if (p && p.pt && view) view.goTo({ center: [p.lon, p.lat], zoom: Math.max(view.zoom, 13) }, { duration: 500 }).catch(() => {}); }
     function hideDetail() { selectedId = null; $("detailCard").hidden = true; renderHighlight(); if (gridApi) gridApi.redrawRows(); }
     function showDetail(id, open) {
       const p = pool.find(x => x.id === id); if (!p) { hideDetail(); return; }
@@ -1123,6 +1164,7 @@
         <div class="brk">${rows}</div>
         <div class="dc-links">
           <calcite-button href="${escHtml(p.factUrl || p.url)}" target="_blank" rel="noopener" icon-start="launch" appearance="outline" kind="brand" scale="s">Fact sheet</calcite-button>
+          ${p.pt ? `<calcite-button id="dcZoom" icon-start="zoom-to-object" appearance="outline" kind="brand" scale="s" title="Zoom the map to this project">Zoom to</calcite-button>` : ""}
           <calcite-button id="dcPin" icon-start="pin" appearance="${p.pinned ? "solid" : "outline"}" kind="brand" scale="s">${p.pinned ? "Unpin" : "Pin"}</calcite-button>
           <calcite-button id="dcEx" icon-start="x-circle" appearance="${p.excluded ? "solid" : "outline"}" kind="neutral" scale="s">${p.excluded ? "Restore" : "Exclude"}</calcite-button>
         </div>`;
@@ -1130,6 +1172,7 @@
       $("dcClose").addEventListener("click", hideDetail);
       $("dcDesc").addEventListener("click", (e) => e.currentTarget.classList.toggle("open"));
       $("dcPin").addEventListener("click", () => toggleFlag(p.id, "pin"));
+      if ($("dcZoom")) $("dcZoom").addEventListener("click", zoomToSelected);
       $("dcEx").addEventListener("click", () => toggleFlag(p.id, "ex"));
     }
 
@@ -1199,7 +1242,7 @@
     }
     $("csvBtn").addEventListener("click", () => {
       const head = ["Rank", "Project #", "Project", "Focus area", "Program", "Action priority", "Lead implementer", "Stage", "Implementation start", "End", "Score", "Rank vs Balanced",
-        "Estimated cost", "Secured funding", "Unfunded need", "Need basis", "LTRA ask", "LTRA secured", "Targeted funding", "Funding status", "On 5-Year List", "Expenditures to date", "Cost minus expenditures", "Envelope status", "Pinned", "Excluded", "Votes", "Points", "Picked by", "My rank", "My note", "Data coverage",
+        "Estimated cost", "Secured funding", "Unfunded need", "Need basis", "LTRA request", "LTRA secured", "Requested not secured", "Funding status", "On 5-Year List", "Expenditures to date", "Cost minus expenditures", "Envelope status", "Pinned", "Excluded", "Votes", "Points", "Picked by", "My rank", "My note", "Score coverage",
         ...CRITERIA.map(c => `${c.label} (w${weights[c.key]})`), "Threshold categories", "Funding sources", "Funding requests", "Tags", "Jurisdictions", "Fact sheet"];
       const lines = [head.map(csvCell).join(",")];
       for (const p of pool) {
@@ -1255,14 +1298,14 @@
       for (const [k, rv] of Object.entries(remote)) {
         const chip = document.createElement("calcite-chip"); chip.scale = "s"; chip.icon = "send";
         const n = Object.values(rv.picks).filter(x => x.s).length;
-        chip.textContent = `${whoLabel(rv.who, rv.agency)} (${n})`;
-        chip.title = `Submitted picks${rv.when ? " " + new Date(rv.when).toLocaleString() : ""}${k === myKey() ? " (you)" : ""}`;
+        chip.textContent = `${whoLabel(rv.who, rv.agency)} · ${n} pick${n === 1 ? "" : "s"}${k === myKey() ? " (you)" : ""}`;
+        chip.title = `Submitted${rv.when ? " " + new Date(rv.when).toLocaleString() : ""}`;
         if (k === myKey()) chip.kind = "brand";
         el.appendChild(chip);
       }
       for (const who of Object.keys(imports)) {
         const chip = document.createElement("calcite-chip"); chip.scale = "s"; chip.closable = true; chip.dataset.who = who;
-        chip.textContent = `${who} (${Object.keys(imports[who]).length})`; chip.title = "Imported reviewer picks. Close to remove."; el.appendChild(chip);
+        const m = Object.keys(imports[who]).length; chip.textContent = `${who} · ${m} pick${m === 1 ? "" : "s"} (CSV)`; chip.title = "Imported from a CSV. Close to remove."; el.appendChild(chip);
       }
     }
     $("reviewerChips").addEventListener("calciteChipClose", (e) => { delete imports[e.target.dataset.who]; saveLS(LS_IMPORTS, imports); renderReviewers(); recompute(); });
@@ -1274,6 +1317,20 @@
     $("reviewerName").addEventListener("change", () => { review.reviewer = $("reviewerName").value.trim(); saveLS(LS_REVIEW, review); recompute(); });
     $("reviewerAgency").addEventListener("change", () => { review.agency = $("reviewerAgency").value.trim(); saveLS(LS_REVIEW, review); recompute(); });
     $("reviewerEmail").addEventListener("change", () => { review.email = $("reviewerEmail").value.trim(); saveLS(LS_REVIEW, review); recompute(); });
+    ["reviewerName", "reviewerAgency", "reviewerEmail"].forEach(id => $(id).addEventListener("input", updateSendState));
+    const roundLabel = () => { const m = SURVEY.round.match(/^(\d{4})-(\d{2})$/); return m ? `${new Date(+m[1], +m[2] - 1, 1).toLocaleString([], { month: "long", year: "numeric" })} round` : `round ${SURVEY.round}`; };
+    // Footer Send button: enabled only when it can work, with the reason shown inline
+    function updateSendState() {
+      const n = myPicks().length;
+      $("pickCount").textContent = n ? `${n} of ${CAP} picked` : "";
+      const name = $("reviewerName").value.trim(), email = $("reviewerEmail").value.trim(), agency = $("reviewerAgency").value.trim();
+      const okId = !!name && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      const btn = $("sendPicksBtn"); btn.hidden = !surveyOn();
+      btn.textContent = n ? `Send my picks (${n})` : "Send my picks";
+      btn.disabled = !(surveyOn() && n && okId);
+      $("sendReason").textContent = !surveyOn() ? "" : !n ? "Tick a Priority project in the table to start your list."
+        : !okId ? "Add your name and email under Priority projects to send." : `Sends ${n} pick${n === 1 ? "" : "s"} as ${whoLabel(name, agency)}.`;
+    }
 
     // ── Survey123 round trip ──
     const surveyOn = () => !!SURVEY.formId;
@@ -1289,7 +1346,9 @@
       const q = new URLSearchParams();
       q.set(`field:${F.name}`, name); q.set(`field:${F.email}`, email); q.set(`field:${F.agency}`, agency);
       q.set(`field:${F.key}`, fnv(email.toLowerCase())); q.set(`field:${F.round}`, SURVEY.round);
-      q.set(`field:${F.picks}`, picked.map(id => `${id}:${review.scores[id].r}`).join("; ")); if (notes) q.set(`field:${F.notes}`, notes);
+      // One readable line per pick: "1. 01.01.01.0033 Tahoe Valley Stormwater..." (parseRemote reads the rank and number)
+      const byId = new Map(projects.map(p => [p.id, p.name]));
+      q.set(`field:${F.picks}`, picked.map(id => `${review.scores[id].r}. ${id} ${byId.get(id) || ""}`.trim()).join("\n")); if (notes) q.set(`field:${F.notes}`, notes);
       q.set(`field:${F.url}`, shareUrl()); q.set("open", "web");
       window.open(`https://survey123.arcgis.com/share/${SURVEY.formId}?${q}`, "_blank", "noopener");
       toast(`Form opened with ${picked.length} pick${picked.length === 1 ? "" : "s"}. Press Submit there, then come back; picks refresh on their own.`, 7000);
@@ -1302,8 +1361,12 @@
         const a = f.attributes || {};
         const key = String(a[F.key] || fnv((a[F.name] || "") + "|" + (a[F.agency] || ""))).trim();
         if (out[key]) continue;                                   // newer submission already kept
-        // "01.01.01.0033:1; 01.02.01.0205:2" (bare numbers, from older submissions, rank by position)
-        const picks = capRanked(splitList(a[F.picks], ";").map(tok => { const m = tok.match(/^([\d.]+)(?::(\d+))?$/); return m ? { id: m[1], r: m[2] ? +m[2] : null, n: "" } : null; }).filter(Boolean));
+        // Accepts "1. 01.01.01.0033 Project name" lines, "01.01.01.0033:1; ..." pairs, or bare numbers (ranked by position)
+        const picks = capRanked(String(a[F.picks] || "").split(/\r?\n|;/).map(tok => {
+          const id = (tok.match(/\d{2}\.\d{2}\.\d{2}\.\d{4}|\d+(?:\.\d+)+/) || [])[0]; if (!id) return null;
+          const lead = tok.match(/^\s*(\d+)\s*[.)]\s/), trail = tok.match(/:\s*(\d+)\s*$/);
+          return { id, r: lead ? +lead[1] : trail ? +trail[1] : null, n: "" };
+        }).filter(Boolean));
         for (const line of String(a[F.notes] || "").split(/\r?\n/)) {
           const m = line.match(/^\s*([\d.]+)\s*:\s*(.*)$/); if (!m) continue;
           if (picks[m[1]]) picks[m[1]].n = m[2].trim(); else picks[m[1]] = { s: 0, r: null, n: m[2].trim() };
@@ -1322,7 +1385,7 @@
         if (r.error) throw new Error(r.error.message || "query error");
         remote = parseRemote(r.features); remoteLoadedAt = Date.now();
         const n = Object.keys(remote).length;
-        st.textContent = `${n} reviewer${n === 1 ? "" : "s"} ha${n === 1 ? "s" : "ve"} sent picks for round ${SURVEY.round} (as of ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}).`;
+        st.textContent = `${n} reviewer${n === 1 ? "" : "s"} ha${n === 1 ? "s" : "ve"} sent picks for the ${roundLabel()} (as of ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}).`;
       } catch (e) { console.warn("Survey123 view query failed:", e); st.textContent = "Could not load submitted picks. Check the connection and click Refresh."; }
       renderReviewers(); recompute();
     }
@@ -1410,10 +1473,15 @@
       $("gridWrap").hidden = activeTab !== "list"; $("chartsWrap").hidden = activeTab !== "charts"; $("drawerTools").hidden = activeTab !== "list";
       if (activeTab === "charts") { renderCharts(); setTimeout(() => ["chartCum", "chartFocus", "chartLead"].forEach(id => Plotly.Plots.resize(id)), 50); }
     });
+    $("maxBtn").addEventListener("click", () => { const on = document.body.classList.toggle("drawer-max"); $("maxBtn").classList.toggle("on", on); $("maxBtn").textContent = on ? "Show map" : "Table only";
+      try { localStorage.setItem("eipPriorities.drawerMax", on ? "1" : ""); } catch {} if (!on && view) setTimeout(() => view.container && window.dispatchEvent(new Event("resize")), 50); });
+    try { if (localStorage.getItem("eipPriorities.drawerMax")) { document.body.classList.add("drawer-max"); $("maxBtn").classList.add("on"); $("maxBtn").textContent = "Show map"; } } catch {}
     $("drawerToggle").addEventListener("click", () => { document.body.classList.toggle("drawer-collapsed"); $("drawerToggleIcon").icon = document.body.classList.contains("drawer-collapsed") ? "chevron-up" : "chevron-down"; });
     $("panelToggle").addEventListener("click", () => { document.body.classList.toggle("panel-collapsed"); $("panelToggleIcon").icon = document.body.classList.contains("panel-collapsed") ? "chevron-right" : "chevron-left"; });
     $("aboutBtn").addEventListener("click", () => { $("aboutDialog").open = true; });
-    $("weightsToggle").addEventListener("click", () => { const c = $("weightsSec").classList.toggle("collapsed"); $("weightsToggle").textContent = c ? "Show" : "Hide"; });
+    const collapsible = (secId, btnId) => $(btnId).addEventListener("click", () => { const c = $(secId).classList.toggle("collapsed"); $(btnId).textContent = c ? "Show" : "Hide"; });
+    collapsible("weightsSec", "weightsToggle"); collapsible("envSec", "envToggle");
+    const expandSec = (secId, btnId) => { $(secId).classList.remove("collapsed"); $(btnId).textContent = "Hide"; };
     window.addEventListener("resize", () => { if (activeTab === "charts") ["chartCum", "chartFocus", "chartLead"].forEach(id => { try { Plotly.Plots.resize(id); } catch {} }); });
 
     // ───────────────────────── Share link ─────────────────────────
@@ -1441,7 +1509,8 @@
       if (s.area && Polygon) { areaGeom = new Polygon({ rings: s.area, spatialReference: { wkid: 102100 } }); areaLayer.removeAll();
         areaLayer.add(new Graphic({ geometry: areaGeom, symbol: { type: "simple-fill", color: hexA(C.orange, 0.08), outline: { color: C.orange, width: 2, style: "dash" } } })); $("clearAreaBtn").hidden = false; }
       $("presetSel").value = matchPreset(); syncWeightUI();
-      if (matchPreset() !== "balanced" || actions.size || juris.size || areaGeom) { $("weightsSec").classList.remove("collapsed"); $("weightsToggle").textContent = "Hide"; }
+      if (matchPreset() !== "balanced" || actions.size || juris.size || areaGeom) expandSec("weightsSec", "weightsToggle");
+      if (envelope > 0) expandSec("envSec", "envToggle");
     }
     const b64e = (o) => btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     const b64d = (s) => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/")))));
@@ -1462,7 +1531,7 @@
       await customElements.whenDefined("calcite-combobox");
       buildControls();
       $("reviewerName").value = review.reviewer || ""; $("reviewerAgency").value = review.agency || ""; $("reviewerEmail").value = review.email || "";
-      $("surveyRow").hidden = !surveyOn();
+      $("surveyRow").hidden = !surveyOn(); updateSendState();
       renderReviewers();
       if (SURVEY.viewUrl) loadRemote(false);
       initGrid();
