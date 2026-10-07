@@ -105,6 +105,7 @@
       "title": "Transportation Tracker",
       "category": "transportation",
       "url": "https://transportation.laketahoeinfo.org",
+      "thumbnail": "assets/thumbs/transportation-tracker.png",
       "description": "Lake Tahoe Info module tracking progress on the Regional Transportation Plan: transit ridership, trail use, vehicle miles traveled, and other performance measures.",
       "tags": [
         "Transportation",
@@ -206,6 +207,7 @@
       "title": "Parcel and Permit Records",
       "category": "permitting",
       "url": "https://parcels.laketahoeinfo.org",
+      "thumbnail": "assets/thumbs/parcels.png",
       "description": "Look up parcel details, permit records, land capability, and coverage information on Lake Tahoe Info.",
       "tags": [
         "Parcels",
@@ -219,6 +221,7 @@
       "title": "Permit Completeness Review",
       "category": "permitting",
       "url": "https://emulatecities.com/trpa/completeness",
+      "thumbnail": "assets/thumbs/completeness.png",
       "description": "Enter a TRPA application file number to pull the parcel details on record and check a permit application for completeness. Built with Emulate Cities.",
       "tags": [
         "Permits",
@@ -259,6 +262,7 @@
       "title": "EIP Project Tracker",
       "category": "eip",
       "url": "https://eip.laketahoeinfo.org",
+      "thumbnail": "assets/thumbs/eip-tracker.png",
       "description": "Lake Tahoe Info module with the full record of Environmental Improvement Program (EIP) projects: descriptions, partners, funding, accomplishments, and the EIP 5-Year Project List.",
       "tags": [
         "EIP",
@@ -272,6 +276,7 @@
       "title": "Stormwater Tools",
       "category": "eip",
       "url": "https://stormwater.laketahoeinfo.org",
+      "thumbnail": "assets/thumbs/stormwater-tools.png",
       "description": "Lake Tahoe Info module for the Lake Clarity Crediting Program: urban catchments, stormwater treatment and load reduction modeling, and jurisdiction credit tracking.",
       "tags": [
         "Stormwater",
@@ -308,6 +313,7 @@
       "title": "Watch Duty",
       "category": "monitoring",
       "url": "https://app.watchduty.org/",
+      "thumbnail": "assets/thumbs/watchduty.png",
       "description": "Real-time wildfire alerts, incident maps, evacuation orders, and air quality for California and Nevada, reported by Watch Duty's volunteer and staff reporters. Not a TRPA product.",
       "tags": [
         "Fire",
@@ -450,6 +456,7 @@
       "title": "Threshold Dashboard",
       "category": "monitoring",
       "url": "https://thresholds.laketahoeinfo.org",
+      "thumbnail": "assets/thumbs/thresholds.png",
       "description": "Lake Tahoe Info module reporting status and trend for every environmental threshold standard adopted for the Tahoe Region, from the most recent Threshold Evaluation.",
       "tags": [
         "Thresholds",
@@ -463,6 +470,7 @@
       "title": "Monitoring Dashboard",
       "category": "monitoring",
       "url": "https://monitoring.laketahoeinfo.org",
+      "thumbnail": "assets/thumbs/monitoring.png",
       "description": "Lake Tahoe Info module with the environmental monitoring indicators tracked by TRPA and partners, including data downloads and method documentation.",
       "tags": [
         "Monitoring",
@@ -476,6 +484,7 @@
       "title": "Climate Resilience Dashboard",
       "category": "monitoring",
       "url": "https://climate.laketahoeinfo.org",
+      "thumbnail": "assets/thumbs/climate.png",
       "description": "Lake Tahoe Info module tracking 33 climate resilience metrics across greenhouse gas emissions, air quality, forest health, and resilient systems for the Tahoe Basin.",
       "tags": [
         "Climate",
@@ -489,6 +498,7 @@
       "title": "Lake Clarity Tracker",
       "category": "monitoring",
       "url": "https://clarity.laketahoeinfo.org",
+      "thumbnail": "assets/thumbs/clarity.png",
       "description": "Lake Tahoe Info module on Lake Tahoe clarity: annual Secchi depth, the drivers of clarity loss, and progress toward the clarity restoration target.",
       "tags": [
         "Lake Clarity",
