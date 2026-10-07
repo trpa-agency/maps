@@ -392,18 +392,32 @@
         <h2 class="sec-title"><span class="sec-num">3</span> Priority projects
           <button id="clearReviewBtn" class="sec-tool" title="Clear your priority picks and any imported reviewer files from this browser">Clear</button>
         </h2>
-        <p class="sec-help">Tick <em>Priority project</em> in the table for the projects your agency wants funded this round, add a note, and export
-          your list. Whoever runs the meeting imports everyone's lists; the share of reviewers who picked a project shows in
-          <em>Priority votes</em> and feeds the <em>Priority votes</em> criterion.</p>
-        <label class="field"><span class="lbl" title="Goes on your exported picks file so the convener can tell reviewers apart when merging lists.">Your name or agency <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <input id="reviewerName" type="text" class="plain" placeholder="e.g. Conservancy, USFS, TRPA" />
-        </label>
+        <p class="sec-help">Tick <em>Priority project</em> in the table for the projects your agency wants funded this round, add a note, then
+          <em>Send my picks</em>: the form opens filled in and you press Submit. Everyone's latest picks load here; the share of reviewers who
+          picked a project shows in <em>Priority votes</em> and feeds the <em>Priority votes</em> criterion.</p>
         <div class="row">
-          <calcite-button id="exportScoresBtn" icon-start="file-csv" appearance="outline" kind="brand" scale="s" width="full" title="Download your priority picks and notes as a CSV">My picks</calcite-button>
-          <calcite-button id="importScoresBtn" icon-start="upload" appearance="outline" kind="brand" scale="s" width="full" title="Import one or more reviewers' picks files">Import</calcite-button>
+          <label class="field" style="flex:1"><span class="lbl" title="Shown next to your picks for the other reviewers.">Your name <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+            <input id="reviewerName" type="text" class="plain" placeholder="First Last" autocomplete="name" />
+          </label>
+          <label class="field" style="flex:1"><span class="lbl" title="Your organization, shown with your name.">Agency <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+            <input id="reviewerAgency" type="text" class="plain" placeholder="e.g. CTC, USFS, TRPA" autocomplete="organization" />
+          </label>
+        </div>
+        <label class="field"><span class="lbl" title="Tells your submissions apart so your latest one counts. It goes to TRPA's ArcGIS Online with the form and is not shown in the tool.">Email <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <input id="reviewerEmail" type="email" class="plain" placeholder="you@agency.gov" autocomplete="email" />
+        </label>
+        <div class="row" id="surveyRow">
+          <calcite-button id="sendPicksBtn" icon-start="send" appearance="solid" kind="brand" scale="s" width="full"
+            title="Opens the picks form with your name, email, and ticked projects filled in. Press Submit there.">Send my picks</calcite-button>
+          <calcite-button id="refreshPicksBtn" icon-start="refresh" appearance="outline" kind="brand" scale="s" title="Reload everyone's submitted picks" label="Refresh picks"></calcite-button>
+        </div>
+        <div class="foot-status" id="surveyStatus" hidden></div>
+        <div class="row">
+          <calcite-button id="exportScoresBtn" icon-start="file-csv" appearance="transparent" kind="neutral" scale="s" width="full" title="Fallback: download your picks and notes as a CSV">CSV of my picks</calcite-button>
+          <calcite-button id="importScoresBtn" icon-start="upload" appearance="transparent" kind="neutral" scale="s" width="full" title="Fallback: import one or more reviewers' CSV files">Import CSV</calcite-button>
           <input id="importFile" type="file" accept=".csv,text/csv" multiple hidden />
         </div>
-        <div id="reviewerChips" aria-label="Imported reviewers"></div>
+        <div id="reviewerChips" aria-label="Reviewers whose picks are loaded"></div>
       </section>
       <section class="panel-sec collapsed" id="weightsSec">
         <h2 class="sec-title"><span class="sec-num">4</span> Scoring weights
@@ -489,8 +503,10 @@
         <li><strong>Funding envelope.</strong> Enter a dollar amount. Projects are funded in rank order by unfunded need (estimated cost minus
           secured funding, as the implementer reported it to the Tracker). Where secured funding is not reported, cost minus expenditures
           stands in and the row is marked with an asterisk. Pinned projects go first; excluded projects leave the pool.</li>
-        <li><strong>Priority projects.</strong> Each reviewer ticks the projects their agency wants funded, adds notes, and exports a list.
-          Import the lists to see how many reviewers picked each project. Picks and notes are kept in this browser only.</li>
+        <li><strong>Priority projects.</strong> Each reviewer ticks the projects their agency wants funded, adds notes, and clicks
+          <em>Send my picks</em>, which opens a Survey123 form already filled in. Submissions land in TRPA's ArcGIS Online; the tool reads
+          everyone's latest picks back (without email addresses) and shows how many reviewers picked each project. CSV export and import
+          remain as a fallback. Your own picks and notes are also kept in this browser.</li>
         <li><strong>Scoring weights</strong> (optional). The list is ordered by a 0 to 100 score: the weighted average of the criteria below
           that have data for a project. The Balanced preset applies unless you change it. Criteria without data for a project are left out of its
           average, and the <em>Data</em> column shows how much of the active weight had data.</li>
@@ -533,6 +549,17 @@
     const JURIS = ["City of South Lake Tahoe", "Douglas County, NV", "El Dorado County, CA", "Placer County, CA", "Washoe County, NV",
       "Carson City County, NV", "Tahoe Regional Planning Agency", "U.S. Forest Service - Lake Tahoe Basin Management Unit", "Alpine County"];
     const LS_REVIEW = "eipPriorities.review", LS_IMPORTS = "eipPriorities.imports";
+    // Survey123 round trip. "Send my picks" opens a public Survey123 form prefilled from the
+    // URL (name, email, agency, the picked project numbers, notes); "Refresh" reads everyone's
+    // latest submission back from a hosted feature layer VIEW that omits the email field.
+    // Leave formId empty to run without it: the CSV export and import still work.
+    const SURVEY = {
+      formId: "",            // Survey123 item id, from the form's share link (survey123.arcgis.com/share/<id>)
+      viewUrl: "",           // feature layer view, e.g. https://services.arcgis.com/<org>/arcgis/rest/services/<name>/FeatureServer/0
+      round: "2026-10",      // funding round label; only submissions tagged with it are loaded
+      fields: { name: "reviewer_name", email: "reviewer_email", agency: "agency", key: "reviewer_key", round: "round",
+        picks: "project_numbers", notes: "notes", url: "scenario_url", when: "CreationDate" },
+    };
 
     // Criteria: fn returns 0..1, or null when the project has no data for it
     // (null criteria drop out of that project's weighted average).
@@ -595,6 +622,7 @@
       recreation: { label: "Recreation and transportation", w: { thr: 2, multi: 3, ready: 3, lev: 3, prog: 1, secured: 1, urg: 1, afford: 0, focus: 4, act: 3, geo: 3, panel: 3 },
         fw: { "Watersheds and Water Quality": 1, "Forest Health": 1, "Sustainable Recreation and Transportation": 5, "Science, Stewardship, and Accountability": 1, "Unassigned": 0 } },
       closeout: { label: "Finish what is started", w: { thr: 1, multi: 1, ready: 3, lev: 2, prog: 5, secured: 4, urg: 4, afford: 2, focus: 1, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
+      consensus: { label: "Reviewer consensus", w: { thr: 1, multi: 1, ready: 1, lev: 1, prog: 0, secured: 0, urg: 1, afford: 0, focus: 0, act: 1, geo: 1, panel: 5 }, fw: EQUAL_FOCUS },
       spread: { label: "Spread the dollars", w: { thr: 3, multi: 2, ready: 3, lev: 3, prog: 1, secured: 1, urg: 1, afford: 4, focus: 2, act: 3, geo: 3, panel: 3 }, fw: EQUAL_FOCUS },
     };
 
@@ -637,8 +665,14 @@
     let actions = new Set(), juris = new Set();
     let pins = new Set(), excluded = new Set();
     let envelope = null, fillMode = "skip";
-    let review = loadLS(LS_REVIEW, { reviewer: "", scores: {} });     // { reviewer, scores: { id: { s, n } } }
-    let imports = loadLS(LS_IMPORTS, {});                              // { reviewerName: { id: { s, n } } }
+    let review = loadLS(LS_REVIEW, { reviewer: "", email: "", agency: "", scores: {} });   // { reviewer, email, agency, scores: { id: { s, n } } }
+    let imports = loadLS(LS_IMPORTS, {});                              // CSV fallback: { reviewerName: { id: { s, n } } }
+    let remote = {}, remoteLoadedAt = 0;                               // Survey123 submissions: { key: { who, agency, picks: { id: { s, n } }, when } }
+    // Short, stable key for a reviewer: FNV-1a of the lowercased email. Travels with the
+    // submission so the public view can tell reviewers apart without carrying the address.
+    function fnv(str) { let h = 0x811c9dc5; for (const ch of String(str)) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, "0"); }
+    const myKey = () => review.email ? fnv(review.email.trim().toLowerCase()) : "";
+    const whoLabel = (name, agency) => [name, agency].filter(Boolean).join(" · ") || "Reviewer";
     let areaGeom = null, selectedId = null, activeTab = "list", snapshotDate = null;
     let map, view, ptLayer, areaLayer, hlLayer, sketch, GE, Graphic, Point, Polygon, drawBtnEl;
     let gridApi = null, chartsDirty = true;
@@ -689,13 +723,18 @@
     }
 
     // ───────────────────────── Panel scores ─────────────────────────
+    const haveLocalPicks = () => Object.values(review.scores).some(r => r.s);
+    // Remote submissions that count, leaving out my own once I have picks in this browser
+    // (otherwise my submitted copy would double-count me).
+    const remoteOthers = () => Object.entries(remote).filter(([k]) => !(haveLocalPicks() && k === myKey()));
     function panelScores(id) {
       const out = [];
-      const mine = review.scores[id]; if (mine && mine.s != null) out.push({ who: review.reviewer || "Me", s: mine.s, n: mine.n || "" });
+      const mine = review.scores[id]; if (mine && mine.s != null) out.push({ who: (review.reviewer || review.agency) ? whoLabel(review.reviewer, review.agency) : "Me", s: mine.s, n: mine.n || "" });
       for (const [who, m] of Object.entries(imports)) { const r = m[id]; if (r && r.s != null && who !== (review.reviewer || "")) out.push({ who, s: r.s, n: r.n || "" }); }
+      for (const [, rv] of remoteOthers()) { const r = rv.picks[id]; if (r && r.s) out.push({ who: whoLabel(rv.who, rv.agency), s: 1, n: r.n || "" }); }
       return out;
     }
-    function reviewerCount() { return (Object.values(review.scores).some(r => r.s) ? 1 : 0) + Object.keys(imports).filter(w => w !== (review.reviewer || "")).length; }
+    function reviewerCount() { return (haveLocalPicks() ? 1 : 0) + Object.keys(imports).filter(w => w !== (review.reviewer || "")).length + remoteOthers().length; }
     function panelPicks(id) { return panelScores(id).filter(x => x.s); }
     // Share of reviewers who marked the project a priority; null until anyone has picked anything
     function panelShare(id) { const n = reviewerCount(); return n ? panelPicks(id).length / n : null; }
@@ -1133,8 +1172,8 @@
       download(`eip-priorities-${new Date().toISOString().slice(0, 10)}.csv`, "﻿" + lines.join("\r\n") + "\r\n" + meta + "\r\n");
     });
     $("exportScoresBtn").addEventListener("click", () => {
-      const who = $("reviewerName").value.trim();
-      if (!who) { toast("Enter your name or agency first, so the file can be told apart from other reviewers.", 4000); $("reviewerName").focus(); return; }
+      const who = whoLabel($("reviewerName").value.trim(), $("reviewerAgency").value.trim());
+      if (!$("reviewerName").value.trim()) { toast("Enter your name first, so the file can be told apart from other reviewers.", 4000); $("reviewerName").focus(); return; }
       const ids = Object.keys(review.scores); if (!ids.length) { toast("No picks yet. Tick Priority project in the table to add one.", 4000); return; }
       const byId = new Map(projects.map(p => [p.id, p]));
       const lines = [["Reviewer", "Project #", "Project", "Priority", "Note"].join(",")];
@@ -1164,6 +1203,14 @@
     });
     function renderReviewers() {
       const el = $("reviewerChips"); el.innerHTML = "";
+      for (const [k, rv] of Object.entries(remote)) {
+        const chip = document.createElement("calcite-chip"); chip.scale = "s"; chip.icon = "send";
+        const n = Object.values(rv.picks).filter(x => x.s).length;
+        chip.textContent = `${whoLabel(rv.who, rv.agency)} (${n})`;
+        chip.title = `Submitted picks${rv.when ? " " + new Date(rv.when).toLocaleString() : ""}${k === myKey() ? " (you)" : ""}`;
+        if (k === myKey()) chip.kind = "brand";
+        el.appendChild(chip);
+      }
       for (const who of Object.keys(imports)) {
         const chip = document.createElement("calcite-chip"); chip.scale = "s"; chip.closable = true; chip.dataset.who = who;
         chip.textContent = `${who} (${Object.keys(imports[who]).length})`; chip.title = "Imported reviewer picks. Close to remove."; el.appendChild(chip);
@@ -1172,9 +1219,67 @@
     $("reviewerChips").addEventListener("calciteChipClose", (e) => { delete imports[e.target.dataset.who]; saveLS(LS_IMPORTS, imports); renderReviewers(); recompute(); });
     $("clearReviewBtn").addEventListener("click", () => {
       if (!confirm("Clear your priority picks and notes and remove imported reviewer lists from this browser?")) return;
-      review = { reviewer: $("reviewerName").value, scores: {} }; imports = {}; saveLS(LS_REVIEW, review); saveLS(LS_IMPORTS, imports); renderReviewers(); recompute();
+      review = { reviewer: $("reviewerName").value.trim(), email: $("reviewerEmail").value.trim(), agency: $("reviewerAgency").value.trim(), scores: {} }; imports = {};
+      saveLS(LS_REVIEW, review); saveLS(LS_IMPORTS, imports); renderReviewers(); recompute();
     });
     $("reviewerName").addEventListener("change", () => { review.reviewer = $("reviewerName").value.trim(); saveLS(LS_REVIEW, review); recompute(); });
+    $("reviewerAgency").addEventListener("change", () => { review.agency = $("reviewerAgency").value.trim(); saveLS(LS_REVIEW, review); recompute(); });
+    $("reviewerEmail").addEventListener("change", () => { review.email = $("reviewerEmail").value.trim(); saveLS(LS_REVIEW, review); recompute(); });
+
+    // ── Survey123 round trip ──
+    const surveyOn = () => !!SURVEY.formId;
+    function shareUrl() { return `${location.origin}${location.pathname}#s=${b64e(scenario())}`; }
+    function sendPicks() {
+      const F = SURVEY.fields;
+      const name = $("reviewerName").value.trim(), email = $("reviewerEmail").value.trim(), agency = $("reviewerAgency").value.trim();
+      if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast("Enter your name and a valid email first.", 4000); (name ? $("reviewerEmail") : $("reviewerName")).focus(); return; }
+      review.reviewer = name; review.email = email; review.agency = agency; saveLS(LS_REVIEW, review);
+      const picked = Object.keys(review.scores).filter(id => review.scores[id].s);
+      if (!picked.length) { toast("Tick at least one Priority project in the table first.", 4000); return; }
+      const notes = Object.entries(review.scores).filter(([, v]) => v.n).map(([id, v]) => `${id}: ${v.n}`).join("\n");
+      const q = new URLSearchParams();
+      q.set(`field:${F.name}`, name); q.set(`field:${F.email}`, email); q.set(`field:${F.agency}`, agency);
+      q.set(`field:${F.key}`, fnv(email.toLowerCase())); q.set(`field:${F.round}`, SURVEY.round);
+      q.set(`field:${F.picks}`, picked.sort().join("; ")); if (notes) q.set(`field:${F.notes}`, notes);
+      q.set(`field:${F.url}`, shareUrl()); q.set("open", "web");
+      window.open(`https://survey123.arcgis.com/share/${SURVEY.formId}?${q}`, "_blank", "noopener");
+      toast(`Form opened with ${picked.length} pick${picked.length === 1 ? "" : "s"}. Press Submit there, then come back; picks refresh on their own.`, 7000);
+      remoteLoadedAt = 0;   // next focus reloads
+    }
+    // Parse view features (newest first) into one record per reviewer key
+    function parseRemote(features) {
+      const F = SURVEY.fields, out = {};
+      for (const f of features || []) {
+        const a = f.attributes || {};
+        const key = String(a[F.key] || fnv((a[F.name] || "") + "|" + (a[F.agency] || ""))).trim();
+        if (out[key]) continue;                                   // newer submission already kept
+        const picks = {};
+        for (const id of splitList(a[F.picks], ";")) picks[id] = { s: 1, n: "" };
+        for (const line of String(a[F.notes] || "").split(/\r?\n/)) {
+          const m = line.match(/^\s*([\d.]+)\s*:\s*(.*)$/); if (!m) continue;
+          if (picks[m[1]]) picks[m[1]].n = m[2].trim(); else picks[m[1]] = { s: 0, n: m[2].trim() };
+        }
+        out[key] = { who: a[F.name] || "Reviewer", agency: a[F.agency] || "", picks, when: a[F.when] || null };
+      }
+      return out;
+    }
+    async function loadRemote(quiet) {
+      if (!SURVEY.viewUrl) return;
+      const F = SURVEY.fields, st = $("surveyStatus"); st.hidden = false;
+      if (!quiet) st.textContent = "Loading submitted picks…";
+      try {
+        const q = new URLSearchParams({ where: `${F.round}='${SURVEY.round.replace(/'/g, "''")}'`, outFields: "*", orderByFields: `${F.when} DESC`, resultRecordCount: "2000", f: "json" });
+        const r = await fetch(`${SURVEY.viewUrl}/query?${q}`).then(x => x.json());
+        if (r.error) throw new Error(r.error.message || "query error");
+        remote = parseRemote(r.features); remoteLoadedAt = Date.now();
+        const n = Object.keys(remote).length;
+        st.textContent = `${n} reviewer${n === 1 ? "" : "s"} ha${n === 1 ? "s" : "ve"} sent picks for round ${SURVEY.round} (as of ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}).`;
+      } catch (e) { console.warn("Survey123 view query failed:", e); st.textContent = "Could not load submitted picks. Check the connection and click Refresh."; }
+      renderReviewers(); recompute();
+    }
+    $("sendPicksBtn").addEventListener("click", sendPicks);
+    $("refreshPicksBtn").addEventListener("click", () => loadRemote(false));
+    window.addEventListener("focus", () => { if (SURVEY.viewUrl && Date.now() - remoteLoadedAt > 30000) loadRemote(true); });
 
     // ───────────────────────── Controls ─────────────────────────
     function buildControls() {
@@ -1307,8 +1412,10 @@
       }
       await customElements.whenDefined("calcite-combobox");
       buildControls();
-      $("reviewerName").value = review.reviewer || "";
+      $("reviewerName").value = review.reviewer || ""; $("reviewerAgency").value = review.agency || ""; $("reviewerEmail").value = review.email || "";
+      $("surveyRow").hidden = !surveyOn();
       renderReviewers();
+      if (SURVEY.viewUrl) loadRemote(false);
       initGrid();
       const sc = readHash();
       const applyWhenReady = () => { if (sc) applyScenario(sc); recompute(); };
