@@ -89,7 +89,7 @@
     .field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.68rem; font-weight: 600; color: var(--gray-text); }
     .field-help { font-size: 0.64rem; font-weight: 400; line-height: 1.4; color: var(--gray-text); }
     .lbl { display: inline-flex; align-items: center; gap: 0.25rem; cursor: help; }
-    .lbl calcite-icon { color: var(--gray-muted); --calcite-icon-size: 12px; }
+    .lbl .info-i { color: var(--gray-muted); flex: 0 0 auto; }
     .toggle .lbl { cursor: help; }
     .row { display: flex; gap: 0.45rem; align-items: center; }
     .row > * { min-width: 0; }
@@ -320,35 +320,35 @@
           <input id="searchInput" type="text" autocomplete="off" spellcheck="false" placeholder="Project name, number, or implementer…" aria-label="Search projects"
                    title="Narrows the pool to projects whose name, EIP number, or lead implementer contains this text." />
         </div>
-        <label class="field"><span class="lbl" title="Project stage on the Tracker. The pool holds the two forward-looking stages; turn one off to see the other alone.">Stage <calcite-icon icon="information" scale="s"></calcite-icon></span>
+        <label class="field"><span class="lbl" title="Project stage on the Tracker. The pool holds the two forward-looking stages; turn one off to see the other alone.">Stage <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <div class="chips" id="stageChips">
             <button data-v="Planning/Design" class="on">Planning / Design</button>
             <button data-v="Implementation" class="on">Implementation</button>
           </div>
         </label>
-        <label class="field"><span class="lbl" title="The EIP focus area the Tracker assigns each project. Click to turn a focus area on or off; Unassigned holds projects with no focus area.">Focus area <calcite-icon icon="information" scale="s"></calcite-icon></span>
+        <label class="field"><span class="lbl" title="The EIP focus area the Tracker assigns each project. Click to turn a focus area on or off; Unassigned holds projects with no focus area.">Focus area <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <div class="chips" id="focusChips"></div>
         </label>
-        <label class="field"><span class="lbl" title="The program under the focus area (for example Stormwater Management, Forest Restoration, Transportation). Pick one or more; empty means any.">EIP program <calcite-icon icon="information" scale="s"></calcite-icon></span>
+        <label class="field"><span class="lbl" title="The program under the focus area (for example Stormwater Management, Forest Restoration, Transportation). Pick one or more; empty means any.">EIP program <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <calcite-combobox id="programSel" selection-mode="multiple" scale="s" placeholder="Any program" max-items="7" overlay-positioning="fixed"></calcite-combobox>
         </label>
-        <label class="field"><span class="lbl" title="The organization listed as lead implementer on the Tracker. Pick one or more; empty means any.">Lead implementer <calcite-icon icon="information" scale="s"></calcite-icon></span>
+        <label class="field"><span class="lbl" title="The organization listed as lead implementer on the Tracker. Pick one or more; empty means any.">Lead implementer <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <calcite-combobox id="leadSel" selection-mode="multiple" scale="s" placeholder="Any implementer" max-items="7" overlay-positioning="fixed"></calcite-combobox>
         </label>
-        <label class="field"><span class="lbl" title="Funding sources with expenditures reported on the project. Pick one or more to see projects those sources have already invested in.">Funding source already on the project <calcite-icon icon="information" scale="s"></calcite-icon></span>
+        <label class="field"><span class="lbl" title="Funding sources with expenditures reported on the project. Pick one or more to see projects those sources have already invested in.">Funding source already on the project <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <calcite-combobox id="fundSel" selection-mode="multiple" scale="s" placeholder="Any source" max-items="7" overlay-positioning="fixed"></calcite-combobox>
         </label>
-        <label class="field"><span class="lbl" title="Public tags applied on the Tracker, such as Climate Resilience or a corridor plan. Pick one or more; empty means any.">Tag <calcite-icon icon="information" scale="s"></calcite-icon></span>
+        <label class="field"><span class="lbl" title="Public tags applied on the Tracker, such as Climate Resilience or a corridor plan. Pick one or more; empty means any.">Tag <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <calcite-combobox id="tagSel" selection-mode="multiple" scale="s" placeholder="Any public tag (Climate Resilience, corridor plans, and others)" max-items="7" overlay-positioning="fixed"></calcite-combobox>
         </label>
-        <label class="field"><span class="lbl" title="Where the project is. California and Nevada each include projects that span both states.">State <calcite-icon icon="information" scale="s"></calcite-icon></span>
+        <label class="field"><span class="lbl" title="Where the project is. California and Nevada each include projects that span both states.">State <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <div class="seg" id="stateSeg" role="radiogroup">
             <button data-v="" class="active">All</button>
             <button data-v="CA">California</button>
             <button data-v="NV">Nevada</button>
           </div>
         </label>
-        <label class="field"><span class="lbl" title="From the Tracker: Unfunded has a cost and nothing secured; Partially funded has some secured and some needed; Fully funded has secured funding covering the cost; Unpriced has no cost estimate. Click to turn a status on or off.">Funding status <calcite-icon icon="information" scale="s"></calcite-icon></span>
+        <label class="field"><span class="lbl" title="From the Tracker: Unfunded has a cost and nothing secured; Partially funded has some secured and some needed; Fully funded has secured funding covering the cost; Unpriced has no cost estimate. Click to turn a status on or off.">Funding status <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <div class="chips" id="fundChips">
             <button data-v="unfunded" class="on" title="Has a cost estimate and no secured funding yet">Unfunded</button>
             <button data-v="partial" class="on" title="Some funding secured, some still needed">Partially funded</button>
@@ -380,7 +380,7 @@
           <button data-v="10">$10M</button><button data-v="25">$25M</button><button data-v="50">$50M</button>
           <button data-v="100">$100M</button><button data-v="250">$250M</button><button data-v="">Clear</button>
         </div>
-        <label class="field"><span class="lbl" title="Keep filling skips a project that does not fit and keeps going down the list, so smaller projects can still be funded. Stop at the cut line funds nothing past the first project that does not fit.">When the next project does not fit <calcite-icon icon="information" scale="s"></calcite-icon></span>
+        <label class="field"><span class="lbl" title="Keep filling skips a project that does not fit and keeps going down the list, so smaller projects can still be funded. Stop at the cut line funds nothing past the first project that does not fit.">When the next project does not fit <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <div class="seg" id="modeSeg" role="radiogroup">
             <button data-v="skip" class="active" title="Skip it and keep filling with smaller projects further down the list">Keep filling</button>
             <button data-v="strict" title="Stop there: a strict cut line in rank order">Stop at the cut line</button>
@@ -395,7 +395,7 @@
         <p class="sec-help">Tick <em>Priority project</em> in the table for the projects your agency wants funded this round, add a note, and export
           your list. Whoever runs the meeting imports everyone's lists; the share of reviewers who picked a project shows in
           <em>Priority votes</em> and feeds the <em>Priority votes</em> criterion.</p>
-        <label class="field"><span class="lbl" title="Goes on your exported picks file so the convener can tell reviewers apart when merging lists.">Your name or agency <calcite-icon icon="information" scale="s"></calcite-icon></span>
+        <label class="field"><span class="lbl" title="Goes on your exported picks file so the convener can tell reviewers apart when merging lists.">Your name or agency <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <input id="reviewerName" type="text" class="plain" placeholder="e.g. Conservancy, USFS, TRPA" />
         </label>
         <div class="row">
@@ -412,18 +412,18 @@
         </h2>
         <p class="sec-help">Optional. The ranking uses the Balanced preset unless you change it here. Scores depend on how much each
           implementer entered in the Tracker, so treat them as a starting order, not a verdict.</p>
-        <label class="field"><span class="lbl" title="A starting set of weights. Balanced is the default; the others lean toward readiness, lake clarity, wildfire, recreation and transportation, finishing projects, or spreading dollars. Moving any slider makes it Custom.">Preset <calcite-icon icon="information" scale="s"></calcite-icon></span>
+        <label class="field"><span class="lbl" title="A starting set of weights. Balanced is the default; the others lean toward readiness, lake clarity, wildfire, recreation and transportation, finishing projects, or spreading dollars. Moving any slider makes it Custom.">Preset <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <select id="presetSel"></select>
         </label>
         <div id="weightRows"></div>
 
-        <div class="sub-title"><span class="lbl" title="Weight each focus area 0 to 5. A project scores its focus area's weight divided by the largest weight, so equal weights make this neutral.">Focus area emphasis <calcite-icon icon="information" scale="s"></calcite-icon></span></div>
+        <div class="sub-title"><span class="lbl" title="Weight each focus area 0 to 5. A project scores its focus area's weight divided by the largest weight, so equal weights make this neutral.">Focus area emphasis <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span></div>
         <div class="fw-grid" id="focusWeights"></div>
 
-        <div class="sub-title"><span class="lbl" title="Pick action priorities to favor. Projects under one you pick score full on this criterion, others score zero. Off until you pick one.">Action priority emphasis <calcite-icon icon="information" scale="s"></calcite-icon></span></div>
+        <div class="sub-title"><span class="lbl" title="Pick action priorities to favor. Projects under one you pick score full on this criterion, others score zero. Off until you pick one.">Action priority emphasis <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span></div>
         <calcite-combobox id="actionSel" selection-mode="multiple" scale="s" placeholder="Pick action priorities to favor" max-items="7" overlay-positioning="fixed"></calcite-combobox>
 
-        <div class="sub-title"><span class="lbl" title="Pick jurisdictions, or draw an area on the map. Projects in a picked jurisdiction or inside the area score full; basin-wide projects score half. Off until you pick one.">Geographic emphasis <calcite-icon icon="information" scale="s"></calcite-icon></span>
+        <div class="sub-title"><span class="lbl" title="Pick jurisdictions, or draw an area on the map. Projects in a picked jurisdiction or inside the area score full; basin-wide projects score half. Off until you pick one.">Geographic emphasis <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <button id="drawAreaBtn" class="sec-tool" title="Draw an area on the map; projects inside it score full on geography"><calcite-icon icon="polygon" scale="s"></calcite-icon> Draw area</button>
           <button id="clearAreaBtn" class="sec-tool" title="Remove the drawn area" hidden><calcite-icon icon="trash" scale="s"></calcite-icon></button>
         </div>
@@ -873,7 +873,9 @@
           { headerName: "Spent", field: "spent", ...money }, { headerName: "Remaining", field: "remaining", ...money, headerTooltip: "Estimated total cost minus expenditures to date" },
           { headerName: "Envelope", field: "fund", width: 128, hide: true, cellRenderer: (p) => fundBadge(p.value, p.data.pinned), comparator: (a, b) => ["funded", "cut", "fully", "none", "unpriced", "excluded"].indexOf(a) - ["funded", "cut", "fully", "none", "unpriced", "excluded"].indexOf(b) },
           { headerName: "Priority project", field: "my", width: 118, sortable: true, valueGetter: (p) => review.scores[p.data.id]?.s ? 1 : 0,
-            cellRenderer: (p) => `<label class="pp"><input type="checkbox" ${p.value ? "checked" : ""} aria-label="Priority project" /></label>`,
+            // A span, not a label: a label forwards the click to its input, which bubbles back as a second
+            // cell click and toggles the pick straight back off. The cell click handler owns the toggle.
+            cellRenderer: (p) => `<span class="pp"><input type="checkbox" ${p.value ? "checked" : ""} tabindex="-1" aria-label="Priority project" /></span>`,
             cellStyle: { background: "rgba(0,125,195,0.05)" }, headerTooltip: "Tick the projects your agency wants funded this round" },
           { headerName: "Priority votes", field: "votes", width: 112, type: "rightAligned", valueGetter: (p) => panelPicks(p.data.id).length,
             valueFormatter: (p) => reviewerCount() ? `${p.value} of ${reviewerCount()}` : "", tooltipValueGetter: (p) => panelPicks(p.data.id).map(s => s.who + (s.n ? " – " + s.n : "")).join("\n") || "Nobody has picked this project yet" },
