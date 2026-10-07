@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EIP Funding Priorities - TRPA Maps</title>
-  <meta name="description" content="Rank Environmental Improvement Program projects against weighted criteria, test a funding envelope, collect panel scores across agencies, and export the ranked list." />
+  <meta name="description" content="Rank Environmental Improvement Program projects against weighted criteria, test a funding amount, collect ranked priority picks from partner agencies, and export the ranked list." />
   <link rel="icon" type="image/png" href="../tools/assets/favicon.png" />
 
   <!-- Calcite Design System -->
@@ -312,7 +312,7 @@
       <calcite-button id="resetAllBtn" icon-start="reset" appearance="transparent" kind="neutral" scale="s"
         title="Start over: reset filters, available funding, weights, pins, and clear unsent picks. Keeps your name and email." label="Start over"></calcite-button>
       <calcite-button id="shareBtn" icon-start="link" appearance="transparent" kind="neutral" scale="s"
-        title="Copy a link that reopens this scenario (filters, weights, envelope, pins)" label="Copy link"></calcite-button>
+        title="Copy a link that reopens this scenario (filters, weights, available funding, pins)" label="Copy link"></calcite-button>
       <calcite-button id="aboutBtn" icon-start="information" appearance="transparent" kind="neutral" scale="s"
         title="About this tool and how the score works" label="About this tool"></calcite-button>
       <calcite-button href="../index.html" icon-start="apps" appearance="transparent" kind="neutral" scale="s"
@@ -486,8 +486,8 @@
       <div id="viewDiv">
         <div class="legend" id="legend"></div>
         <div id="detailCard" hidden></div>
-        <div class="toast" id="toast"></div>
       </div>
+      <div class="toast" id="toast"></div>
       <div id="drawer">
         <div class="drawer-head">
           <div class="dtabs" role="tablist">
@@ -522,7 +522,7 @@
     <div class="dlg">
       <p>A shared workbench for deciding what gets funded next in the Environmental Improvement Program. It reads the same project
         records the <a href="https://eip.laketahoeinfo.org/" target="_blank" rel="noopener">EIP Project Tracker</a> publishes, scores them against
-        criteria you weight, tests a funding envelope, and collects panel scores from partner agencies.</p>
+        criteria you weight, tests an amount of available funding, and collects ranked priority picks from partner agencies.</p>
       <ol>
         <li><strong>Priority projects.</strong> Each reviewer ticks up to ten projects, ranks them, adds notes, and clicks
           <em>Send my picks</em>, which opens a Survey123 form already filled in. Submissions land in TRPA's ArcGIS Online; the tool reads
@@ -557,7 +557,7 @@
           Projects whose secured funding equals their cost show zero need and are funded at no cost to the envelope.</li>
         <li>The Tracker assigns each project one action priority for reporting, so multi-benefit projects may not match the action priority you pick.</li>
         <li>The table opens in a reviewer view. <em>All columns</em> above the table shows costs, criteria values, and Tracker details.</li>
-        <li>This tool does not write to the Tracker. Export the ranked list and panel scores to carry results forward.</li>
+        <li>This tool does not write to the Tracker. Export the ranked list to carry results forward; submitted picks live in TRPA's ArcGIS Online.</li>
       </ul>
     </div>
   </calcite-dialog>
@@ -673,6 +673,7 @@
       const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     }
+    const todayLocal = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
     const csvCell = (v) => { const s = v == null ? "" : String(v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
     function parseCsv(text) {
       const rows = []; let row = [], cell = "", q = false;
@@ -913,7 +914,7 @@
         "Unfunded need": "What the envelope counts: estimated cost minus secured funding, as the Tracker computes it. An asterisk means secured funding is not reported and cost minus expenditures stands in.",
         "Spent": "Expenditures reported to the Tracker to date, all sources.",
         "Remaining": "Estimated total cost minus expenditures to date.",
-        "Envelope": "Whether the available funding entered in the panel covers this project's unfunded need, going down the list in rank order. Shown only when an amount is set.",
+        "Envelope": "Whether the available funding entered in the panel covers this project's unfunded need, going down the list in rank order. Shown when an amount is set or a project is pinned or excluded.",
         "Priority project": "Tick up to ten projects your agency wants funded this round. New picks go to the bottom of your ranking; set the order in My rank.",
         "My rank": "Your order of preference, 1 (top) to 10. Type a number to move a pick there; the others shift. Typing a rank on an unticked project picks it.",
         "Votes": "How many reviewers picked this project, out of everyone whose list has been sent or imported. Your own picks count once you send them. Hover for names, ranks, and notes.",
@@ -1152,7 +1153,7 @@
           <dt>Stage</dt><dd>${escHtml(p.stage)}${p.implStart || p.end ? ` · ${[p.implStart, p.end].filter(v => v != null).join(" to ")}` : ""}</dd>
           <dt>Cost</dt><dd>${p.cost != null ? `${fmtUSD(p.cost)} estimated${p.secured != null ? `, ${fmtUSD(p.secured)} secured` : ""}, ${fmtUSD(p.spent || 0)} spent` : `no estimate${p.spent ? `, ${fmtUSD(p.spent)} spent` : ""}`}</dd>
           ${p.need != null ? `<dt>Need</dt><dd><b>${fmtUSD(p.need)}</b> ${p.needBasis === "unfunded" ? "unfunded, per the Tracker" : "remaining (cost minus expenditures; secured funding not reported)"}</dd>` : ""}
-          ${p.ltraAsk > 0 || p.ltraSecured > 0 ? `<dt>LTRA</dt><dd>${p.ltraAsk > 0 ? `<b>${fmtUSD(p.ltraAsk)}</b> targeted` : ""}${p.ltraAsk > 0 && p.ltraSecured > 0 ? ", " : ""}${p.ltraSecured > 0 ? `${fmtUSD(p.ltraSecured)} secured` : ""}</dd>` : ""}
+          ${p.ltraAsk > 0 || p.ltraSecured > 0 ? `<dt>LTRA</dt><dd>${p.ltraAsk > 0 ? `<b>${fmtUSD(p.ltraAsk)}</b> requested` : ""}${p.ltraAsk > 0 && p.ltraSecured > 0 ? ", " : ""}${p.ltraSecured > 0 ? `${fmtUSD(p.ltraSecured)} secured` : ""}</dd>` : ""}
           ${p.requests ? `<dt>Requests</dt><dd style="font-size:0.66rem">${escHtml(p.requests)}</dd>` : ""}
           ${p.tags.length ? `<dt>Tags</dt><dd>${escHtml(p.tags.join("; "))}</dd>` : ""}
           <dt>Funding</dt><dd>${p.funding.length ? escHtml(p.funding.join("; ")) : "none reported"}</dd>
@@ -1254,8 +1255,8 @@
           mine.s ? (mine.r ?? "yes") : "", mine.n ?? "", Math.round(p.coverage * 100) + "%",
           ...CRITERIA.map(c => p.parts[c.key] == null ? "" : (p.parts[c.key] * 100).toFixed(0)), p.thresholds.join(", "), p.funding.join("; "), p.requests, p.tags.join("; "), p.jurisdictions.join("; "), p.factUrl || p.url].map(csvCell).join(","));
       }
-      const meta = `# EIP Funding Priorities ${new Date().toISOString().slice(0, 10)} · envelope ${envelope > 0 ? fmtM(envelope * 1e6) : "none"} · weights ${CRITERIA.map(c => `${c.key}=${weights[c.key]}`).join(" ")}`;
-      download(`eip-priorities-${new Date().toISOString().slice(0, 10)}.csv`, "﻿" + lines.join("\r\n") + "\r\n" + meta + "\r\n");
+      const meta = `# EIP Funding Priorities ${todayLocal()} · envelope ${envelope > 0 ? fmtM(envelope * 1e6) : "none"} · weights ${CRITERIA.map(c => `${c.key}=${weights[c.key]}`).join(" ")}`;
+      download(`eip-priorities-${todayLocal()}.csv`, "﻿" + lines.join("\r\n") + "\r\n" + meta + "\r\n");
     });
     $("exportScoresBtn").addEventListener("click", () => {
       const who = whoLabel($("reviewerName").value.trim(), $("reviewerAgency").value.trim());
@@ -1264,7 +1265,7 @@
       const byId = new Map(projects.map(p => [p.id, p]));
       const lines = [["Reviewer", "Project #", "Project", "Rank", "Note"].join(",")];
       for (const id of ids) { const r = review.scores[id]; lines.push([who, id, byId.get(id)?.name || "", r.s ? (r.r ?? "") : "", r.n ?? ""].map(csvCell).join(",")); }
-      download(`eip-priority-picks-${who.replace(/[^\w-]+/g, "_")}-${new Date().toISOString().slice(0, 10)}.csv`, "﻿" + lines.join("\r\n") + "\r\n");
+      download(`eip-priority-picks-${who.replace(/[^\w-]+/g, "_")}-${todayLocal()}.csv`, "﻿" + lines.join("\r\n") + "\r\n");
     });
     $("importScoresBtn").addEventListener("click", () => $("importFile").click());
     $("importFile").addEventListener("change", async (e) => {
@@ -1541,10 +1542,11 @@
     const b64d = (s) => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/")))));
     $("shareBtn").addEventListener("click", async () => {
       const url = `${location.origin}${location.pathname}#s=${b64e(scenario())}`;
-      try { await navigator.clipboard.writeText(url); toast("Link copied. It reopens this scenario: filters, weights, envelope, pins, and drawn area. Panel scores stay in each reviewer's browser.", 5000); }
+      try { await navigator.clipboard.writeText(url); toast("Link copied. It reopens this scenario: filters, weights, available funding, pins, and drawn area. Picks are not in the link; they travel through Send my picks.", 5000); }
       catch { prompt("Copy this link", url); }
     });
     function readHash() { const m = location.hash.match(/#s=([\w-]+)/); if (!m) return null; try { return b64d(m[1]); } catch { return null; } }
+    window.addEventListener("hashchange", () => { const sc = readHash(); if (sc && projects.length) { applyScenario(sc); recompute(); toast("Scenario loaded from the link.", 2500); } });
 
     // ───────────────────────── Boot ─────────────────────────
     (async () => {
