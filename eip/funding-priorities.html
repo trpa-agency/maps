@@ -279,6 +279,12 @@
     .dlg h3 { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--gray-text); margin: 0.8rem 0 0.3rem; }
     .dlg ul, .dlg ol { margin: 0 0 0.6rem; padding-left: 1.2rem; }
     .dlg li { margin-bottom: 0.3rem; }
+    .dlg .fine { font-size: 0.74rem; color: var(--gray-text); }
+    .send-list { margin: 0 0 0.6rem; padding-left: 1.2rem; font-size: 0.8rem; }
+    .send-list li { margin-bottom: 0.25rem; }
+    .send-list .fine { display: inline-block; margin-left: 0.3rem; }
+    .send-list .note-line { display: block; margin-left: 0; font-style: italic; }
+    .send-err { font-size: 0.78rem; color: #B5430E; background: var(--eip-orange-light); border-radius: 8px; padding: 0.4rem 0.6rem; }
     .dlg table { border-collapse: collapse; font-size: 0.76rem; width: 100%; margin-bottom: 0.6rem; }
     .dlg th, .dlg td { text-align: left; padding: 0.25rem 0.4rem; border-bottom: 1px solid var(--gray-border); vertical-align: top; }
     .dlg th { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--gray-text); }
@@ -339,8 +345,8 @@
           <button id="clearReviewBtn" class="sec-tool" title="Clear your picks, notes, and any imported CSV lists from this browser">Clear</button>
         </h2>
         <p class="sec-help">In the table, tick up to ten projects your agency wants funded (the <em>Priority project</em> column), put them in
-          order with <em>My rank</em>, and add a note if you like. Then press <em>Send my picks</em> at the bottom of this panel. You can
-          send again; only your latest submission counts.</p>
+          order with <em>My rank</em>, and add a note if you like. Then press <em>Send my picks</em> at the bottom of this panel and
+          confirm. You can send again; only your latest submission counts.</p>
         <div class="row">
           <label class="field" style="flex:1"><span class="lbl" title="Shown next to your picks for the other reviewers.">Your name <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
             <input id="reviewerName" type="text" class="plain" placeholder="First Last" autocomplete="name" />
@@ -480,7 +486,7 @@
     <div id="panelFooter">
       <div class="row">
         <calcite-button id="sendPicksBtn" icon-start="send" appearance="solid" kind="brand" scale="s" width="full" disabled
-          title="Opens the picks form with your name, email, and ranked picks filled in. Press Submit there.">Send my picks</calcite-button>
+          title="Shows your ranked picks for a final check, then sends them. No separate form to fill in.">Send my picks</calcite-button>
         <calcite-button id="csvBtn" icon-start="file-csv" appearance="outline" kind="brand" scale="s" width="full" disabled title="Download the ranked list with scores, votes, costs, and funding status">Ranked list CSV</calcite-button>
       </div>
       <div class="foot-status" id="sendReason"></div>
@@ -528,6 +534,18 @@
     </div>
   </div><!-- /appBody -->
 
+  <calcite-dialog id="sendDialog" modal heading="Send my picks" width-scale="s">
+    <div class="dlg">
+      <p>Sending as <b id="sendWho"></b></p>
+      <ol id="sendList" class="send-list"></ol>
+      <p class="fine" id="sendNote"></p>
+      <p class="send-err" id="sendErr" hidden></p>
+    </div>
+    <calcite-button slot="footer-end" id="sendCancel" appearance="outline" kind="neutral" scale="s">Cancel</calcite-button>
+    <calcite-button slot="footer-end" id="sendForm" appearance="outline" kind="brand" scale="s" title="If sending from here fails, the Survey123 form does the same thing in a new window">Open the form instead</calcite-button>
+    <calcite-button slot="footer-end" id="sendGo" appearance="solid" kind="brand" scale="s" icon-start="send">Send</calcite-button>
+  </calcite-dialog>
+
   <calcite-dialog id="aboutDialog" modal heading="About EIP Funding Priorities" width-scale="m">
     <div class="dlg">
       <p>A shared workbench for deciding what gets funded next in the Environmental Improvement Program. It reads the same project
@@ -535,7 +553,8 @@
         criteria you weight, tests an amount of available funding, and collects ranked priority picks from partner agencies.</p>
       <ol>
         <li><strong>Priority projects.</strong> Each reviewer ticks up to ten projects, ranks them, adds notes, and clicks
-          <em>Send my picks</em>, which opens a Survey123 form already filled in. Submissions land in TRPA's ArcGIS Online; the tool reads
+          <em>Send my picks</em>, which sends the list straight to the survey's layer after a confirmation (the Survey123 form remains
+          as a fallback). Submissions land in TRPA's ArcGIS Online; the tool reads
           everyone's latest picks back (without email addresses) and combines them by Borda count: rank 1 earns 10 points, rank 10 earns 1,
           summed across reviewers. The cap gives every agency the same influence whatever the length of its list. <em>Votes</em> counts
           reviewers, <em>Points</em> is the Borda total, and the <em>Reviewer points</em> criterion can carry it into the composite score.
@@ -596,6 +615,9 @@
     const SURVEY = {
       formId: "06f26df8a2ab4ddab59c4f82ee06d8e5",   // Survey123 "EIP Funding Priorities picks" (TRPA ArcGIS Online, owner mbindl)
       viewUrl: "https://services5.arcgis.com/fXXSUzHD5JjcOt1v/arcgis/rest/services/EIP_Funding_Priorities_picks_public_view/FeatureServer/0",  // view without reviewer_email
+      // The survey's own submission layer (public, Create only): the same place the Survey123 form writes.
+      // Send posts here directly so no form window is needed; the form stays as a fallback.
+      submitUrl: "https://services5.arcgis.com/fXXSUzHD5JjcOt1v/arcgis/rest/services/survey123_06f26df8a2ab4ddab59c4f82ee06d8e5_form/FeatureServer/0",
       round: "2026-10",      // funding round label; only submissions tagged with it are loaded
       // Field names as published (three kept their auto-generated names; names are frozen after publishing)
       fields: { name: "reviewer_name", email: "reviewer_email", agency: "agency", key: "reviewer_key_filled_in_by_the_t", round: "funding_round_filled_in_by_the",
@@ -1313,7 +1335,7 @@
       for (const [k, rv] of Object.entries(remote)) {
         const n = Object.values(rv.picks).filter(x => x.s).length, me = k === myKey();
         const when = rv.when ? new Date(rv.when).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
-        rows.push(`<li class="rrow${me ? " me" : ""}" title="Sent through the form${when ? " on " + escHtml(when) : ""}"><span class="r-who">${escHtml(whoLabel(rv.who, rv.agency))}${me ? ' <em>you</em>' : ""}</span><span class="r-n">${n} pick${n === 1 ? "" : "s"}</span><span class="r-when">${escHtml(when)}</span></li>`);
+        rows.push(`<li class="rrow${me ? " me" : ""}" title="Sent${when ? " on " + escHtml(when) : ""}"><span class="r-who">${escHtml(whoLabel(rv.who, rv.agency))}${me ? ' <em>you</em>' : ""}</span><span class="r-n">${n} pick${n === 1 ? "" : "s"}</span><span class="r-when">${escHtml(when)}</span></li>`);
       }
       for (const who of Object.keys(imports)) {
         const m = Object.keys(imports[who]).length;
@@ -1348,25 +1370,63 @@
     // ── Survey123 round trip ──
     const surveyOn = () => !!SURVEY.formId;
     function shareUrl() { return `${location.origin}${location.pathname}#s=${b64e(scenario())}`; }
-    function sendPicks() {
+    // The record a submission carries, keyed by the survey's field names. Null when the
+    // identity or the list is not ready (the footer button is disabled in that state anyway).
+    function buildSubmission() {
       const F = SURVEY.fields;
       const name = $("reviewerName").value.trim(), email = $("reviewerEmail").value.trim(), agency = $("reviewerAgency").value.trim();
-      if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast("Enter your name and a valid email first.", 4000); (name ? $("reviewerEmail") : $("reviewerName")).focus(); return; }
+      if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast("Enter your name and a valid email first.", 4000); (name ? $("reviewerEmail") : $("reviewerName")).focus(); return null; }
       review.reviewer = name; review.email = email; review.agency = agency; saveLS(LS_REVIEW, review);
       const picked = myPicks();
-      if (!picked.length) { toast("Tick at least one Priority project in the table first.", 4000); return; }
-      const notes = Object.entries(review.scores).filter(([, v]) => v.n).map(([id, v]) => `${id}: ${v.n}`).join("\n");
-      const q = new URLSearchParams();
-      q.set(`field:${F.name}`, name); q.set(`field:${F.email}`, email); q.set(`field:${F.agency}`, agency);
-      q.set(`field:${F.key}`, fnv(email.toLowerCase())); q.set(`field:${F.round}`, SURVEY.round);
-      // One readable line per pick: "1. 01.01.01.0033 Tahoe Valley Stormwater..." (parseRemote reads the rank and number)
+      if (!picked.length) { toast("Tick at least one Priority project in the table first.", 4000); return null; }
       const byId = new Map(projects.map(p => [p.id, p.name]));
-      q.set(`field:${F.picks}`, picked.map(id => `${review.scores[id].r}. ${id} ${byId.get(id) || ""}`.trim()).join("\n")); if (notes) q.set(`field:${F.notes}`, notes);
-      q.set(`field:${F.url}`, shareUrl()); q.set("open", "web");
+      const lines = picked.map(id => `${review.scores[id].r}. ${id} ${byId.get(id) || ""}`.trim());   // "1. 01.01.01.0033 Tahoe Valley..." (parseRemote reads rank and number)
+      const notes = Object.entries(review.scores).filter(([, v]) => v.n).map(([id, v]) => `${id}: ${v.n}`).join("\n");
+      const attrs = {};
+      attrs[F.name] = name; attrs[F.email] = email; attrs[F.agency] = agency; attrs[F.key] = fnv(email.toLowerCase()); attrs[F.round] = SURVEY.round;
+      attrs[F.picks] = lines.join("\n"); attrs[F.notes] = notes || null; attrs[F.url] = shareUrl();
+      return { attrs, picked, lines, name, agency, email, byId };
+    }
+    // Send my picks: confirm in place, then post straight to the survey's submission layer
+    function sendPicks() {
+      const sub = buildSubmission(); if (!sub) return;
+      $("sendWho").textContent = `${whoLabel(sub.name, sub.agency)} · ${sub.email}`;
+      $("sendList").innerHTML = sub.picked.map(id => `<li>${escHtml(sub.byId.get(id) || id)} <span class="fine">${escHtml(id)}</span>${review.scores[id].n ? `<span class="fine note-line">Note: ${escHtml(review.scores[id].n)}</span>` : ""}</li>`).join("");
+      $("sendNote").textContent = Object.keys(remote).includes(fnv(sub.email.toLowerCase())) ? "You have sent picks before. This replaces them; only your latest submission counts." : "Only your latest submission counts, so you can send again later.";
+      $("sendErr").hidden = true; $("sendGo").loading = false; $("sendGo").disabled = false;
+      $("sendDialog").open = true;
+    }
+    async function confirmSend() {
+      const sub = buildSubmission(); if (!sub) return;
+      const go = $("sendGo"); go.loading = true; go.disabled = true; $("sendErr").hidden = true;
+      try {
+        const body = new URLSearchParams({ f: "json", adds: JSON.stringify([{ attributes: sub.attrs }]), rollbackOnFailure: "true" });
+        const r = await fetch(`${SURVEY.submitUrl}/applyEdits`, { method: "POST", body }).then(x => x.json());
+        const res = r.addResults && r.addResults[0];
+        if (r.error || !res || !res.success) throw new Error((r.error && r.error.message) || (res && res.error && res.error.description) || "The server did not accept the submission.");
+        $("sendDialog").open = false;
+        toast(`Sent ${sub.picked.length} pick${sub.picked.length === 1 ? "" : "s"} as ${whoLabel(sub.name, sub.agency)}.`, 5000);
+        setTimeout(() => loadRemote(true), 1200);
+      } catch (e) {
+        console.warn("Direct submission failed:", e);
+        $("sendErr").textContent = `Could not send: ${e.message} You can open the form instead.`; $("sendErr").hidden = false;
+        go.loading = false; go.disabled = false;
+      }
+    }
+    // Fallback: the Survey123 web form, prefilled through the URL
+    function openForm() {
+      const sub = buildSubmission(); if (!sub) return;
+      const F = SURVEY.fields, q = new URLSearchParams();
+      for (const [k, v] of Object.entries(sub.attrs)) if (v != null) q.set(`field:${k}`, v);
+      q.set("open", "web");
       window.open(`https://survey123.arcgis.com/share/${SURVEY.formId}?${q}`, "_blank", "noopener");
-      toast(`Form opened with ${picked.length} pick${picked.length === 1 ? "" : "s"}. Press Submit there, then come back; picks refresh on their own.`, 7000);
+      $("sendDialog").open = false;
+      toast(`Form opened with ${sub.picked.length} pick${sub.picked.length === 1 ? "" : "s"}. Press Submit there, then come back; picks refresh on their own.`, 7000);
       remoteLoadedAt = 0;   // next focus reloads
     }
+    $("sendGo").addEventListener("click", confirmSend);
+    $("sendForm").addEventListener("click", openForm);
+    $("sendCancel").addEventListener("click", () => { $("sendDialog").open = false; });
     // Parse view features (newest first) into one record per reviewer key
     function parseRemote(features) {
       const F = SURVEY.fields, out = {};
