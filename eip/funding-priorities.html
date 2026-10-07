@@ -309,6 +309,8 @@
       <calcite-button href="https://trpa-agency.github.io/EIP/html/projects-map.html" target="_blank" rel="noopener" icon-start="map"
         appearance="transparent" kind="neutral" scale="s" title="EIP Projects Map" label="EIP Projects Map"></calcite-button>
       <span class="hdr-sep" aria-hidden="true"></span>
+      <calcite-button id="resetAllBtn" icon-start="reset" appearance="transparent" kind="neutral" scale="s"
+        title="Start over: reset filters, available funding, weights, pins, and clear unsent picks. Keeps your name and email." label="Start over"></calcite-button>
       <calcite-button id="shareBtn" icon-start="link" appearance="transparent" kind="neutral" scale="s"
         title="Copy a link that reopens this scenario (filters, weights, envelope, pins)" label="Copy link"></calcite-button>
       <calcite-button id="aboutBtn" icon-start="information" appearance="transparent" kind="neutral" scale="s"
@@ -1459,10 +1461,33 @@
     segClick("modeSeg", (v) => { fillMode = v; recompute(); });
     $("envInput").addEventListener("input", () => { const v = num($("envInput").value); envelope = v != null && v > 0 ? v : null; recomputeSoon(); });
     $("envPresets").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; $("envInput").value = b.dataset.v; envelope = b.dataset.v ? +b.dataset.v : null; recompute(); });
-    $("resetFiltersBtn").addEventListener("click", () => {
+    function resetFilters(skipRecompute) {
       $("searchInput").value = ""; $("stageChips").querySelectorAll("button").forEach(b => b.classList.toggle("on", ["Planning/Design", "Implementation"].includes(b.dataset.v)));
       $("focusChips").querySelectorAll("button").forEach(b => b.classList.add("on")); ["programSel", "leadSel", "fundSel", "tagSel"].forEach(id => setCombo($(id), []));
-      $("stateSeg").querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.v === "")); $("fundChips").querySelectorAll("button").forEach(b => b.classList.add("on")); $("ltraOnly").checked = false; $("nonEip").checked = false; recompute();
+      $("stateSeg").querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.v === "")); $("fundChips").querySelectorAll("button").forEach(b => b.classList.add("on")); $("ltraOnly").checked = false; $("nonEip").checked = false;
+      if (!skipRecompute) recompute();
+    }
+    $("resetFiltersBtn").addEventListener("click", () => resetFilters());
+    // Start over: everything back to the opening state except who you are and what you already sent
+    $("resetAllBtn").addEventListener("click", () => {
+      const n = myPicks().length;
+      const msg = "Start over?\n\nThis resets the filters, available funding, scoring weights, pins and exclusions, the drawn area, and the table view" +
+        (n ? `, and clears your ${n} unsent pick${n === 1 ? "" : "s"} and notes in this browser` : "") +
+        ".\n\nYour name, agency, and email stay. Picks you already sent are not affected.";
+      if (!confirm(msg)) return;
+      resetFilters(true);
+      setCombo($("actionSel"), []); actions = new Set(); setCombo($("jurisSel"), []); juris = new Set();
+      weights = { ...PRESETS.balanced.w }; focusW = { ...PRESETS.balanced.fw }; $("presetSel").value = "balanced"; syncWeightUI();
+      envelope = null; $("envInput").value = ""; fillMode = "skip"; $("modeSeg").querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.v === "skip"));
+      pins = new Set(); excluded = new Set();
+      if (areaLayer) areaLayer.removeAll(); areaGeom = null; $("clearAreaBtn").hidden = true;
+      review.scores = {}; saveLS(LS_REVIEW, review); imports = {}; saveLS(LS_IMPORTS, imports);
+      ["envSec", "weightsSec"].forEach((id, i) => { $(id).classList.add("collapsed"); $(["envToggle", "weightsToggle"][i]).textContent = "Show"; });
+      if (fullView) $("colsBtn").click(); if (document.body.classList.contains("drawer-max")) $("maxBtn").click();
+      $("quickFilter").value = ""; gridApi && gridApi.setGridOption("quickFilterText", "");
+      if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+      hideDetail(); renderReviewers(); recompute(); if (view) view.goTo({ center: BASIN.center, zoom: BASIN.zoom }).catch(() => {});
+      toast("Back to the opening view. Your name and email are kept.", 3500);
     });
     let recomputeT; function recomputeSoon() { clearTimeout(recomputeT); recomputeT = setTimeout(recompute, 180); }
 
