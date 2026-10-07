@@ -159,7 +159,17 @@
       font-size: 0.66rem; font-weight: 600; color: var(--gray-text); padding: 0.12rem 0.5rem; cursor: pointer; }
     .env-presets button:hover { border-color: var(--eip-blue); color: var(--eip-blue); }
 
-    #reviewerChips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    #reviewerChips .r-head { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--gray-text); margin-bottom: 0.2rem; }
+    .rlist { list-style: none; margin: 0; padding: 0; border: 1px solid var(--gray-border); border-radius: 8px; overflow: hidden; }
+    .rrow { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.6rem; font-size: 0.72rem; border-top: 1px solid var(--gray-border); background: #fff; }
+    .rrow:first-child { border-top: none; }
+    .rrow.me { background: var(--eip-blue-light); }
+    .rrow .r-who { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--eip-navy); font-weight: 600; }
+    .rrow .r-who em { font-style: normal; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--eip-blue); margin-left: 0.25rem; }
+    .rrow .r-n { white-space: nowrap; color: var(--eip-navy); }
+    .rrow .r-when { white-space: nowrap; color: var(--gray-text); font-size: 0.64rem; }
+    .rrow .r-x { border: none; background: transparent; cursor: pointer; color: var(--gray-muted); font-size: 0.95rem; line-height: 1; padding: 0 0.2rem; border-radius: 999px; }
+    .rrow .r-x:hover { color: var(--eip-orange); background: var(--gray-bg); }
 
     /* Map tool buttons */
     .map-btn calcite-icon { color: inherit; }
@@ -1296,22 +1306,22 @@
       const sorted = list.map((x, i) => ({ ...x, i })).sort((a, b) => (a.r || 99) - (b.r || 99) || a.i - b.i).slice(0, CAP);
       const out = {}; sorted.forEach((x, i) => { out[x.id] = { s: 1, r: i + 1, n: x.n || "" }; }); return out;
     }
+    // One line per reviewer whose list is loaded: who, how many picks, when; "you" marks your own submission
     function renderReviewers() {
       const el = $("reviewerChips"); el.innerHTML = "";
+      const rows = [];
       for (const [k, rv] of Object.entries(remote)) {
-        const chip = document.createElement("calcite-chip"); chip.scale = "s"; chip.icon = "send";
-        const n = Object.values(rv.picks).filter(x => x.s).length;
-        chip.textContent = `${whoLabel(rv.who, rv.agency)} · ${n} pick${n === 1 ? "" : "s"}${k === myKey() ? " (you)" : ""}`;
-        chip.title = `Submitted${rv.when ? " " + new Date(rv.when).toLocaleString() : ""}`;
-        if (k === myKey()) chip.kind = "brand";
-        el.appendChild(chip);
+        const n = Object.values(rv.picks).filter(x => x.s).length, me = k === myKey();
+        const when = rv.when ? new Date(rv.when).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "";
+        rows.push(`<li class="rrow${me ? " me" : ""}" title="Sent through the form${when ? " on " + escHtml(when) : ""}"><span class="r-who">${escHtml(whoLabel(rv.who, rv.agency))}${me ? ' <em>you</em>' : ""}</span><span class="r-n">${n} pick${n === 1 ? "" : "s"}</span><span class="r-when">${escHtml(when)}</span></li>`);
       }
       for (const who of Object.keys(imports)) {
-        const chip = document.createElement("calcite-chip"); chip.scale = "s"; chip.closable = true; chip.dataset.who = who;
-        const m = Object.keys(imports[who]).length; chip.textContent = `${who} · ${m} pick${m === 1 ? "" : "s"} (CSV)`; chip.title = "Imported from a CSV. Close to remove."; el.appendChild(chip);
+        const m = Object.keys(imports[who]).length;
+        rows.push(`<li class="rrow csv" title="Imported from a CSV"><span class="r-who">${escHtml(who)} <em>CSV</em></span><span class="r-n">${m} pick${m === 1 ? "" : "s"}</span><button class="r-x" data-who="${escHtml(who)}" title="Remove this imported list" aria-label="Remove ${escHtml(who)}">&times;</button></li>`);
       }
+      el.innerHTML = rows.length ? `<div class="r-head">Picks received</div><ul class="rlist">${rows.join("")}</ul>` : "";
     }
-    $("reviewerChips").addEventListener("calciteChipClose", (e) => { delete imports[e.target.dataset.who]; saveLS(LS_IMPORTS, imports); renderReviewers(); recompute(); });
+    $("reviewerChips").addEventListener("click", (e) => { const b = e.target.closest(".r-x"); if (!b) return; delete imports[b.dataset.who]; saveLS(LS_IMPORTS, imports); renderReviewers(); recompute(); });
     $("clearReviewBtn").addEventListener("click", () => {
       if (!confirm("Clear your priority picks and notes and remove imported reviewer lists from this browser?")) return;
       review = { reviewer: $("reviewerName").value.trim(), email: $("reviewerEmail").value.trim(), agency: $("reviewerAgency").value.trim(), scores: {} }; imports = {};
