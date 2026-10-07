@@ -397,7 +397,10 @@
         <details class="more">
           <summary>Convener tools and CSV fallback</summary>
           <div class="row">
-            <calcite-button id="masterBtn" icon-start="file-csv" appearance="outline" kind="brand" scale="s" width="full" title="The combined LTRA list in the master sheet layout: one block per working group with Priority 1 and all-priority totals">Master sheet CSV</calcite-button>
+            <calcite-button id="printBtn" icon-start="print" appearance="solid" kind="brand" scale="s" width="full" title="A readable version of this list's combined picks, one section per working group with totals, for printing or saving as PDF">Print master list</calcite-button>
+            <calcite-button id="masterBtn" icon-start="file-csv" appearance="outline" kind="brand" scale="s" width="full" title="The same combined list in the master sheet column layout: one block per working group with Priority 1 and all-priority totals">Master sheet CSV</calcite-button>
+          </div>
+          <div class="row">
             <calcite-button id="importScoresBtn" icon-start="upload" appearance="outline" kind="brand" scale="s" width="full" title="Convener: import one or more reviewers' CSV files">Import CSV</calcite-button>
             <input id="importFile" type="file" accept=".csv,text/csv" multiple hidden />
           </div>
@@ -582,8 +585,9 @@
           funding source, and state.</li>
         <li><strong>Available funding.</strong> Enter a dollar amount for the current list. Picked projects are funded in rank order by their
           request (or unfunded need where none was given). Pinned projects go first; excluded projects leave the pool.</li>
-        <li><strong>Master sheet CSV.</strong> The combined LTRA list grouped by working group with Priority 1 and all-priority totals, in the
-          column order of the master sheet. Federal Agency and Project Type are not in the Tracker and are left for the leads to fill in.</li>
+        <li><strong>Print master list and Master sheet CSV.</strong> The combined list you are viewing, grouped by working group with Priority 1
+          and all-priority totals. The print version opens as a clean page for printing or saving as PDF; the CSV follows the column order of
+          the master sheet. Federal Agency and Project Type are not in the Tracker and are left for the leads to fill in.</li>
       </ol>
       <h3>Data</h3>
       <ul>
@@ -1288,32 +1292,90 @@
       const meta = `# EIP Funding Priorities ${todayLocal()} · ${LISTS[listKey].long} · ${SURVEY.roundLabel} · available ${envelope() > 0 ? fmtM(envelope() * 1e6) : "none"} · ${reviewerCount()} reviewer lists · ranked by Priority 1, 2, 3 votes`;
       download(`eip-priorities-${listKey}-${todayLocal()}.csv`, "﻿" + lines.join("\r\n") + "\r\n" + meta + "\r\n");
     });
-    // Master sheet layout: the combined LTRA list, one block per working group, Priority 1 and all-priority totals per block and overall
+    // The combined list for one of the two lists, grouped by working group as the master sheet is: groups in roster order
+    // (unknown or missing groups last), projects by group tier then Priority 1 votes then name, with per-group and overall totals
+    function masterGroups(l) {
+      const rows = projects.filter(p => p.active || picksFor(p.id, l).length).map(p => ({ p, tl: tally(p.id, l) })).filter(x => x.tl.n);
+      const byWg = {}; for (const x of rows) { const k = x.tl.wg || "No working group given"; (byWg[k] = byWg[k] || []).push(x); }
+      const wgOrder = (w) => { const i = WORKING_GROUPS.indexOf(w); return i < 0 ? 99 : i; };
+      const groups = Object.keys(byWg).sort((a, b) => wgOrder(a) - wgOrder(b) || a.localeCompare(b)).map(wg => {
+        const items = byWg[wg].sort((a, b) => a.tl.tier - b.tl.tier || b.tl.v[1] - a.tl.v[1] || a.p.name.localeCompare(b.p.name));
+        let all = 0, p1 = 0; for (const { tl } of items) if (tl.med != null) { all += tl.med; if (tl.tier === 1) p1 += tl.med; }
+        return { wg, items, all, p1 };
+      });
+      return { groups, all: groups.reduce((a, g) => a + g.all, 0), p1: groups.reduce((a, g) => a + g.p1, 0), n: rows.length };
+    }
+    // Master sheet layout as CSV
     $("masterBtn").addEventListener("click", () => {
-      const rows = projects.filter(p => p.active || picksFor(p.id, "ltra").length).map(p => ({ p, tl: tally(p.id, "ltra") })).filter(x => x.tl.n);
-      if (!rows.length) { toast("No LTRA picks have been sent or imported yet.", 4000); return; }
+      const m = masterGroups(listKey);
+      if (!m.n) { toast(`No ${LISTS[listKey].label} picks have been sent or imported yet.`, 4000); return; }
       const head = ["Working group", "Federal Agency", "Implementer", "Project", `${SURVEY.round} Request`, "EIP Tracker #", "Priority Ranking", "Project Type", "Notes", "Reviewers", "Priority votes (1/2/3)", "Tracker LTRA request", "Tracker stage"];
       const lines = [head.map(csvCell).join(",")];
-      const groups = {}; for (const x of rows) (groups[x.tl.wg || "No working group given"] = groups[x.tl.wg || "No working group given"] || []).push(x);
-      let all = 0, allP1 = 0;
-      const wgOrder = (w) => { const i = WORKING_GROUPS.indexOf(w); return i < 0 ? 99 : i; };   // unknown or missing groups last
-      for (const wg of Object.keys(groups).sort((a, b) => wgOrder(a) - wgOrder(b) || a.localeCompare(b))) {
-        const g = groups[wg].sort((a, b) => a.tl.tier - b.tl.tier || b.tl.v[1] - a.tl.v[1] || a.p.name.localeCompare(b.p.name));
-        let sub = 0, subP1 = 0;
-        for (const { p, tl } of g) {
-          const req = tl.med; if (req != null) { sub += req; if (tl.tier === 1) subP1 += req; }
+      for (const g of m.groups) {
+        for (const { p, tl } of g.items) {
           const stageNote = p.active ? p.stage : `${p.stage} (not in planning or implementation)`;
-          lines.push([wg, "", p.lead, p.name, req != null ? Math.round(req) : "", p.id, tl.tier, "", tl.rows.map(r => `${r.who}: ${r.n || "(no note)"}`).join(" | "), tl.n, `${tl.v[1]}/${tl.v[2]}/${tl.v[3]}`, p.ltraAsk ?? "", stageNote].map(csvCell).join(","));
+          lines.push([g.wg, "", p.lead, p.name, tl.med != null ? Math.round(tl.med) : "", p.id, tl.tier, "", tl.rows.map(r => `${r.who}: ${r.n || "(no note)"}`).join(" | "), tl.n, `${tl.v[1]}/${tl.v[2]}/${tl.v[3]}`, p.ltraAsk ?? "", stageNote].map(csvCell).join(","));
         }
-        lines.push([wg, "", "", "Total of all Priorities:", Math.round(sub)].map(csvCell).join(","));
-        lines.push([wg, "", "", "Total of all Priority 1 Projects:", Math.round(subP1)].map(csvCell).join(","));
+        lines.push([g.wg, "", "", "Total of all Priorities:", Math.round(g.all)].map(csvCell).join(","));
+        lines.push([g.wg, "", "", "Total of all Priority 1 Projects:", Math.round(g.p1)].map(csvCell).join(","));
         lines.push("");
-        all += sub; allP1 += subP1;
       }
-      lines.push(["ALL", "", "", "TOTAL, all priorities:", Math.round(all)].map(csvCell).join(","));
-      lines.push(["ALL", "", "", "TOTAL, Priority 1:", Math.round(allP1)].map(csvCell).join(","));
-      lines.push(`# ${SURVEY.roundLabel} · exported ${todayLocal()} · ${reviewerCount()} reviewer lists · request = median of reviewers' requests · Federal Agency and Project Type are not in the Tracker`);
-      download(`eip-ltra-master-${SURVEY.round}-${todayLocal()}.csv`, "﻿" + lines.join("\r\n") + "\r\n");
+      lines.push(["ALL", "", "", "TOTAL, all priorities:", Math.round(m.all)].map(csvCell).join(","));
+      lines.push(["ALL", "", "", "TOTAL, Priority 1:", Math.round(m.p1)].map(csvCell).join(","));
+      lines.push(`# ${SURVEY.roundLabel} · ${LISTS[listKey].long} · exported ${todayLocal()} · ${reviewerCount()} reviewer lists · request = median of reviewers' requests · Federal Agency and Project Type are not in the Tracker`);
+      download(`eip-${listKey}-master-${SURVEY.round}-${todayLocal()}.csv`, "﻿" + lines.join("\r\n") + "\r\n");
+    });
+    // Print-friendly master list: a standalone page in a new tab with the summary table, one section per working group,
+    // and the print dialog ready. Falls back to downloading the page if the browser blocks the new tab.
+    $("printBtn").addEventListener("click", () => {
+      const m = masterGroups(listKey);
+      if (!m.n) { toast(`No ${LISTS[listKey].label} picks have been sent or imported yet.`, 4000); return; }
+      const title = `${SURVEY.round} ${listKey === "ltra" ? "LTRA Priority List" : "EIP Priority List, other funding"}`;
+      const when = new Date().toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+      const fontCss = new URL("../tools/assets/fonts/fonts.css", location.href).href;
+      const tier = (t) => `<span class="t t${t}">Priority ${t}</span>`;
+      const summary = `<table class="sum"><thead><tr><th>Working group</th><th class="r">All priorities</th><th class="r">Priority 1</th><th class="r">Projects</th></tr></thead><tbody>` +
+        m.groups.map(g => `<tr><td>${escHtml(g.wg)}</td><td class="r">${fmtFull(g.all)}</td><td class="r">${fmtFull(g.p1)}</td><td class="r">${g.items.length}</td></tr>`).join("") +
+        `<tr class="tot"><td>Total</td><td class="r">${fmtFull(m.all)}</td><td class="r">${fmtFull(m.p1)}</td><td class="r">${m.n}</td></tr></tbody></table>`;
+      const sections = m.groups.map(g => `<section><h2>${escHtml(g.wg)} <small>${g.items.length} project${g.items.length === 1 ? "" : "s"} · ${fmtFull(g.all)} requested, ${fmtFull(g.p1)} in Priority 1</small></h2>
+        <table><thead><tr><th>Priority</th><th>Project</th><th>Implementer</th><th>EIP #</th><th class="r">${SURVEY.round} request</th><th>Reviewers</th><th>Notes</th></tr></thead><tbody>` +
+        g.items.map(({ p, tl }) => `<tr><td>${tier(tl.tier)}</td><td><b>${escHtml(p.name)}</b>${p.active ? "" : `<br><em class="warn">${escHtml(p.stage)} on the Tracker, not in planning or implementation</em>`}</td><td>${escHtml(p.lead)}</td><td class="mono">${escHtml(p.id)}</td>` +
+          `<td class="r">${tl.med != null ? fmtFull(tl.med) : "<em>none given</em>"}${p.ltraAsk > 0 && listKey === "ltra" ? `<br><small>Tracker: ${fmtFull(p.ltraAsk)}</small>` : ""}</td>` +
+          `<td>${tl.n} <small>(${tl.v[1]} P1, ${tl.v[2]} P2, ${tl.v[3]} P3)</small><br><small>${tl.rows.map(r => escHtml(r.who)).join("; ")}</small></td>` +
+          `<td class="notes">${tl.rows.filter(r => r.n).map(r => `<div><b>${escHtml(r.who)}:</b> ${escHtml(r.n)}</div>`).join("") || "<em>none</em>"}</td></tr>`).join("") +
+        `<tr class="tot"><td colspan="4">Total of all priorities</td><td class="r">${fmtFull(g.all)}</td><td colspan="2"></td></tr>` +
+        `<tr class="tot"><td colspan="4">Total of Priority 1 projects</td><td class="r">${fmtFull(g.p1)}</td><td colspan="2"></td></tr></tbody></table></section>`).join("");
+      const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${escHtml(title)}</title><link rel="stylesheet" href="${fontCss}">
+<style>
+  @page { size: landscape; margin: 0.6in; }
+  :root { color-scheme: light; }
+  body { font-family: 'Lexend Deca', system-ui, sans-serif; color: #0B1F41; background: #fff; font-size: 10.5pt; margin: 1.2rem 1.5rem; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; border-bottom: 3px solid #007DC3; padding-bottom: 0.4rem; margin-bottom: 0.8rem; }
+  h1 { font-size: 18pt; margin: 0; } header small { color: #5F6B7E; font-size: 9.5pt; }
+  .note { color: #5F6B7E; font-size: 9pt; margin: 0.3rem 0 1rem; line-height: 1.45; }
+  h2 { font-size: 13pt; margin: 1.4rem 0 0.4rem; color: #007DC3; break-after: avoid; } h2 small { color: #5F6B7E; font-size: 9.5pt; font-weight: 400; margin-left: 0.5rem; }
+  table { width: 100%; border-collapse: collapse; } th, td { text-align: left; vertical-align: top; padding: 5px 7px; border-bottom: 1px solid #E1E5EC; }
+  th { font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.04em; color: #5F6B7E; border-bottom: 2px solid #E1E5EC; } thead { display: table-header-group; }
+  tr { break-inside: avoid; } .r { text-align: right; white-space: nowrap; } .mono { white-space: nowrap; font-size: 9.5pt; } small { font-size: 8.5pt; color: #5F6B7E; }
+  .notes { font-size: 9pt; max-width: 34em; } .notes div { margin-bottom: 0.2rem; } .warn { color: #B5430E; font-size: 8.5pt; }
+  .tot td { font-weight: 700; background: #F4F6F9; border-bottom: 2px solid #E1E5EC; }
+  .sum { width: auto; min-width: 50%; margin-bottom: 0.4rem; } .sum td, .sum th { padding: 4px 14px 4px 7px; }
+  .t { display: inline-block; font-size: 8.5pt; font-weight: 700; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+  .t1 { background: #E8F5E0; color: #2F6B13; } .t2 { background: #FFF4CC; color: #8A6D00; } .t3 { background: #FDE8DC; color: #B5430E; }
+  .toolbar { position: fixed; top: 10px; right: 14px; } .toolbar button { font: inherit; font-weight: 700; color: #fff; background: #007DC3; border: none; border-radius: 999px; padding: 0.4rem 1rem; cursor: pointer; }
+  @media print { .toolbar { display: none; } body { margin: 0; } }
+</style></head><body>
+<div class="toolbar"><button onclick="window.print()">Print or save as PDF</button></div>
+<header><h1>${escHtml(title)}</h1><small>Environmental Improvement Program · ${escHtml(when)}</small></header>
+<p class="note">Combined from ${reviewerCount()} reviewer list${reviewerCount() === 1 ? "" : "s"} sent through EIP Funding Priorities. Priority is the tier most reviewers gave a project (ties go to the higher priority);
+  the request is the median of reviewers' requests, and totals add those medians. Working group leads settle the final tier and dollar figure. Federal agency and project type are not in the Tracker and are to be added by the leads.</p>
+${summary}${sections}
+<p class="note">EIP Funding Priorities, maps.trpa.gov · project records from the EIP Project Tracker (eip.laketahoeinfo.org) · ${escHtml(SURVEY.roundLabel)}</p>
+</body></html>`;
+      const blob = new Blob([html], { type: "text/html" }), url = URL.createObjectURL(blob);
+      const w = window.open(url, "_blank");
+      if (!w) { download(`eip-${listKey}-master-${SURVEY.round}-${todayLocal()}.html`, html, "text/html"); toast("The browser blocked the new tab, so the page was downloaded instead. Open it and print from there.", 6000); }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
     });
     $("exportScoresBtn").addEventListener("click", () => {
       const who = whoLabel($("reviewerName").value.trim(), $("reviewerAgency").value.trim());
