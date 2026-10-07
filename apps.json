@@ -36,10 +36,16 @@
       "description": "Interactive mapping and analysis apps built by TRPA."
     },
     {
+      "slug": "monitoring",
+      "name": "Monitoring",
+      "color": "#9C3E27",
+      "description": "Environmental threshold, lake clarity, climate resilience, wildfire, and smoke dashboards tracking conditions in the Tahoe Basin."
+    },
+    {
       "slug": "data",
       "name": "Data & Developers",
       "color": "#B47E00",
-      "description": "Open data, monitoring dashboards, service directories, and resources for GIS users and developers."
+      "description": "Open data, service directories, and resources for GIS users and developers."
     }
   ],
   "apps": [
@@ -298,9 +304,22 @@
       ]
     },
     {
+      "id": "watchduty",
+      "title": "Watch Duty",
+      "category": "monitoring",
+      "url": "https://app.watchduty.org/",
+      "description": "Real-time wildfire alerts, incident maps, evacuation orders, and air quality for California and Nevada, reported by Watch Duty's volunteer and staff reporters. Not a TRPA product.",
+      "tags": [
+        "Fire",
+        "Evacuation",
+        "Air Quality"
+      ],
+      "external": true
+    },
+    {
       "id": "smokemap",
       "title": "48-Hour Smoke Forecast",
-      "category": "eip",
+      "category": "monitoring",
       "url": "https://gis.trpa.org/smokemap",
       "thumbnail": "assets/thumbs/smokemap.png",
       "description": "Smoke forecast for the Tahoe Basin and surrounding region, updated every 24 hours by the National Weather Service. Concentrations reported in micrograms per cubic meter.",
@@ -312,7 +331,7 @@
     {
       "id": "smokemap-next",
       "title": "Smoke Forecast and Air Quality",
-      "category": "eip",
+      "category": "monitoring",
       "url": "tools/smoke-map.html",
       "thumbnail": "assets/thumbs/smokemap-beta.svg",
       "description": "Prototype replacement for the 48-hour smoke forecast, rebuilt on the current ArcGIS Maps SDK with live standalone layers in place of a stored web map. Adds evacuation zones, satellite hot spots and smoke plumes, and the hourly AirNow air quality surface alongside monitors and low-cost sensors.",
@@ -429,7 +448,7 @@
     {
       "id": "thresholds",
       "title": "Threshold Dashboard",
-      "category": "data",
+      "category": "monitoring",
       "url": "https://thresholds.laketahoeinfo.org",
       "description": "Lake Tahoe Info module reporting status and trend for every environmental threshold standard adopted for the Tahoe Region, from the most recent Threshold Evaluation.",
       "tags": [
@@ -442,7 +461,7 @@
     {
       "id": "monitoring",
       "title": "Monitoring Dashboard",
-      "category": "data",
+      "category": "monitoring",
       "url": "https://monitoring.laketahoeinfo.org",
       "description": "Lake Tahoe Info module with the environmental monitoring indicators tracked by TRPA and partners, including data downloads and method documentation.",
       "tags": [
@@ -455,7 +474,7 @@
     {
       "id": "climate",
       "title": "Climate Resilience Dashboard",
-      "category": "data",
+      "category": "monitoring",
       "url": "https://climate.laketahoeinfo.org",
       "description": "Lake Tahoe Info module tracking 33 climate resilience metrics across greenhouse gas emissions, air quality, forest health, and resilient systems for the Tahoe Basin.",
       "tags": [
@@ -468,7 +487,7 @@
     {
       "id": "clarity",
       "title": "Lake Clarity Tracker",
-      "category": "data",
+      "category": "monitoring",
       "url": "https://clarity.laketahoeinfo.org",
       "description": "Lake Tahoe Info module on Lake Tahoe clarity: annual Secchi depth, the drivers of clarity loss, and progress toward the clarity restoration target.",
       "tags": [

@@ -18,7 +18,8 @@ maps/
 ├── permitting/         # Permitting apps (parcels, permits, completeness review)
 ├── eip/                # Environmental Improvement Program apps (stormwater, forest health, SEZ)
 ├── tools/              # General viewers and TRPA-built tools
-└── data/               # Open data, monitoring dashboards, developer resources
+├── monitoring/         # Threshold, climate, lake clarity, wildfire, and smoke dashboards
+└── data/               # Open data and developer resources
 ```
 
 Each category folder has an `index.html` landing page that lists only its apps. Migrated and new apps live as subfolders inside their category, e.g. `planning/localplans/` → `maps.trpa.gov/planning/localplans/`.
@@ -40,7 +41,7 @@ Edit `apps.json`, every page reads from it, so no HTML changes are needed:
 }
 ```
 
-- `category` must match a `slug` in the `categories` array (`planning`, `transportation`, `permitting`, `eip`, `tools`, `data`).
+- `category` must match a `slug` in the `categories` array (`planning`, `transportation`, `permitting`, `eip`, `tools`, `monitoring`, `data`).
 - `url` can be relative (apps hosted in this repo) or absolute (apps still on gis.trpa.org or external sites like Lake Tahoe Info).
 - Set `"external": true` for non-TRPA-hosted sites. Thumbnails are 200 x 133 PNGs in `assets/thumbs/`.
 
