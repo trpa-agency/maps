@@ -557,11 +557,12 @@
     // latest submission back from a hosted feature layer VIEW that omits the email field.
     // Leave formId empty to run without it: the CSV export and import still work.
     const SURVEY = {
-      formId: "",            // Survey123 item id, from the form's share link (survey123.arcgis.com/share/<id>)
-      viewUrl: "",           // feature layer view, e.g. https://services.arcgis.com/<org>/arcgis/rest/services/<name>/FeatureServer/0
+      formId: "06f26df8a2ab4ddab59c4f82ee06d8e5",   // Survey123 "EIP Funding Priorities picks" (TRPA ArcGIS Online, owner mbindl)
+      viewUrl: "https://services5.arcgis.com/fXXSUzHD5JjcOt1v/arcgis/rest/services/EIP_Funding_Priorities_picks_public_view/FeatureServer/0",  // view without reviewer_email
       round: "2026-10",      // funding round label; only submissions tagged with it are loaded
-      fields: { name: "reviewer_name", email: "reviewer_email", agency: "agency", key: "reviewer_key", round: "round",
-        picks: "project_numbers", notes: "notes", url: "scenario_url", when: "CreationDate" },
+      // Field names as published (three kept their auto-generated names; names are frozen after publishing)
+      fields: { name: "reviewer_name", email: "reviewer_email", agency: "agency", key: "reviewer_key_filled_in_by_the_t", round: "funding_round_filled_in_by_the",
+        picks: "your_ranked_picks_project_numbe", notes: "notes", url: "scenario_url", when: "CreationDate" },
     };
 
     // Criteria: fn returns 0..1, or null when the project has no data for it
