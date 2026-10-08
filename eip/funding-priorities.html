@@ -135,6 +135,9 @@
     .chips button.on { border-color: var(--c, var(--eip-blue)); color: var(--eip-navy); background: color-mix(in srgb, var(--c, var(--eip-blue)) 10%, #fff); }
     .chips button.on i { opacity: 1; }
     .chips.crit button { font-weight: 500; font-size: 0.72rem; padding: 0.15rem 0.5rem; }
+    .chips.req { margin-top: -0.1rem; }
+    .chips.req button { font-weight: 600; font-size: 0.7rem; padding: 0.15rem 0.55rem; border-color: var(--eip-blue); color: var(--eip-blue); background: #fff; }
+    .chips.req button:hover { background: var(--eip-blue-light); }
 
     .search-box { display: flex; align-items: center; gap: 0.5rem; background: var(--gray-bg);
       border: 1.5px solid var(--gray-border); border-radius: 999px; padding: 0.25rem 0.75rem; }
@@ -1150,6 +1153,15 @@
     }
 
     // ───────────────────────── Detail card ─────────────────────────
+    // One-click fills for the request: the Tracker's LTRA request, the whole unfunded need, half the need
+    // (LTRA asks are usually one year's slice of a multi-year project). Only amounts the Tracker has are offered.
+    function reqChips(p) {
+      const opts = [];
+      if (p.ltraAsk > 0) opts.push([p.ltraAsk, `Tracker LTRA request ${fmtUSD(p.ltraAsk)}`, "What the project's expected funding table on the Tracker says it is asking from LTRA"]);
+      if (p.need > 0) { opts.push([p.need, `Unfunded need ${fmtUSD(p.need)}`, "Estimated cost minus secured funding, per the Tracker"]); opts.push([Math.round(p.need / 2), `Half the need ${fmtUSD(p.need / 2)}`, "Half of the unfunded need, a one-year slice of a multi-year project"]); }
+      if (p.targeted > 0 && p.targeted !== p.ltraAsk) opts.push([p.targeted, `All requested ${fmtUSD(p.targeted)}`, "Everything the project has requested but not secured, all sources"]);
+      return opts.length ? `<div class="chips req" id="dcReqChips">${opts.map(([v, l, t]) => `<button type="button" data-v="${v}" title="${escHtml(t)}">${escHtml(l)}</button>`).join("")}</div>` : "";
+    }
     function selectProject(id, fromGrid) {
       selectedId = id; renderHighlight(); showDetail(id, true);
       if (gridApi) { gridApi.redrawRows(); const node = gridApi.getRowNode(id); if (node && !fromGrid) gridApi.ensureNodeVisible(node, "middle"); }
@@ -1178,8 +1190,9 @@
             </label>
           </div>
           <label class="field">Request ($)${drift ? ` <span class="drift" title="${escHtml(drift)}">! differs from the Tracker</span>` : ""}
-            <input id="dcReq" type="number" class="plain" min="0" step="1000" placeholder="e.g. 500000" value="${mine.req ?? ""}" />
+            <input id="dcReq" type="text" inputmode="decimal" class="plain" placeholder="e.g. 500000, 500k, or 1.5M" value="${mine.req != null ? Math.round(mine.req).toLocaleString("en-US") : ""}" />
           </label>
+          ${reqChips(p)}
           <label class="field">LTRA criteria this project meets
             <div class="chips crit" id="dcCrit">${CRITERIA.map(c => `<button data-k="${c.k}" class="${(mine.c || []).includes(c.k) ? "on" : ""}" title="${escHtml(c.d)}">${escHtml(c.s)}</button>`).join("")}</div>
           </label>
@@ -1219,7 +1232,10 @@
       $("dcList").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; setMyPick(p.id, { l: b.dataset.v }); recompute(); });
       $("dcTier").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; const t = tierOf(b.dataset.v);
         setMyPick(p.id, { t, l: t ? (mine.t ? mine.l : listKey) : mine.l }); recompute(); });
-      $("dcReq").addEventListener("change", () => { const v = num($("dcReq").value); setMyPick(p.id, { req: v != null && v >= 0 ? v : null, l: mine.t ? mine.l : listKey }); recompute(); });
+      // Typed amounts accept shorthand (500k, 1.5M); the chips fill the box with a figure from the Tracker
+      const setReq = (v) => { setMyPick(p.id, { req: v != null && v >= 0 ? Math.round(v) : null, l: mine.t ? mine.l : listKey }); recompute(); };
+      $("dcReq").addEventListener("change", () => setReq(parseMoney($("dcReq").value)));
+      if ($("dcReqChips")) $("dcReqChips").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; setReq(+b.dataset.v); });
       $("dcCrit").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; const c = new Set((myPick(p.id) || {}).c || []);
         if (c.has(b.dataset.k)) c.delete(b.dataset.k); else c.add(b.dataset.k); setMyPick(p.id, { c: [...c], l: mine.t ? mine.l : listKey }); b.classList.toggle("on"); if (gridApi) gridApi.refreshCells({ force: true }); });
       $("dcNote").addEventListener("change", () => { setMyPick(p.id, { n: $("dcNote").value.trim(), l: mine.t ? mine.l : listKey }); if (gridApi) gridApi.refreshCells({ force: true }); });
