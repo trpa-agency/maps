@@ -524,6 +524,7 @@
       "title": "ArcGIS REST Services",
       "category": "data",
       "url": "https://maps.trpa.org/server/rest/services",
+      "thumbnail": "assets/thumbs/rest.png",
       "description": "ArcGIS Server REST services directory for developers building on TRPA data.",
       "tags": [
         "Developers",
