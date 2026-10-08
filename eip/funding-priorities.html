@@ -819,9 +819,10 @@
       return out;
     }
     const reviewerCount = () => reviewerLists().length;
-    // Everyone's picks of one project on one list: who, working group, tier, request, note
+    const listReviewerCount = (l) => reviewerLists().filter(r => Object.values(r.picks).some(p => p.t && p.l === l)).length;   // reviewers with picks on one list
+    // Everyone's picks of one project on one list: who, working group, tier, request, note (n is criteria plus text; crit and note are the parts)
     function picksFor(id, l) {
-      return reviewerLists().flatMap(r => { const p = r.picks[id]; return p && p.t && p.l === l ? [{ who: r.who, wg: r.wg, t: p.t, req: p.req ?? null, n: fullNote(p) }] : []; })
+      return reviewerLists().flatMap(r => { const p = r.picks[id]; return p && p.t && p.l === l ? [{ who: r.who, wg: r.wg, t: p.t, req: p.req ?? null, n: fullNote(p), crit: p.c || [], note: p.n || "" }] : []; })
         .sort((a, b) => a.t - b.t || a.who.localeCompare(b.who));
     }
     // Tally: votes per tier, the tier most reviewers gave (ties to the higher priority), median request, working group most named
@@ -1322,7 +1323,7 @@
       }
       lines.push(["ALL", "", "", "TOTAL, all priorities:", Math.round(m.all)].map(csvCell).join(","));
       lines.push(["ALL", "", "", "TOTAL, Priority 1:", Math.round(m.p1)].map(csvCell).join(","));
-      lines.push(`# ${SURVEY.roundLabel} · ${LISTS[listKey].long} · exported ${todayLocal()} · ${reviewerCount()} reviewer lists · request = median of reviewers' requests · Federal Agency and Project Type are not in the Tracker`);
+      lines.push(`# ${SURVEY.roundLabel} · ${LISTS[listKey].long} · exported ${todayLocal()} · ${listReviewerCount(listKey)} reviewer lists with picks on this list · request = median of reviewers' requests · Federal Agency and Project Type are not in the Tracker`);
       download(`eip-${listKey}-master-${SURVEY.round}-${todayLocal()}.csv`, "﻿" + lines.join("\r\n") + "\r\n");
     });
     // Print-friendly master list: a standalone page in a new tab with the summary table, one section per working group,
@@ -1334,15 +1335,18 @@
       const when = new Date().toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
       const fontCss = new URL("../tools/assets/fonts/fonts.css", location.href).href;
       const tier = (t) => `<span class="t t${t}">Priority ${t}</span>`;
+      const who = (r) => escHtml(r.who.replace(/ · (.+)$/, " ($1)"));                       // "Ana Lee · CTC" reads as "Ana Lee (CTC)" in a table
+      const critUnion = (rows) => critText([...new Set(rows.flatMap(r => r.crit))]);       // criteria any reviewer ticked, once each
+      const nRev = listReviewerCount(listKey);
       const summary = `<table class="sum"><thead><tr><th>Working group</th><th class="r">All priorities</th><th class="r">Priority 1</th><th class="r">Projects</th></tr></thead><tbody>` +
         m.groups.map(g => `<tr><td>${escHtml(g.wg)}</td><td class="r">${fmtFull(g.all)}</td><td class="r">${fmtFull(g.p1)}</td><td class="r">${g.items.length}</td></tr>`).join("") +
         `<tr class="tot"><td>Total</td><td class="r">${fmtFull(m.all)}</td><td class="r">${fmtFull(m.p1)}</td><td class="r">${m.n}</td></tr></tbody></table>`;
       const sections = m.groups.map(g => `<section><h2>${escHtml(g.wg)} <small>${g.items.length} project${g.items.length === 1 ? "" : "s"} · ${fmtFull(g.all)} requested, ${fmtFull(g.p1)} in Priority 1</small></h2>
         <table><thead><tr><th>Priority</th><th>Project</th><th>Implementer</th><th>EIP #</th><th class="r">${SURVEY.round} request</th><th>Reviewers</th><th>Notes</th></tr></thead><tbody>` +
-        g.items.map(({ p, tl }) => `<tr><td>${tier(tl.tier)}</td><td><b>${escHtml(p.name)}</b>${p.active ? "" : `<br><em class="warn">${escHtml(p.stage)} on the Tracker, not in planning or implementation</em>`}</td><td>${escHtml(p.lead)}</td><td class="mono">${escHtml(p.id)}</td>` +
+        g.items.map(({ p, tl }) => `<tr><td>${tier(tl.tier)}</td><td><b>${escHtml(p.name.trim())}</b>${p.active ? "" : `<br><em class="warn">${escHtml(p.stage)} on the Tracker, not in planning or implementation</em>`}${critUnion(tl.rows) ? `<br><small>Criteria: ${escHtml(critUnion(tl.rows))}</small>` : ""}</td><td>${escHtml(p.lead)}</td><td class="mono">${escHtml(p.id)}</td>` +
           `<td class="r">${tl.med != null ? fmtFull(tl.med) : "<em>none given</em>"}${p.ltraAsk > 0 && listKey === "ltra" ? `<br><small>Tracker: ${fmtFull(p.ltraAsk)}</small>` : ""}</td>` +
-          `<td>${tl.n} <small>(${tl.v[1]} P1, ${tl.v[2]} P2, ${tl.v[3]} P3)</small><br><small>${tl.rows.map(r => escHtml(r.who)).join("; ")}</small></td>` +
-          `<td class="notes">${tl.rows.filter(r => r.n).map(r => `<div><b>${escHtml(r.who)}:</b> ${escHtml(r.n)}</div>`).join("") || "<em>none</em>"}</td></tr>`).join("") +
+          `<td>${tl.n} <small>(${[1, 2, 3].filter(t => tl.v[t]).map(t => `${tl.v[t]} at Priority ${t}`).join(", ")})</small><br><small>${tl.rows.map(who).join("; ")}</small></td>` +
+          `<td class="notes">${tl.rows.filter(r => r.note).map(r => `<div><b>${who(r)}:</b> ${escHtml(r.note)}</div>`).join("") || "<em>none</em>"}</td></tr>`).join("") +
         `<tr class="tot"><td colspan="4">Total of all priorities</td><td class="r">${fmtFull(g.all)}</td><td colspan="2"></td></tr>` +
         `<tr class="tot"><td colspan="4">Total of Priority 1 projects</td><td class="r">${fmtFull(g.p1)}</td><td colspan="2"></td></tr></tbody></table></section>`).join("");
       const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${escHtml(title)}</title><link rel="stylesheet" href="${fontCss}">
@@ -1357,7 +1361,8 @@
   table { width: 100%; border-collapse: collapse; } th, td { text-align: left; vertical-align: top; padding: 5px 7px; border-bottom: 1px solid #E1E5EC; }
   th { font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.04em; color: #5F6B7E; border-bottom: 2px solid #E1E5EC; } thead { display: table-header-group; }
   tr { break-inside: avoid; } .r { text-align: right; white-space: nowrap; } .mono { white-space: nowrap; font-size: 9.5pt; } small { font-size: 8.5pt; color: #5F6B7E; }
-  .notes { font-size: 9pt; max-width: 34em; } .notes div { margin-bottom: 0.2rem; } .warn { color: #B5430E; font-size: 8.5pt; }
+  .notes { font-size: 9pt; min-width: 20em; max-width: 36em; } .notes div { margin-bottom: 0.2rem; } .warn { color: #B5430E; font-size: 8.5pt; }
+  th:nth-child(2) { width: 24%; } th:nth-child(3) { width: 14%; } th:nth-child(6) { width: 13%; }
   .tot td { font-weight: 700; background: #F4F6F9; border-bottom: 2px solid #E1E5EC; }
   .sum { width: auto; min-width: 50%; margin-bottom: 0.4rem; } .sum td, .sum th { padding: 4px 14px 4px 7px; }
   .t { display: inline-block; font-size: 8.5pt; font-weight: 700; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
@@ -1367,15 +1372,16 @@
 </style></head><body>
 <div class="toolbar"><button onclick="window.print()">Print or save as PDF</button></div>
 <header><h1>${escHtml(title)}</h1><small>Environmental Improvement Program · ${escHtml(when)}</small></header>
-<p class="note">Combined from ${reviewerCount()} reviewer list${reviewerCount() === 1 ? "" : "s"} sent through EIP Funding Priorities. Priority is the tier most reviewers gave a project (ties go to the higher priority);
-  the request is the median of reviewers' requests, and totals add those medians. Working group leads settle the final tier and dollar figure. Federal agency and project type are not in the Tracker and are to be added by the leads.</p>
+<p class="note">Combined from ${nRev} reviewer list${nRev === 1 ? "" : "s"} with picks on this list, sent through EIP Funding Priorities. Priority is the tier most reviewers gave a project (ties go to the higher priority);
+  the request is the middle value of reviewers' requests, and totals add those values. The Reviewers column shows how many reviewers picked the project and at which priority. Criteria are the Lake Tahoe Restoration Act
+  criteria any reviewer ticked for the project. Working group leads settle the final tier and dollar figure. Federal agency and project type are not in the Tracker and are to be added by the leads.</p>
 ${summary}${sections}
 <p class="note">EIP Funding Priorities, maps.trpa.gov · project records from the EIP Project Tracker (eip.laketahoeinfo.org) · ${escHtml(SURVEY.roundLabel)}</p>
 </body></html>`;
+      // The page address stays valid while this tab is open (not revoked), so a reload of the print tab still works
       const blob = new Blob([html], { type: "text/html" }), url = URL.createObjectURL(blob);
       const w = window.open(url, "_blank");
-      if (!w) { download(`eip-${listKey}-master-${SURVEY.round}-${todayLocal()}.html`, html, "text/html"); toast("The browser blocked the new tab, so the page was downloaded instead. Open it and print from there.", 6000); }
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      if (!w) { download(`eip-${listKey}-master-${SURVEY.round}-${todayLocal()}.html`, html, "text/html"); toast("The browser blocked the new tab, so the page was downloaded instead. Open it and print from there.", 6000); URL.revokeObjectURL(url); }
     });
     $("exportScoresBtn").addEventListener("click", () => {
       const who = whoLabel($("reviewerName").value.trim(), $("reviewerAgency").value.trim());
