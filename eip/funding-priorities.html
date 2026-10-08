@@ -663,12 +663,14 @@
       viewUrl: "https://services5.arcgis.com/fXXSUzHD5JjcOt1v/arcgis/rest/services/EIP_Funding_Priorities_picks_public_view/FeatureServer/0",  // view without reviewer_email
       submitUrl: "https://services5.arcgis.com/fXXSUzHD5JjcOt1v/arcgis/rest/services/survey123_06f26df8a2ab4ddab59c4f82ee06d8e5_form/FeatureServer/0",  // public, Create only
       round: "FY28",                 // cycle label; only submissions tagged with it are loaded
-      maxLen: 4000,                  // length of the picks and notes text fields on the layer; raise here after enlarging them in ArcGIS Online
+      // The two text fields Survey123 published hold 4,000 characters and ArcGIS Online cannot lengthen them, so the full text
+      // goes to picks_text and notes_text (50,000, added Oct 2026) and a trimmed copy to the originals for the form fallback.
+      shortLen: 4000, longLen: 50000,
       roundLabel: "FY28 LTRA cycle", // shown in the panel
       deadline: "Working group lists are due to the EIP Coordinating Committee by Dec. 22, 2026. The LTRA request goes to the Congressional delegation March 15, 2027.",
       // Field names as published (three kept their auto-generated names; names are frozen after publishing)
       fields: { name: "reviewer_name", email: "reviewer_email", agency: "agency", key: "reviewer_key_filled_in_by_the_t", round: "funding_round_filled_in_by_the",
-        picks: "your_ranked_picks_project_numbe", notes: "notes", url: "scenario_url", when: "CreationDate" },
+        picks: "your_ranked_picks_project_numbe", notes: "notes", picksLong: "picks_text", notesLong: "notes_text", url: "scenario_url", when: "CreationDate" },
     };
 
     // ───────────────────────── Helpers ─────────────────────────
@@ -1480,10 +1482,14 @@ ${summary}${sections}
       const notes = [...lists.ltra, ...lists.other].map(id => { const t = fullNote(review.picks[id]); return t ? `${id}: ${t}` : ""; }).filter(Boolean).join("\n");
       const attrs = {};
       attrs[F.name] = name; attrs[F.email] = email; attrs[F.agency] = agency; attrs[F.key] = fnv(email.toLowerCase()); attrs[F.round] = SURVEY.round;
-      attrs[F.picks] = lines.join("\n"); attrs[F.notes] = notes || null; attrs[F.url] = shareUrl();
-      // The layer's text fields have a fixed length; fail here with a clear message instead of a server error
-      const over = [["picks", attrs[F.picks].length], ["notes", (attrs[F.notes] || "").length]].filter(([, n]) => n > SURVEY.maxLen);
-      if (over.length) { toast(`Your ${over.map(([k, n]) => `${k} text is ${n.toLocaleString()} characters`).join(" and ")}; the survey holds ${SURVEY.maxLen.toLocaleString()}. Shorten notes or send fewer picks, or ask TRPA to enlarge the field.`, 9000); return null; }
+      const picksText = lines.join("\n");
+      // Full text to the long fields; the originals get a copy cut at a line break so the form fallback still carries something readable
+      const TAIL = "\n[continued in the full-text field]";
+      const trim = (s) => { if (s.length <= SURVEY.shortLen) return s; const room = SURVEY.shortLen - TAIL.length; const cut = s.lastIndexOf("\n", room); return s.slice(0, cut > 0 ? cut : room) + TAIL; };
+      attrs[F.picksLong] = picksText; attrs[F.notesLong] = notes || null;
+      attrs[F.picks] = trim(picksText); attrs[F.notes] = notes ? trim(notes) : null; attrs[F.url] = shareUrl();
+      const over = [["picks", picksText.length], ["notes", (notes || "").length]].filter(([, n]) => n > SURVEY.longLen);
+      if (over.length) { toast(`Your ${over.map(([k, n]) => `${k} text is ${n.toLocaleString()} characters`).join(" and ")}; the survey holds ${SURVEY.longLen.toLocaleString()}. Shorten notes or send fewer picks.`, 9000); return null; }
       return { attrs, lists, name, agency, wg, email };
     }
     function sendPicks() {
@@ -1520,7 +1526,8 @@ ${summary}${sections}
     function openForm() {
       const sub = buildSubmission(); if (!sub) return;
       const q = new URLSearchParams();
-      for (const [k, v] of Object.entries(sub.attrs)) if (v != null) q.set(`field:${k}`, v);
+      const F = SURVEY.fields;   // the form only has the original fields; the long ones are layer-only
+      for (const [k, v] of Object.entries(sub.attrs)) if (v != null && k !== F.picksLong && k !== F.notesLong) q.set(`field:${k}`, v);
       q.set("open", "web");
       window.open(`https://survey123.arcgis.com/share/${SURVEY.formId}?${q}`, "_blank", "noopener");
       $("sendDialog").open = false;
@@ -1540,7 +1547,8 @@ ${summary}${sections}
         const key = String(a[F.key] || fnv((a[F.name] || "") + "|" + (a[F.agency] || ""))).trim();
         if (out[key]) continue;                                   // newer submission already kept
         let wg = "";
-        const entries = String(a[F.picks] || "").split(/\r?\n|;/).map(tok => {
+        const picksText = a[F.picksLong] || a[F.picks] || "", notesText = a[F.notesLong] || a[F.notes] || "";   // long fields first, originals for older records
+        const entries = String(picksText).split(/\r?\n|;/).map(tok => {
           const wm = tok.match(/^\s*Working group:\s*(.+)$/i); if (wm) { wg = wm[1].trim(); return null; }
           const id = (tok.match(/\d{2}\.\d{2}\.\d{2}\.\d{4}/) || [])[0]; if (!id) return null;
           const lm = tok.match(/^\s*(LTRA|Other)\b/i), tm = tok.match(/\bP([123])\b/), qm = tok.match(/\$\s*([\d,]+(?:\.\d+)?)\s*([MK])?/i);
@@ -1550,7 +1558,7 @@ ${summary}${sections}
           return { id, t, req: qm ? parseMoney(qm[0]) : null, n: "", l: lm ? (lm[1].toLowerCase() === "ltra" ? "ltra" : "other") : null };
         }).filter(Boolean);
         const notesById = {};
-        for (const line of String(a[F.notes] || "").split(/\r?\n/)) { const m = line.match(/^\s*(\d{2}\.\d{2}\.\d{2}\.\d{4})\s*:\s*(.*)$/); if (m) notesById[m[1]] = m[2].trim(); }
+        for (const line of String(notesText).split(/\r?\n/)) { const m = line.match(/^\s*(\d{2}\.\d{2}\.\d{2}\.\d{4})\s*:\s*(.*)$/); if (m) notesById[m[1]] = m[2].trim(); }
         for (const e of entries) if (notesById[e.id]) e.n = notesById[e.id];
         out[key] = { who: a[F.name] || "Reviewer", agency: a[F.agency] || "", wg, picks: normalizeEntries(entries), when: a[F.when] || null };
       }
