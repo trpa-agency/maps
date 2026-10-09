@@ -640,6 +640,7 @@
       "Other / not sure": "Other" };
     const WORKING_GROUPS = Object.keys(WG_SHORT);
     const wgShort = (w) => WG_SHORT[w] || w || "";
+    const wgRank = (w) => { if (!w) return 999; const i = WORKING_GROUPS.indexOf(w); return i < 0 ? 99 : i; };   // roster order; unknown groups after it; none last
     const EIP_ID = /^\d{2}\.\d{2}\.\d{2}\.\d{4}$/;   // only projects with a Tracker number can be picked
     // Criteria named in the Lake Tahoe Restoration Act for prioritizing projects. A reviewer ticks the ones a pick meets;
     // they are written into the note as "Criteria addressed: ..." so the submission reads like the master sheet.
@@ -934,7 +935,8 @@
       return Math.abs(pk.req - ref) / ref > 0.1 ? `Differs from the Tracker's ${pk.l === "ltra" ? "LTRA " : ""}request of ${fmtUSD(ref)}. One of the two should be updated.` : "";
     }
     const HEADER_TIPS = {
-      "#": "Position in this list's group ranking: pinned projects first, then Priority 1 votes, then Priority 2, then Priority 3, then name. Blank until someone picks the project.",
+      "#": "Position in this list's group ranking: pinned projects first, then Priority 1 votes, then Priority 2, then Priority 3, then name. Blank until someone picks the project. The table opens grouped by working group, as the master sheet is; click this header to see the plain ranking.",
+      "Working group": "The working group most of this project's reviewers belong to, which decides where it sits on the master sheet. The table opens in this order: groups in roster order, then rank within each group, then projects nobody has picked.",
       "": "Pin a project to fund it first, or exclude it from the pool. Click again to undo.",
       "Project #": "EIP project number. Opens the project's fact sheet on the EIP Project Tracker.",
       "Project": "Project name as entered on the Tracker. Click a row for details, criteria, and notes.",
@@ -955,7 +957,6 @@
       "Votes": "How many reviewers gave this project Priority 1, 2, and 3 on this list, from everyone whose picks have been sent or imported. Your own count once you send them. Hover for names, requests, and notes.",
       "Group priority": "The tier most reviewers gave this project on this list (ties go to the higher priority), with the number of reviewers who picked it.",
       "Group request": "The median of reviewers' funding requests for this project on this list. Hover for each reviewer's figure.",
-      "Working group": "The working group most of this project's reviewers belong to, which decides where it sits on the master sheet.",
       "Note": "Your note on the project: how the criteria were considered, what changed from last year. Sent with your picks. Tick criteria in the detail card.",
       "Criteria": "How many of the eleven LTRA criteria you ticked for this pick. Click the row to tick them.",
       "Thresholds": "Threshold categories the project reports against on the Tracker.",
@@ -991,7 +992,9 @@
         columnDefs: withTips([
           // Reviewer-first order: the reviewer's own controls (priority, request, criteria, note) next to the rank, then the project,
           // then the group tallies; Tracker detail follows, most of it hidden until "All columns" (applyColumnVisibility).
-          { headerName: "#", field: "rank", width: 54, type: "rightAligned", pinned: pinL, valueFormatter: (p) => p.value ?? "", comparator: (a, b) => (a ?? 1e9) - (b ?? 1e9), sort: "asc", sortingOrder: ["asc", null] },
+          // Default order is the master sheet's: by working group (roster order, projects nobody picked last), then rank within the group.
+          // Clicking # alone restores the plain ranking; shift-click adds a second sort.
+          { headerName: "#", field: "rank", width: 54, type: "rightAligned", pinned: pinL, valueFormatter: (p) => p.value ?? "", comparator: (a, b) => (a ?? 1e9) - (b ?? 1e9), sort: "asc", sortIndex: 1, sortingOrder: ["asc", null] },
           { headerName: "My priority", colId: "myTier", width: 118, pinned: pinL, sortingOrder: bestFirst,
             valueGetter: (p) => { const pk = myPick(p.data.id); return pk && pk.l === listKey && pk.t ? pk.t : null; },
             valueFormatter: (p) => p.value ? `Priority ${p.value}` : "",
@@ -1019,7 +1022,8 @@
             tooltipValueGetter: (p) => p.data.tl.n ? `${p.data.tl.n} reviewer${p.data.tl.n === 1 ? "" : "s"}: ${p.data.tl.v[1]} said Priority 1, ${p.data.tl.v[2]} Priority 2, ${p.data.tl.v[3]} Priority 3` : "" },
           { headerName: "Group request", colId: "gReq", width: 112, type: "rightAligned", sortingOrder: bigFirst, valueGetter: (p) => p.data.tl.med, valueFormatter: (p) => p.value == null ? "" : fmtFull(p.value),
             comparator: (a, b) => (a ?? -1) - (b ?? -1), tooltipValueGetter: (p) => p.data.tl.rows.filter(r => r.req != null).map(r => `${r.who}: ${fmtFull(r.req)}`).join("\n") || "" },
-          { headerName: "Working group", colId: "wg", width: 130, valueGetter: (p) => p.data.tl.wg, valueFormatter: (p) => wgShort(p.value), tooltipValueGetter: (p) => p.value || "" },
+          { headerName: "Working group", colId: "wg", width: 130, valueGetter: (p) => p.data.tl.wg, valueFormatter: (p) => wgShort(p.value), tooltipValueGetter: (p) => p.value || "",
+            sort: "asc", sortIndex: 0, sortingOrder: ["asc", "desc", null], comparator: (a, b) => wgRank(a) - wgRank(b) || String(a).localeCompare(String(b)) },
           { headerName: "Lead implementer", field: "lead", flex: 1.2, minWidth: 160 },
           { headerName: "Tracker LTRA", colId: "tltra", width: 170, valueGetter: (p) => trackerLtra(p.data) },
           { headerName: "Est. cost", field: "cost", ...money },
@@ -1074,7 +1078,7 @@
       if (!gridApi) return;
       const all = gridApi.getAllGridColumns().map(c => c.getColId());
       const show = new Set(fullView ? all : REVIEWER_COLS);
-      if (fullView || reviewerCount() > 0) { show.add("votes"); show.add("gTier"); show.add("gReq"); if (listKey === "ltra") show.add("wg"); }
+      if (fullView || reviewerCount() > 0) { show.add("votes"); show.add("gTier"); show.add("gReq"); show.add("wg"); }
       if (fullView || envelope() > 0 || pins.size || excluded.size) { show.add("fund"); show.add("flags"); }
       if (fullView || listKey === "ltra") show.add("tltra");
       gridApi.setColumnsVisible(all.filter(c => show.has(c)), true);
