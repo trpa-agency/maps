@@ -138,10 +138,10 @@
     .chips button i { width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--gray-muted)); display: inline-block; opacity: 0.4; }
     .chips button.on { border-color: var(--c, var(--eip-blue)); color: var(--eip-navy); background: color-mix(in srgb, var(--c, var(--eip-blue)) 10%, #fff); }
     .chips button.on i { opacity: 1; }
-    .chips.crit { gap: 0.25rem; }
-    .chips.crit button { font-weight: 500; font-size: 0.7rem; padding: 0.1rem 0.5rem; min-height: 24px; }
-    .chips.req { margin-top: -0.1rem; }
-    .chips.req button { font-weight: 600; font-size: 0.7rem; padding: 0.2rem 0.6rem; border-color: var(--blue-text); color: var(--blue-text); background: #fff; }
+    .chips.crit { gap: 0.2rem; }
+    .chips.crit button { font-weight: 500; font-size: 0.68rem; padding: 0.05rem 0.45rem; min-height: 22px; }
+    .chips.req { margin-top: -0.15rem; gap: 0.2rem; }
+    .chips.req button { font-weight: 600; font-size: 0.68rem; padding: 0.1rem 0.55rem; min-height: 24px; border-color: var(--blue-text); color: var(--blue-text); background: #fff; }
     .chips.req button:hover { background: var(--eip-blue-light); }
 
     .search-box { display: flex; align-items: center; gap: 0.5rem; background: var(--gray-bg);
@@ -273,9 +273,9 @@
     .legend .lg-note { color: var(--gray-text); margin-top: 0.15rem; }
     /* The detail card sits over the whole map-plus-table column so the pick form is reachable on a laptop */
     #detailCard { position: absolute; left: 12px; top: 12px; z-index: 16; width: min(420px, calc(100% - 24px)); max-height: calc(100% - 24px);
-      overflow: auto; background: rgba(255,255,255,0.98); border-radius: 12px; box-shadow: var(--shadow); padding: 0.7rem 0.85rem 0.8rem; font-size: 0.78rem; }
+      overflow: auto; background: rgba(255,255,255,0.98); border-radius: 12px; box-shadow: var(--shadow); padding: 0.5rem 0.85rem 0.6rem; font-size: 0.78rem; }
     #detailCard .dc-head { display: flex; align-items: flex-start; gap: 0.5rem; }
-    #detailCard .dc-head h3 { font-size: 0.92rem; font-weight: 700; line-height: 1.25; flex: 1; }
+    #detailCard .dc-head h3 { font-size: 0.9rem; font-weight: 700; line-height: 1.2; flex: 1; }
     #detailCard .dc-sub { font-size: 0.72rem; color: var(--gray-text); margin: 0.1rem 0 0.3rem; line-height: 1.4; }
     #detailCard .dc-grid { display: grid; grid-template-columns: auto 1fr; gap: 0.15rem 0.6rem; font-size: 0.72rem; margin-bottom: 0.45rem; }
     #detailCard .dc-grid dt { color: var(--gray-text); font-weight: 600; white-space: nowrap; }
@@ -284,7 +284,8 @@
     #detailCard .dc-desc.open { -webkit-line-clamp: unset; }
     #detailCard details.more { border-top: none; padding-top: 0; margin-top: 0.3rem; }
     #detailCard details.more > summary { font-size: 0.74rem; }
-    .dc-pick { border: 1.5px solid var(--eip-blue); border-radius: 10px; padding: 0.45rem 0.6rem; margin: 0.3rem 0; display: flex; flex-direction: column; gap: 0.3rem; background: rgba(0,125,195,0.04); }
+    .dc-pick { border: 1.5px solid var(--eip-blue); border-radius: 10px; padding: 0.4rem 0.6rem; margin: 0.25rem 0; display: flex; flex-direction: column; gap: 0.25rem; background: rgba(0,125,195,0.04); }
+    .dc-pick textarea.plain { min-height: 2.2rem; padding: 0.25rem 0.6rem; }
     .dc-pick h4 { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--blue-text); }
     .dc-desc-btn { all: unset; display: block; cursor: pointer; }
     .dc-desc-btn:focus-visible { outline: 2px solid var(--eip-blue); outline-offset: 2px; }
@@ -547,9 +548,9 @@
           <button class="d-btn" id="drawerToggle" title="Collapse / expand"><calcite-icon icon="chevron-down" scale="s" id="drawerToggleIcon"></calcite-icon></button>
         </div>
         <div id="drawerBody">
-          <calcite-notice id="startHint" icon="lightbulb" kind="brand" scale="s" width="full" closable style="margin:0.4rem 0.8rem 0">
+          <div style="padding:0.4rem 0.8rem 0"><calcite-notice id="startHint" icon="lightbulb" kind="brand" scale="s" width="full" closable>
             <div slot="message"><b>Start here:</b> click 1, 2, or 3 under <em>My priority</em> on a project your working group wants funded.
-            Type a request in the <em>Request</em> column, or click the row for the request, criteria, and a note.</div></calcite-notice>
+            Type a request in the <em>Request</em> column, or click the row for the request, criteria, and a note.</div></calcite-notice></div>
           <div id="gridWrap"><div class="load-wrap" id="gridLoading"><calcite-loader inline scale="m" label="Loading EIP projects"></calcite-loader> Loading EIP projects from the Tracker snapshot</div><div id="grid" hidden></div></div>
           <div id="chartsWrap" hidden>
             <div class="tiles" id="tiles"></div>
@@ -592,7 +593,8 @@
         <li><strong>How picks combine.</strong> For each project the tool counts how many reviewers called it Priority 1, Priority 2, and
           Priority 3. The ranking is by Priority 1 votes, then Priority 2, then Priority 3, then name. <em>Group priority</em> is the priority most
           reviewers gave (ties go to the higher priority); <em>Group request</em> is the median of their requests; <em>Working group</em> is the
-          group most of its reviewers named (ties go to the reviewer who gave the higher priority). Projects nobody picked have no rank. The
+          group most of its reviewers named (ties go to the reviewer who gave the higher priority, then to the first reviewer by name).
+          Projects nobody picked have no rank. The
           table opens grouped by working group, as the master sheet is. The working group leads settle the final priority and dollar figure
           from this picture.</li>
         <li><strong>Projects you can pick from.</strong> Filter by focus area, implementer, stage, funding status, Tracker LTRA history, program,
@@ -714,6 +716,7 @@
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     }
     const csvCell = (v) => { const s = v == null ? "" : String(v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    const csvQuote = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;   // always quoted, for footer lines
     function parseCsv(text) {
       const rows = []; let row = [], cell = "", q = false;
       for (let i = 0; i < text.length; i++) {
@@ -901,7 +904,7 @@
       list.filter(p => p.excluded).forEach(p => { p.rank = null; p.fund = "excluded"; });
       allocate(active);
       pool = [...active, ...list.filter(p => p.excluded).sort((a, b) => a.name.localeCompare(b.name))];
-      renderListCounts();
+      renderListCounts(); syncAria();
       renderGrid(); renderMap(); renderLegend(); renderStatus(); updateSendState(); chartsDirty = true;
       if (activeTab === "charts") renderCharts();
       if (selectedId) showDetail(selectedId, false);
@@ -952,7 +955,7 @@
     }
     const HEADER_TIPS = {
       "#": "Position in this list's group ranking: pinned projects first, then Priority 1 votes, then Priority 2, then Priority 3, then name. Blank until someone picks the project. The table opens grouped by working group, as the master sheet is; click this header to see the plain ranking.",
-      "Working group": "The working group most of this project's reviewers belong to, which decides where it sits on the master sheet. The table opens in this order: groups in roster order, then rank within each group, then projects nobody has picked.",
+      "Working group": "The working group most of this project's reviewers belong to, which decides where it sits on the master sheet (ties go to the reviewer with the higher priority, then the first by name). The table opens in this order: groups in roster order, then rank within each group, then projects nobody has picked.",
       "": "Pin a project to fund it first, or exclude it from the list. Click again to undo.",
       "Project #": "EIP project number. Opens the project's fact sheet on the EIP Project Tracker.",
       "Project": "Project name as entered on the Tracker. Click a row for details, criteria, and notes.",
@@ -1072,6 +1075,8 @@
         },
         onCellValueChanged: (e) => { const col = e.column.getColId(); if (col === "note") gridApi.refreshCells({ rowNodes: [e.node], force: true }); else recompute(); },
         onFilterChanged: () => renderDrawerCount(),
+        // Clicking # off the default two-column sort would clear every sort; fall back to plain rank order with the indicator showing
+        onSortChanged: () => { if (!gridApi.getColumnState().some(c => c.sort)) gridApi.applyColumnState({ state: [{ colId: "rank", sort: "asc" }], defaultState: { sort: null } }); },
       });
       $("quickFilter").addEventListener("input", () => gridApi.setGridOption("quickFilterText", $("quickFilter").value));
       $("colsBtn").addEventListener("click", () => { fullView = !fullView; $("colsBtn").classList.toggle("on", fullView); $("colsBtn").textContent = fullView ? "Fewer columns" : "All columns"; applyColumnVisibility(); });
@@ -1089,7 +1094,14 @@
     function renderStartHint() {
       $("startHint").toggleAttribute("open", !(startHintDismissed || Object.values(review.picks).some(p => p.t) || reviewerCount() > 0 && Object.keys(remote).includes(myKey())));
     }
-    $("startHint").addEventListener("calciteNoticeClose", () => { startHintDismissed = true; });
+    // BeforeClose fires on the click itself; Close only after the transition, which a hidden tab may never finish
+    ["calciteNoticeBeforeClose", "calciteNoticeClose"].forEach(ev => $("startHint").addEventListener(ev, () => { startHintDismissed = true; }));
+    // Keep ARIA state in step with the classes after resets and share links (click handlers do it themselves)
+    function syncAria() {
+      document.querySelectorAll(".chips:not(.crit) button").forEach(b => b.setAttribute("aria-pressed", String(b.classList.contains("on"))));
+      document.querySelectorAll(".seg[role=radiogroup] button").forEach(b => b.setAttribute("aria-checked", String(b.classList.contains("active"))));
+      document.querySelectorAll(".dtabs button").forEach(b => b.setAttribute("aria-selected", String(b.classList.contains("active"))));
+    }
     function applyColumnVisibility() {
       if (!gridApi) return;
       const all = gridApi.getAllGridColumns().map(c => c.getColId());
@@ -1330,7 +1342,7 @@
           p.ltraAsk ?? "", p.ltraSecured ?? "", p.targeted ?? "", p.fstatus, p.fiveYear ? "yes" : "", p.spent ?? "", p.fund, p.pinned ? "yes" : "", p.excluded ? "yes" : "",
           mine.t ? LISTS[mine.l].label : "", mine.t ?? "", mine.req != null ? Math.round(mine.req) : "", critText(mine.c), mine.n ?? "", p.thresholds.join(", "), p.funding.join("; "), p.requests, p.tags.join("; "), p.jurisdictions.join("; "), p.factUrl || p.url].map(csvCell).join(","));
       }
-      const meta = csvCell(`# EIP Funding Priorities ${todayLocal()} · ${LISTS[listKey].long} · ${SURVEY.roundLabel} · available ${envelope() > 0 ? fmtM(envelope() * 1e6) : "none"} · ${listReviewerCount(listKey)} reviewer lists with picks on this list · ranked by Priority 1, 2, and 3 votes`);
+      const meta = csvQuote(`# EIP Funding Priorities ${todayLocal()} · ${LISTS[listKey].long} · ${SURVEY.roundLabel} · available ${envelope() > 0 ? fmtM(envelope() * 1e6) : "none"} · ${listReviewerCount(listKey)} reviewer lists with picks on this list · ranked by Priority 1, 2, and 3 votes`);
       download(`eip-priorities-${listKey}-${todayLocal()}.csv`, "﻿" + lines.join("\r\n") + "\r\n" + meta + "\r\n");
     });
     // The combined list for one of the two lists, grouped by working group as the master sheet is: groups in roster order
@@ -1363,7 +1375,7 @@
       }
       lines.push(["ALL", "", "", "TOTAL, all priorities:", Math.round(m.all)].map(csvCell).join(","));
       lines.push(["ALL", "", "", "TOTAL, Priority 1:", Math.round(m.p1)].map(csvCell).join(","));
-      lines.push(csvCell(`# ${SURVEY.roundLabel} · ${LISTS[listKey].long} · exported ${todayLocal()} · ${listReviewerCount(listKey)} reviewer lists with picks on this list · request = median of reviewers' requests · Federal agency and project type are not in the Tracker`));
+      lines.push(csvQuote(`# ${SURVEY.roundLabel} · ${LISTS[listKey].long} · exported ${todayLocal()} · ${listReviewerCount(listKey)} reviewer lists with picks on this list · request = median of reviewers' requests · Federal agency and project type are not in the Tracker`));
       download(`eip-${listKey}-master-${SURVEY.round}-${todayLocal()}.csv`, "﻿" + lines.join("\r\n") + "\r\n");
     });
     // Print-friendly master list: a standalone page in a new tab with the summary table, one section per working group,
@@ -1453,7 +1465,7 @@ ${summary}${sections}
           const w = byWho[who] = byWho[who] || { wg: iW >= 0 ? (r[iW] || "").trim() : "", entries: [] };
           w.entries.push({ id: idm[0], t, req: iQ >= 0 ? parseMoney(r[iQ]) : null, n: iN >= 0 ? (r[iN] || "") : "", c, l });
         }
-        for (const [who, w] of Object.entries(byWho)) { imports[who] = { wg: w.wg, picks: normalizeEntries(w.entries) }; added += Object.keys(imports[who].picks).length; }
+        for (const [who, w] of Object.entries(byWho)) { imports[who] = { wg: w.wg, picks: normalizeEntries(w.entries), when: Date.now() }; added += Object.keys(imports[who].picks).length; }
       }
       saveLS(LS_IMPORTS, imports); e.target.value = "";
       renderReviewers(); recompute();
@@ -1471,7 +1483,7 @@ ${summary}${sections}
         rows.push(`<li class="rrow${me ? " me" : ""}" title="Sent${rv.when ? " " + new Date(rv.when).toLocaleString() : ""}. P1, P2, P3 are Priority 1, 2, 3 picks."><span class="r-who">${escHtml(whoLabel(rv.who, rv.agency))}${me ? ' <em>you</em>' : ""}<small>${escHtml(wgShort(rv.wg) || "no working group")} · ${counts(rv.picks)}</small></span><span class="r-when">${escHtml(when)}</span></li>`);
       }
       for (const [who, m] of Object.entries(imports)) {
-        rows.push(`<li class="rrow csv" title="Imported from a CSV. P1, P2, P3 are Priority 1, 2, 3 picks."><span class="r-who">${escHtml(who)} <em>CSV</em><small>${escHtml(wgShort(m.wg) || "no working group")} · ${counts(m.picks || {})}</small></span><button class="r-x" data-who="${escHtml(who)}" title="Remove this imported list" aria-label="Remove ${escHtml(who)}">&times;</button></li>`);
+        rows.push(`<li class="rrow csv" title="Imported from a CSV${m.when ? " on " + new Date(m.when).toLocaleString() : ""}. P1, P2, P3 are Priority 1, 2, 3 picks."><span class="r-who">${escHtml(who)} <em>CSV</em><small>${escHtml(wgShort(m.wg) || "no working group")} · ${counts(m.picks || {})}</small></span>${m.when ? `<span class="r-when">${escHtml(apDate(m.when, false))}</span>` : ""}<button class="r-x" data-who="${escHtml(who)}" title="Remove this imported list" aria-label="Remove ${escHtml(who)}">&times;</button></li>`);
       }
       el.innerHTML = rows.length ? `<div class="r-head">Picks received</div><ul class="rlist">${rows.join("")}</ul>` : "";
     }
@@ -1645,7 +1657,7 @@ ${summary}${sections}
     ["programSel", "leadSel", "fundSel", "tagSel"].forEach(id => $(id).addEventListener("calciteComboboxChange", recompute));
     ["nonEip", "pickedOnly", "ltraHintOnly"].forEach(id => $(id).addEventListener("calciteSwitchChange", recompute));
     $("searchInput").addEventListener("input", recomputeSoon);
-    const syncChips = () => document.querySelectorAll(".chips:not(.crit) button").forEach(b => b.setAttribute("aria-pressed", b.classList.contains("on") ? "true" : "false"));
+    const syncChips = syncAria;
     [$("stageChips"), $("focusChips"), $("fundChips")].forEach(el => el.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; b.classList.toggle("on"); syncChips(); recompute(); }));
     const segClick = (id, fn) => $(id).addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return;
       $(id).querySelectorAll("button").forEach(x => { x.classList.toggle("active", x === b); x.setAttribute("aria-checked", String(x === b)); }); fn(b.dataset.v); });
