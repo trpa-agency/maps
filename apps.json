@@ -249,7 +249,7 @@
       "category": "eip",
       "url": "eip/funding-priorities.html",
       "thumbnail": "assets/thumbs/eip-priorities.svg",
-      "description": "Build the EIP priority lists together: working groups mark projects Priority 1, 2, or 3 with a funding request on an LTRA list and an Other list, picks combine across reviewers, and the result exports in the master sheet layout.",
+      "description": "Build the EIP priority lists together: working groups mark projects Priority 1, 2, or 3 with a funding request on a Lake Tahoe Restoration Act (LTRA) list and an Other list, picks combine across reviewers, and the result exports in the master sheet layout.",
       "tags": [
         "EIP",
         "Funding",

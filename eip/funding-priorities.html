@@ -29,11 +29,14 @@
       --eip-green-light: #E8F5E0; --eip-blue-light: #E0F0FA; --eip-orange-light: #FDE8DC;
       --gray-bg: #F4F6F9; --gray-border: #E1E5EC; --gray-text: #5F6B7E; --gray-muted: #8A93A3;
       --white: #FFFFFF;
-      --t1: #2F6B13; --t1-bg: #E8F5E0; --t2: #8A6D00; --t2-bg: #FFF4CC; --t3: #B5430E; --t3-bg: #FDE8DC;
+      /* Priority ramp, derived from the EIP palette (darkened green and orange with an earth tone between); each pair clears 4.5:1 */
+      --t1: #2F6B13; --t1-bg: #E8F5E0; --t2: #735A00; --t2-bg: #FFF4CC; --t3: #B5430E; --t3-bg: #FDE8DC;
       --green-dark: #2F6B13;
+      /* EIP Blue measures 4.45:1 on white, just under AA for text, so text-sized blue uses this darker step; fills keep EIP Blue */
+      --blue-text: #0068A8; --alert-text: #B5430E;
       --shadow: 0 2px 10px rgba(11,31,65,0.16);
       --font: 'Lexend Deca', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      --calcite-color-brand: var(--eip-blue);
+      --calcite-color-brand: var(--blue-text);
       --calcite-color-brand-hover: var(--eip-navy);
       --calcite-color-brand-press: var(--eip-navy);
       --calcite-font-family: var(--font);
@@ -42,8 +45,9 @@
     [hidden] { display: none !important; }
     html, body { height: 100%; font-family: var(--font); color: var(--eip-navy); background: var(--gray-bg); overflow: hidden; }
     body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; font-size: 14px; }
-    a { color: var(--eip-blue); }
+    a { color: var(--blue-text); }
     :focus-visible { outline: 2px solid var(--eip-blue); outline-offset: 2px; }
+    h1, h2, h3, h4 { font-weight: 700; }
     calcite-button { border-radius: 999px; --calcite-button-corner-radius: 999px; }
 
     /* ── Header ── */
@@ -55,15 +59,15 @@
     .hdr-brand { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
     .hdr-brand img { height: 38px; width: auto; }
     .htitle { display: flex; flex-direction: column; line-height: 1.15; }
-    .hagency { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--eip-blue); }
-    .hname { font-size: 0.98rem; font-weight: 700; color: var(--eip-navy); }
-    .hdr-back { font-size: 0.72rem; font-weight: 600; color: var(--gray-muted); text-decoration: none;
+    .hagency { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--blue-text); }
+    .hname { font-size: 0.98rem; font-weight: 700; color: var(--eip-navy); margin: 0; }
+    .hdr-back { font-size: 0.72rem; font-weight: 600; color: var(--gray-text); text-decoration: none;
       border-left: 1px solid var(--gray-border); padding-left: 0.7rem; white-space: nowrap; }
-    .hdr-back:hover { color: var(--eip-blue); }
+    .hdr-back:hover { color: var(--blue-text); }
     .hdr-links { display: flex; align-items: center; gap: 0.2rem; }
     .hdr-sep { width: 1px; height: 18px; background: var(--gray-border); margin: 0 0.3rem; }
     .beta-chip { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-      color: var(--eip-orange); border: 1px solid var(--eip-orange); border-radius: 999px; padding: 0.1rem 0.5rem; margin-right: 0.4rem; }
+      color: var(--alert-text); border: 1px solid var(--alert-text); border-radius: 999px; padding: 0.1rem 0.5rem; margin-right: 0.4rem; }
 
     /* ── Body: side panel + map ── */
     #appBody { flex: 1 1 auto; display: flex; min-height: 0; }
@@ -85,7 +89,7 @@
       padding: 0.45rem 0.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.1rem; transition: background 120ms; }
     .list-switch button b { font-size: 0.82rem; font-weight: 700; }
     .list-switch button span { font-size: 0.7rem; color: var(--gray-text); }
-    .list-switch button.active { background: var(--eip-blue); color: #fff; }
+    .list-switch button.active { background: var(--blue-text); color: #fff; }
     .list-switch button.active span { color: rgba(255,255,255,0.88); }
     .list-help { font-size: 0.76rem; color: var(--gray-text); line-height: 1.45; margin-top: 0.4rem; }
     .deadline { font-size: 0.74rem; color: var(--eip-navy); background: var(--eip-blue-light); border-radius: 8px; padding: 0.35rem 0.6rem; line-height: 1.45; margin-top: 0.5rem; }
@@ -96,10 +100,10 @@
       font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--gray-text); }
     .sec-num { display: inline-flex; align-items: center; justify-content: center; width: 1.15rem; height: 1.15rem;
       border-radius: 50%; background: var(--eip-blue); color: #fff; font-size: 0.66rem; }
-    .sec-count { font-weight: 600; color: var(--eip-blue); text-transform: none; letter-spacing: 0; font-size: 0.68rem; }
-    .sec-tool { margin-left: auto; border: none; background: transparent; cursor: pointer; color: var(--gray-text);
-      padding: 0.1rem 0.3rem; border-radius: 999px; line-height: 0; font-family: var(--font); font-size: 0.66rem; display: inline-flex; align-items: center; gap: 0.2rem; }
-    .sec-tool:hover { color: var(--eip-blue); background: var(--gray-bg); }
+    .sec-count { font-weight: 600; color: var(--blue-text); text-transform: none; letter-spacing: 0; font-size: 0.7rem; }
+    .sec-tool { margin-left: auto; border: 1px solid var(--gray-border); background: #fff; cursor: pointer; color: var(--gray-text); min-height: 28px;
+      padding: 0.2rem 0.65rem; border-radius: 999px; line-height: 1.2; font-family: var(--font); font-size: 0.7rem; font-weight: 600; letter-spacing: 0; text-transform: none; display: inline-flex; align-items: center; gap: 0.2rem; }
+    .sec-tool:hover { color: var(--blue-text); border-color: var(--blue-text); background: var(--gray-bg); }
     .sec-help { margin: -0.25rem 0 0; font-size: 0.78rem; line-height: 1.45; color: var(--gray-text); }
     .sec-help ol { margin: 0.3rem 0 0; padding-left: 1.2rem; }
     .sec-help li { margin-bottom: 0.15rem; }
@@ -114,29 +118,30 @@
     textarea.plain { border-radius: 10px; resize: vertical; min-height: 2.6rem; }
     select:focus, input:focus, textarea:focus { outline: none; border-color: var(--eip-blue); }
     .seg { display: flex; border-radius: 999px; overflow: hidden; border: 1px solid var(--gray-border); }
-    .seg button { flex: 1; border: none; background: #fff; cursor: pointer; font-family: var(--font);
+    .seg button { flex: 1; border: none; background: #fff; cursor: pointer; font-family: var(--font); min-height: 30px;
       font-size: 0.72rem; font-weight: 600; color: var(--gray-text); padding: 0.35rem 0.4rem; transition: all 120ms; }
-    .seg button.active { background: var(--eip-blue); color: #fff; font-weight: 700; }
+    .seg button.active { background: var(--blue-text); color: #fff; font-weight: 700; }
     .seg.tiers button.active[data-v="1"] { background: var(--t1); } .seg.tiers button.active[data-v="2"] { background: var(--t2); } .seg.tiers button.active[data-v="3"] { background: var(--t3); }
     .toggle { display: flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; color: var(--eip-navy); font-weight: 400; }
     .lbl { display: inline-flex; align-items: center; gap: 0.25rem; cursor: help; }
     .lbl .info-i { color: var(--gray-muted); flex: 0 0 auto; }
     details.more { border-top: 1px dashed var(--gray-border); padding-top: 0.4rem; display: flex; flex-direction: column; gap: 0.55rem; }
-    details.more > summary { cursor: pointer; font-size: 0.7rem; font-weight: 700; color: var(--eip-blue); list-style: none; display: flex; align-items: center; gap: 0.3rem; }
+    details.more > summary { cursor: pointer; font-size: 0.72rem; font-weight: 700; color: var(--blue-text); list-style: none; display: flex; align-items: center; gap: 0.3rem; min-height: 28px; }
     details.more > summary::before { content: ""; width: 0; height: 0; border-left: 5px solid currentColor; border-top: 4px solid transparent; border-bottom: 4px solid transparent; transition: transform 120ms; }
     details.more[open] > summary::before { transform: rotate(90deg); }
     details.more > summary::-webkit-details-marker { display: none; }
 
     .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
-    .chips button { border: 1.5px solid var(--gray-border); background: #fff; color: var(--gray-text); cursor: pointer;
-      font-family: var(--font); font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 999px;
+    .chips button { border: 1.5px solid var(--gray-border); background: #fff; color: var(--gray-text); cursor: pointer; min-height: 28px;
+      font-family: var(--font); font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.65rem; border-radius: 999px;
       display: inline-flex; align-items: center; gap: 0.35rem; transition: all 120ms; }
     .chips button i { width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--gray-muted)); display: inline-block; opacity: 0.4; }
     .chips button.on { border-color: var(--c, var(--eip-blue)); color: var(--eip-navy); background: color-mix(in srgb, var(--c, var(--eip-blue)) 10%, #fff); }
     .chips button.on i { opacity: 1; }
-    .chips.crit button { font-weight: 500; font-size: 0.72rem; padding: 0.15rem 0.5rem; }
+    .chips.crit { gap: 0.25rem; }
+    .chips.crit button { font-weight: 500; font-size: 0.7rem; padding: 0.1rem 0.5rem; min-height: 24px; }
     .chips.req { margin-top: -0.1rem; }
-    .chips.req button { font-weight: 600; font-size: 0.7rem; padding: 0.15rem 0.55rem; border-color: var(--eip-blue); color: var(--eip-blue); background: #fff; }
+    .chips.req button { font-weight: 600; font-size: 0.7rem; padding: 0.2rem 0.6rem; border-color: var(--blue-text); color: var(--blue-text); background: #fff; }
     .chips.req button:hover { background: var(--eip-blue-light); }
 
     .search-box { display: flex; align-items: center; gap: 0.5rem; background: var(--gray-bg);
@@ -180,20 +185,20 @@
     body.drawer-collapsed #drawerBody, body.drawer-collapsed #drawerTools { display: none; }
     .drawer-head { display: flex; align-items: center; gap: 0.6rem; padding: 0.3rem 0.8rem; border-bottom: 1px solid var(--gray-border); flex-wrap: wrap; }
     .dtabs { display: flex; gap: 0.1rem; }
-    .dtabs button { border: none; background: transparent; cursor: pointer; font-family: var(--font); font-size: 0.74rem; font-weight: 700;
-      letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray-text); padding: 0.35rem 0.7rem; border-bottom: 2px solid transparent; }
-    .dtabs button.active { color: var(--eip-blue); border-bottom-color: var(--eip-blue); }
+    .dtabs button { border: none; background: transparent; cursor: pointer; font-family: var(--font); font-size: 0.74rem; font-weight: 700; min-height: 32px;
+      letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray-text); padding: 0.4rem 0.7rem; border-bottom: 2px solid transparent; }
+    .dtabs button.active { color: var(--blue-text); border-bottom-color: var(--eip-blue); }
     .drawer-head .d-count { font-size: 0.74rem; color: var(--eip-navy); font-weight: 600; }
     .drawer-head .spacer { flex: 1; }
     #drawerTools { display: flex; align-items: center; gap: 0.4rem; }
     #quickFilter { width: 170px; font-family: var(--font); font-size: 0.76rem; border: 1.5px solid var(--gray-border); border-radius: 999px; padding: 0.22rem 0.7rem; }
     #quickFilter:focus { outline: none; border-color: var(--eip-blue); }
-    .d-btn { border: none; background: transparent; cursor: pointer; color: var(--gray-text); padding: 0.15rem 0.3rem; border-radius: 999px; line-height: 0; }
-    .d-btn:hover { color: var(--eip-blue); background: var(--gray-bg); }
-    .d-txt { border: 1px solid var(--gray-border); background: #fff; cursor: pointer; color: var(--gray-text); font-family: var(--font);
-      font-size: 0.68rem; font-weight: 700; padding: 0.18rem 0.6rem; border-radius: 999px; white-space: nowrap; }
-    .d-txt:hover { color: var(--eip-blue); border-color: var(--eip-blue); }
-    .d-txt.on { background: var(--eip-blue); color: #fff; border-color: var(--eip-blue); }
+    .d-btn { border: none; background: transparent; cursor: pointer; color: var(--gray-text); padding: 0.3rem 0.4rem; border-radius: 999px; line-height: 0; min-width: 28px; min-height: 28px; }
+    .d-btn:hover { color: var(--blue-text); background: var(--gray-bg); }
+    .d-txt { border: 1px solid var(--gray-border); background: #fff; cursor: pointer; color: var(--gray-text); font-family: var(--font); min-height: 28px;
+      font-size: 0.7rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 999px; white-space: nowrap; }
+    .d-txt:hover { color: var(--blue-text); border-color: var(--blue-text); }
+    .d-txt.on { background: var(--blue-text); color: #fff; border-color: var(--blue-text); }
     #drawerBody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
     #gridWrap { flex: 1 1 auto; min-height: 0; }
     #grid { height: 100%; width: 100%; }
@@ -205,12 +210,13 @@
     .tile.hi b { color: var(--green-dark); }
     .start-hint { display: flex; align-items: center; gap: 0.6rem; margin: 0.4rem 0.8rem 0; padding: 0.45rem 0.75rem; border-radius: 10px; background: var(--eip-blue-light);
       color: var(--eip-navy); font-size: 0.8rem; line-height: 1.4; }
-    .start-hint b { color: var(--eip-blue); }
-    .start-hint button { margin-left: auto; border: none; background: transparent; cursor: pointer; color: var(--gray-text); font-size: 1rem; line-height: 1; padding: 0 0.3rem; border-radius: 999px; }
-    .start-hint button:hover { color: var(--eip-blue); background: #fff; }
+    .start-hint b { color: var(--blue-text); }
+    .start-hint button { margin-left: auto; border: none; background: transparent; cursor: pointer; color: var(--gray-text); font-size: 1.1rem; line-height: 1; padding: 0.2rem 0.5rem; min-width: 28px; min-height: 28px; border-radius: 999px; }
+    .start-hint button:hover { color: var(--blue-text); background: #fff; }
+    .load-wrap { display: flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 2rem 1rem; color: var(--gray-text); font-size: 0.8rem; }
     .charts-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 0.6rem; min-height: 260px; }
     .chart-card { background: #fff; border: 1px solid var(--gray-border); border-radius: 10px; padding: 0.4rem 0.5rem 0.2rem; display: flex; flex-direction: column; min-width: 0; }
-    .chart-card h4 { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--gray-text); padding: 0 0.3rem; }
+    .chart-card h3 { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--gray-text); padding: 0 0.3rem; }
     .chart-card .plot { flex: 1 1 auto; min-height: 220px; }
 
     /* grid cell bits */
@@ -221,17 +227,17 @@
     .badge.cut { background: var(--eip-orange-light); color: #B5430E; }
     .badge.unpriced { background: var(--gray-bg); color: var(--gray-text); border: 1px solid var(--gray-border); }
     .badge.fully { background: #fff; color: #2F6B13; border: 1px solid var(--eip-green); }
-    .badge.partial { background: var(--eip-blue-light); color: var(--eip-blue); }
-    .badge.pinned { background: var(--eip-blue-light); color: var(--eip-blue); }
-    .badge.hint { background: #fff; color: var(--eip-blue); border: 1px solid var(--eip-blue); }
+    .badge.partial { background: var(--eip-blue-light); color: var(--blue-text); }
+    .badge.pinned { background: var(--eip-blue-light); color: var(--blue-text); }
+    .badge.hint { background: #fff; color: var(--blue-text); border: 1px solid var(--eip-blue); }
     .tier { display: inline-flex; align-items: center; justify-content: center; min-width: 1.5rem; height: 1.3rem; padding: 0 0.4rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; vertical-align: middle; }
     .tier.t1 { background: var(--t1-bg); color: var(--t1); } .tier.t2 { background: var(--t2-bg); color: var(--t2); } .tier.t3 { background: var(--t3-bg); color: var(--t3); }
-    .tier.empty { background: transparent; color: var(--gray-muted); border: 1px dashed var(--gray-border); font-weight: 500; }
-    /* inline 1 / 2 / 3 picker in the My priority cell */
-    .tpick { display: inline-flex; gap: 2px; align-items: center; vertical-align: middle; }
-    .tpick button { width: 24px; height: 22px; border-radius: 6px; border: 1px solid var(--gray-border); background: #fff; color: var(--gray-text); cursor: pointer;
-      font-family: var(--font); font-size: 0.72rem; font-weight: 700; padding: 0; line-height: 1; }
-    .tpick button:hover { border-color: var(--eip-blue); color: var(--eip-blue); }
+    .tier.empty { background: transparent; color: var(--gray-text); border: 1px dashed var(--gray-border); font-weight: 500; }
+    /* inline 1 / 2 / 3 picker in the My priority cell (row height 36, so 28 tall is the most it can take) */
+    .tpick { display: inline-flex; gap: 3px; align-items: center; vertical-align: middle; }
+    .tpick button { width: 30px; height: 28px; border-radius: 6px; border: 1px solid var(--gray-border); background: #fff; color: var(--gray-text); cursor: pointer;
+      font-family: var(--font); font-size: 0.76rem; font-weight: 700; padding: 0; line-height: 1; }
+    .tpick button:hover { border-color: var(--blue-text); color: var(--blue-text); }
     .tpick button.on[data-t="1"] { background: var(--t1-bg); color: var(--t1); border-color: var(--t1); }
     .tpick button.on[data-t="2"] { background: var(--t2-bg); color: var(--t2); border-color: var(--t2); }
     .tpick button.on[data-t="3"] { background: var(--t3-bg); color: var(--t3); border-color: var(--t3); }
@@ -240,16 +246,16 @@
     .tv span { font-size: 0.68rem; font-weight: 700; padding: 0 0.35rem; border-radius: 6px; }
     .tv .v1 { background: var(--t1-bg); color: var(--t1); } .tv .v2 { background: var(--t2-bg); color: var(--t2); } .tv .v3 { background: var(--t3-bg); color: var(--t3); }
     .tv span.z { opacity: 0.35; }
-    .flag-btn { border: none; background: transparent; cursor: pointer; color: var(--gray-muted); padding: 0 0.15rem; line-height: 0; vertical-align: middle; border-radius: 999px; }
-    .flag-btn:hover { color: var(--eip-blue); background: var(--gray-bg); }
-    .flag-btn.on.pin { color: var(--eip-blue); }
-    .flag-btn.on.ex { color: var(--eip-orange); }
-    .ag-row.row-excluded { color: var(--gray-muted); }
+    .flag-btn { border: none; background: transparent; cursor: pointer; color: var(--gray-text); padding: 0.3rem 0.3rem; line-height: 0; vertical-align: middle; border-radius: 999px; min-width: 26px; min-height: 26px; }
+    .flag-btn:hover { color: var(--blue-text); background: var(--gray-bg); }
+    .flag-btn.on.pin { color: var(--blue-text); }
+    .flag-btn.on.ex { color: var(--alert-text); }
+    .ag-row.row-excluded { color: var(--gray-text); }
     .ag-row.row-excluded .ag-cell:not([col-id="flags"]) { text-decoration: line-through; text-decoration-color: rgba(107,118,136,0.45); }
     .ag-row.row-pinned-proj { background: rgba(0,125,195,0.06); }
     .ag-row.row-selected-proj { background: rgba(241,96,34,0.10) !important; }
     .cov { font-size: 0.7rem; color: var(--gray-text); }
-    .drift { color: var(--eip-orange); font-weight: 700; cursor: help; }
+    .drift { color: var(--alert-text); font-weight: 700; cursor: help; }
     .ag-tooltip { white-space: pre-line !important; max-width: 420px; line-height: 1.4; }
 
     .toast { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 40;
@@ -270,7 +276,7 @@
       overflow: auto; background: rgba(255,255,255,0.98); border-radius: 12px; box-shadow: var(--shadow); padding: 0.7rem 0.85rem 0.8rem; font-size: 0.78rem; }
     #detailCard .dc-head { display: flex; align-items: flex-start; gap: 0.5rem; }
     #detailCard .dc-head h3 { font-size: 0.92rem; font-weight: 700; line-height: 1.25; flex: 1; }
-    #detailCard .dc-sub { font-size: 0.72rem; color: var(--gray-text); margin: 0.15rem 0 0.45rem; line-height: 1.45; }
+    #detailCard .dc-sub { font-size: 0.72rem; color: var(--gray-text); margin: 0.1rem 0 0.3rem; line-height: 1.4; }
     #detailCard .dc-grid { display: grid; grid-template-columns: auto 1fr; gap: 0.15rem 0.6rem; font-size: 0.72rem; margin-bottom: 0.45rem; }
     #detailCard .dc-grid dt { color: var(--gray-text); font-weight: 600; white-space: nowrap; }
     #detailCard .dc-grid dd { color: var(--eip-navy); }
@@ -278,16 +284,18 @@
     #detailCard .dc-desc.open { -webkit-line-clamp: unset; }
     #detailCard details.more { border-top: none; padding-top: 0; margin-top: 0.3rem; }
     #detailCard details.more > summary { font-size: 0.74rem; }
-    .dc-pick { border: 1.5px solid var(--eip-blue); border-radius: 10px; padding: 0.5rem 0.6rem; margin: 0.4rem 0; display: flex; flex-direction: column; gap: 0.4rem; background: rgba(0,125,195,0.04); }
-    .dc-pick h4 { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--eip-blue); }
+    .dc-pick { border: 1.5px solid var(--eip-blue); border-radius: 10px; padding: 0.45rem 0.6rem; margin: 0.3rem 0; display: flex; flex-direction: column; gap: 0.3rem; background: rgba(0,125,195,0.04); }
+    .dc-pick h4 { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--blue-text); }
+    .dc-desc-btn { all: unset; display: block; cursor: pointer; }
+    .dc-desc-btn:focus-visible { outline: 2px solid var(--eip-blue); outline-offset: 2px; }
     .dc-pick .field { font-size: 0.7rem; }
-    .dc-group { font-size: 0.72rem; line-height: 1.45; margin: 0.3rem 0; }
+    .dc-group { font-size: 0.72rem; line-height: 1.4; margin: 0.15rem 0; }
     .dc-score { display: flex; align-items: baseline; gap: 0.4rem; margin: 0.3rem 0 0.3rem; }
     .dc-score b { font-size: 1.2rem; color: var(--eip-blue); }
     .dc-score span { font-size: 0.66rem; color: var(--gray-text); }
     .dc-links { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.5rem; }
-    .dc-close { border: none; background: transparent; cursor: pointer; color: var(--gray-text); line-height: 0; padding: 0.1rem; border-radius: 999px; }
-    .dc-close:hover { background: var(--gray-bg); color: var(--eip-blue); }
+    .dc-close { border: none; background: transparent; cursor: pointer; color: var(--gray-text); line-height: 0; padding: 0.35rem; min-width: 28px; min-height: 28px; border-radius: 999px; }
+    .dc-close:hover { background: var(--gray-bg); color: var(--blue-text); }
 
     /* Dialogs */
     .dlg { font-size: 0.86rem; line-height: 1.6; color: var(--eip-navy); }
@@ -301,10 +309,11 @@
     .send-list .fine { display: inline-block; }
     .send-list .note-line { display: block; width: 100%; font-style: italic; padding-left: 2rem; }
     .send-h { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--gray-text); margin: 0.5rem 0 0.2rem; }
-    .send-err { font-size: 0.78rem; color: #B5430E; background: var(--eip-orange-light); border-radius: 8px; padding: 0.4rem 0.6rem; }
+    .send-err { font-size: 0.78rem; color: var(--alert-text); background: var(--eip-orange-light); border-radius: 8px; padding: 0.4rem 0.6rem; }
 
     @media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr 1fr; } .charts-grid .chart-card:first-child { grid-column: 1 / -1; } }
-    @media (max-width: 1024px) {
+    /* Below 1024 the columns stack (a 1024-wide laptop keeps the side-by-side layout) */
+    @media (max-width: 1023px) {
       .hdr-back, .link-label, .hagency, .hdr-sep { display: none; }
       .hdr-brand img { height: 30px; }
       #appBody { flex-direction: column; }
@@ -328,18 +337,18 @@
 
   <header id="appHeader">
     <div class="hdr-brand">
-      <img src="../tools/assets/eip-logo.png" alt="Lake Tahoe Environmental Improvement Program" />
+      <img src="../tools/assets/eip-logo-76.png" alt="Lake Tahoe Environmental Improvement Program" width="auto" height="38" />
       <a href="index.html" class="hdr-back">&larr; EIP maps</a>
       <div class="htitle">
         <span class="hagency">Environmental Improvement Program</span>
-        <span class="hname">Funding Priorities</span>
+        <h1 class="hname">Funding Priorities</h1>
       </div>
     </div>
     <div class="hdr-links">
       <span class="beta-chip">Beta</span>
-      <calcite-button href="https://eip.laketahoeinfo.org/projects/five-year" target="_blank" rel="noopener" icon-start="list"
+      <calcite-button href="https://eip.laketahoeinfo.org/projects/five-year" target="_blank" rel="noopener noreferrer" icon-start="list"
         appearance="transparent" kind="neutral" scale="s" title="EIP 5-Year Project List on the Project Tracker" label="EIP 5-Year Project List"></calcite-button>
-      <calcite-button href="https://trpa-agency.github.io/EIP/html/projects-map.html" target="_blank" rel="noopener" icon-start="map"
+      <calcite-button href="https://trpa-agency.github.io/EIP/html/projects-map.html" target="_blank" rel="noopener noreferrer" icon-start="map"
         appearance="transparent" kind="neutral" scale="s" title="EIP Projects Map" label="EIP Projects Map"></calcite-button>
       <span class="hdr-sep" aria-hidden="true"></span>
       <calcite-button id="resetAllBtn" icon-start="reset" appearance="transparent" kind="neutral" scale="s"
@@ -364,7 +373,7 @@
         </div>
         <p class="list-help">The <b>LTRA list</b> is the annual Lake Tahoe Restoration Act (LTRA) funding request. The <b>Other list</b> is for
           every other funding source. Both draw on the same projects; you decide which list a project goes on.</p>
-        <div class="deadline" id="deadline"></div>
+        <calcite-notice open icon="calendar" kind="brand" scale="s" width="full" style="margin-top:0.5rem"><div slot="message" id="deadline"></div></calcite-notice>
       </div>
 
       <section class="panel-sec" id="pickSec">
@@ -374,8 +383,8 @@
         <div class="sec-help">
           <ol>
             <li>In the table, click <em>1</em>, <em>2</em>, or <em>3</em> under <em>My priority</em> for each project your working group wants funded from this list.</li>
-            <li>Click the row to enter a dollar request, tick the LTRA criteria it meets, and write a note.</li>
-            <li>Press <em>Send my picks</em> at the bottom of this panel. You can send again later; only your latest submission counts.</li>
+            <li>Type a dollar request in the <em>Request</em> column, or click the row to pick one from the Tracker's figures, tick the LTRA criteria the project meets, and write a note.</li>
+            <li>Press <em>Send my picks</em> at the bottom of this panel. You can send again later; only what you sent last counts.</li>
           </ol>
         </div>
         <div class="row">
@@ -389,7 +398,7 @@
         <label class="field"><span class="lbl" title="The EIP working group your picks belong to. The combined LTRA list is grouped by working group, as the master sheet is.">Working group <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <select id="reviewerWg"></select>
         </label>
-        <label class="field"><span class="lbl" title="Used only to match your submissions so your latest one counts. It goes to TRPA's ArcGIS Online and is not shown to other reviewers.">Email <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <label class="field"><span class="lbl" title="Used only to match what you send so your latest picks count. It goes to TRPA's ArcGIS Online and is not shown to other reviewers.">Email <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <input id="reviewerEmail" type="email" class="plain" placeholder="you@agency.gov" autocomplete="email" />
         </label>
         <div class="row" id="surveyRow" style="align-items:center">
@@ -398,16 +407,16 @@
         </div>
         <div id="reviewerChips" aria-label="Reviewers whose picks are loaded"></div>
         <details class="more">
-          <summary>Convener tools and CSV fallback</summary>
+          <summary>Working group lead tools and CSV fallback</summary>
           <div class="row">
-            <calcite-button id="printBtn" icon-start="print" appearance="solid" kind="brand" scale="s" width="full" title="A readable version of this list's combined picks, one section per working group with totals, for printing or saving as PDF">Print master list</calcite-button>
+            <calcite-button id="printBtn" icon-start="print" appearance="solid" kind="brand" scale="s" width="full" title="A readable version of this list's combined picks, one section per working group with totals, for printing or saving as PDF">Print master sheet</calcite-button>
             <calcite-button id="masterBtn" icon-start="file-csv" appearance="outline" kind="brand" scale="s" width="full" title="The same combined list in the master sheet column layout: one block per working group with Priority 1 and all-priority totals">Master sheet CSV</calcite-button>
           </div>
           <div class="row">
-            <calcite-button id="importScoresBtn" icon-start="upload" appearance="outline" kind="brand" scale="s" width="full" title="Convener: import one or more reviewers' CSV files">Import CSV</calcite-button>
+            <calcite-button id="importScoresBtn" icon-start="upload" appearance="outline" kind="brand" scale="s" width="full" title="For working group leads: import one or more reviewers' CSV files">Import CSV</calcite-button>
             <input id="importFile" type="file" accept=".csv,text/csv" multiple hidden />
           </div>
-          <calcite-button id="exportScoresBtn" icon-start="download" appearance="transparent" kind="neutral" scale="s" width="full" title="If sending fails: download your picks as a CSV to email to the convener">CSV of my picks (if sending fails)</calcite-button>
+          <calcite-button id="exportScoresBtn" icon-start="download" appearance="transparent" kind="neutral" scale="s" width="full" title="If sending fails: download your picks as a CSV to email to your working group lead">CSV of my picks (if sending fails)</calcite-button>
         </details>
       </section>
 
@@ -423,16 +432,16 @@
                    title="Narrows the list to projects whose name, EIP number, or lead implementer contains this text." />
         </div>
         <label class="toggle" title="Only projects with a pick on this list, from you or anyone who has sent picks">
-          <calcite-switch id="pickedOnly" scale="s"></calcite-switch>
+          <calcite-switch id="pickedOnly" scale="s" label="Only picked projects"></calcite-switch>
           <span>Only picked projects</span>
         </label>
         <label class="field"><span class="lbl" title="The EIP focus area the Tracker assigns each project. Click to turn a focus area on or off; Unassigned holds projects with no focus area.">Focus area <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <div class="chips" id="focusChips"></div>
         </label>
         <label class="field"><span class="lbl" title="The organization listed as lead implementer on the Tracker. Pick one or more; empty means any.">Lead implementer <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <calcite-combobox id="leadSel" selection-mode="multiple" scale="s" placeholder="Any implementer" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+          <calcite-combobox id="leadSel" label="Lead implementer" selection-mode="multiple" scale="s" placeholder="Any implementer" max-items="7" overlay-positioning="fixed"></calcite-combobox>
         </label>
-        <label class="field"><span class="lbl" title="Project stage on the Tracker. The pool holds the two forward-looking stages; turn one off to see the other alone.">Stage <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <label class="field"><span class="lbl" title="Project stage on the Tracker. The list holds the two forward-looking stages; turn one off to see the other alone.">Stage <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
           <div class="chips" id="stageChips">
             <button data-v="Planning/Design" class="on">Planning / Design</button>
             <button data-v="Implementation" class="on">Implementation</button>
@@ -447,36 +456,36 @@
           </div>
         </label>
         <label class="toggle" title="Projects whose Tracker record shows a Lake Tahoe Restoration Act request or past LTRA funding. A hint, not a rule: the LTRA list is whatever reviewers put on it.">
-          <calcite-switch id="ltraHintOnly" scale="s"></calcite-switch>
+          <calcite-switch id="ltraHintOnly" scale="s" label="Only projects with LTRA history on the Tracker"></calcite-switch>
           <span>Only projects with LTRA history on the Tracker</span>
         </label>
         <details class="more">
           <summary>More filters</summary>
           <label class="field"><span class="lbl" title="The program under the focus area (for example Stormwater Management, Forest Restoration, Transportation). Pick one or more; empty means any.">EIP program <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-            <calcite-combobox id="programSel" selection-mode="multiple" scale="s" placeholder="Any program" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+            <calcite-combobox id="programSel" label="EIP program" selection-mode="multiple" scale="s" placeholder="Any program" max-items="7" overlay-positioning="fixed"></calcite-combobox>
           </label>
           <label class="field"><span class="lbl" title="Public tags applied on the Tracker, such as Climate Resilience or a corridor plan. Pick one or more; empty means any.">Tag <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-            <calcite-combobox id="tagSel" selection-mode="multiple" scale="s" placeholder="Any public tag" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+            <calcite-combobox id="tagSel" label="Tag" selection-mode="multiple" scale="s" placeholder="Any public tag" max-items="7" overlay-positioning="fixed"></calcite-combobox>
           </label>
           <label class="field"><span class="lbl" title="Funding sources with expenditures reported on the project. Pick one or more to see projects those sources have already invested in.">Funding source already on the project <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-            <calcite-combobox id="fundSel" selection-mode="multiple" scale="s" placeholder="Any source" max-items="7" overlay-positioning="fixed"></calcite-combobox>
+            <calcite-combobox id="fundSel" label="Funding source already on the project" selection-mode="multiple" scale="s" placeholder="Any source" max-items="7" overlay-positioning="fixed"></calcite-combobox>
           </label>
           <label class="field"><span class="lbl" title="Where the project is. California and Nevada each include projects that span both states.">State <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-            <div class="seg" id="stateSeg" role="radiogroup">
-              <button data-v="" class="active">All</button>
-              <button data-v="CA">California</button>
-              <button data-v="NV">Nevada</button>
+            <div class="seg" id="stateSeg" role="radiogroup" aria-label="State">
+              <button data-v="" class="active" role="radio" aria-checked="true">All</button>
+              <button data-v="CA" role="radio" aria-checked="false">California</button>
+              <button data-v="NV" role="radio" aria-checked="false">Nevada</button>
             </div>
           </label>
           <label class="toggle">
-            <calcite-switch id="nonEip" scale="s"></calcite-switch>
+            <calcite-switch id="nonEip" scale="s" label="Include non-EIP projects tracked on Lake Tahoe Info"></calcite-switch>
             <span class="lbl" title="Lake Tahoe Info tracks a few dozen projects that are not part of the EIP. They are left out unless you turn this on.">Include non-EIP projects tracked on Lake Tahoe Info</span>
           </label>
         </details>
       </section>
 
       <section class="panel-sec collapsed" id="envSec">
-        <h2 class="sec-title">Convener: available funding
+        <h2 class="sec-title">For working group leads: available funding
           <button id="envToggle" class="sec-tool" title="Show or hide the available funding settings">Show</button>
         </h2>
         <p class="sec-help">Enter the dollars available for this list and the table shows which picked projects it covers, going down the
@@ -493,9 +502,9 @@
           <button data-v="100">$100M</button><button data-v="250">$250M</button><button data-v="">Clear</button>
         </div>
         <label class="field"><span class="lbl" title="Skip it and keep going funds smaller projects further down the ranking with what is left. Stop there funds nothing past the first project that does not fit.">When the next project does not fit <svg class="info-i" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2M8 4.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <div class="seg" id="modeSeg" role="radiogroup">
-            <button data-v="skip" class="active" title="Skip the project that does not fit and keep funding smaller ones further down">Skip it and keep going</button>
-            <button data-v="strict" title="A strict cut line: nothing past the first project that does not fit">Stop there</button>
+          <div class="seg" id="modeSeg" role="radiogroup" aria-label="When the next project does not fit">
+            <button data-v="skip" class="active" role="radio" aria-checked="true" title="Skip the project that does not fit and keep funding smaller ones further down">Skip it and keep going</button>
+            <button data-v="strict" role="radio" aria-checked="false" title="A strict cut line: nothing past the first project that does not fit">Stop there</button>
           </div>
         </label>
       </section>
@@ -524,9 +533,9 @@
       <div class="toast" id="toast"></div>
       <div id="drawer">
         <div class="drawer-head">
-          <div class="dtabs" role="tablist">
-            <button data-tab="list" class="active" role="tab">Ranked list</button>
-            <button data-tab="charts" role="tab">Funding and charts</button>
+          <div class="dtabs" role="tablist" aria-label="Table or charts">
+            <button data-tab="list" class="active" role="tab" aria-selected="true" aria-controls="gridWrap">Ranked list</button>
+            <button data-tab="charts" role="tab" aria-selected="false" aria-controls="chartsWrap">Funding and charts</button>
           </div>
           <span class="d-count" id="drawerCount"></span>
           <span class="spacer"></span>
@@ -538,15 +547,16 @@
           <button class="d-btn" id="drawerToggle" title="Collapse / expand"><calcite-icon icon="chevron-down" scale="s" id="drawerToggleIcon"></calcite-icon></button>
         </div>
         <div id="drawerBody">
-          <div class="start-hint" id="startHint" hidden><span><b>Start here:</b> click 1, 2, or 3 under <em>My priority</em> on a project your working group wants funded.
-            Then click the row to add a request, criteria, and a note.</span><button id="startHintX" title="Dismiss" aria-label="Dismiss">&times;</button></div>
-          <div id="gridWrap"><div id="grid"></div></div>
+          <calcite-notice id="startHint" icon="lightbulb" kind="brand" scale="s" width="full" closable style="margin:0.4rem 0.8rem 0">
+            <div slot="message"><b>Start here:</b> click 1, 2, or 3 under <em>My priority</em> on a project your working group wants funded.
+            Type a request in the <em>Request</em> column, or click the row for the request, criteria, and a note.</div></calcite-notice>
+          <div id="gridWrap"><div class="load-wrap" id="gridLoading"><calcite-loader inline scale="m" label="Loading EIP projects"></calcite-loader> Loading EIP projects from the Tracker snapshot</div><div id="grid" hidden></div></div>
           <div id="chartsWrap" hidden>
             <div class="tiles" id="tiles"></div>
             <div class="charts-grid">
-              <div class="chart-card"><h4>Where the funding runs out</h4><div class="plot" id="chartCum"></div></div>
-              <div class="chart-card"><h4>Requests by working group and priority</h4><div class="plot" id="chartWg"></div></div>
-              <div class="chart-card"><h4>Requests by lead implementer</h4><div class="plot" id="chartLead"></div></div>
+              <div class="chart-card"><h3>Where the funding runs out</h3><div class="plot" id="chartCum"></div></div>
+              <div class="chart-card"><h3>Requests by working group and priority</h3><div class="plot" id="chartWg"></div></div>
+              <div class="chart-card"><h3>Requests by lead implementer and priority</h3><div class="plot" id="chartLead"></div></div>
             </div>
           </div>
         </div>
@@ -569,33 +579,34 @@
   <calcite-dialog id="aboutDialog" modal heading="About EIP Funding Priorities" width-scale="m">
     <div class="dlg">
       <p>A shared workbench for the Environmental Improvement Program's annual priority lists. It reads the project records the
-        <a href="https://eip.laketahoeinfo.org/" target="_blank" rel="noopener">EIP Project Tracker</a> publishes, collects each working group's
-        priorities, combines them, and exports them in the layout of the master priority sheet. There is no automatic scoring: every
+        <a href="https://eip.laketahoeinfo.org/" target="_blank" rel="noopener noreferrer">EIP Project Tracker</a> publishes, collects each working group's
+        priorities, combines them, and exports them in the layout of the master sheet. There is no automatic scoring: every
         priority on the list was set by a reviewer.</p>
       <ol>
         <li><strong>Two lists.</strong> The LTRA list is the annual Lake Tahoe Restoration Act request. The Other list holds priorities for
-          every other funding source. Both draw from one pool, EIP projects in planning or implementation, and the reviewer decides which
+          every other funding source. Both draw on the same projects, EIP projects in planning or implementation, and the reviewer decides which
           list a project goes on.</li>
-        <li><strong>Picks.</strong> For each project a reviewer sets a priority (1, 2, or 3, the same tiers as the master sheet), a funding
+        <li><strong>Picks.</strong> For each project a reviewer sets a priority (1, 2, or 3, the same as the master sheet), a funding
           request in dollars, the LTRA criteria the project meets, and a note. <em>Send my picks</em> sends both lists to the survey's layer
-          after a confirmation. Submissions land in TRPA's ArcGIS Online; the tool reads everyone's latest picks back (without email addresses).</li>
+          after a confirmation. Sent picks land in TRPA's ArcGIS Online; the tool reads everyone's latest picks back (without email addresses).</li>
         <li><strong>How picks combine.</strong> For each project the tool counts how many reviewers called it Priority 1, Priority 2, and
-          Priority 3. The ranking is by Priority 1 votes, then Priority 2, then Priority 3, then name. <em>Group priority</em> is the tier most
+          Priority 3. The ranking is by Priority 1 votes, then Priority 2, then Priority 3, then name. <em>Group priority</em> is the priority most
           reviewers gave (ties go to the higher priority); <em>Group request</em> is the median of their requests; <em>Working group</em> is the
           group most of its reviewers named (ties go to the reviewer who gave the higher priority). Projects nobody picked have no rank. The
-          working group leads settle the final tier and dollar figure from this picture.</li>
-        <li><strong>Candidate pool.</strong> Filter by focus area, implementer, stage, funding status, Tracker LTRA history, program, tag,
-          funding source, and state.</li>
+          table opens grouped by working group, as the master sheet is. The working group leads settle the final priority and dollar figure
+          from this picture.</li>
+        <li><strong>Projects you can pick from.</strong> Filter by focus area, implementer, stage, funding status, Tracker LTRA history, program,
+          tag, funding source, and state.</li>
         <li><strong>Available funding.</strong> Enter a dollar amount for the current list. Picked projects are funded in rank order by their
-          request (or unfunded need where none was given). Pinned projects go first; excluded projects leave the pool.</li>
-        <li><strong>Print master list and Master sheet CSV.</strong> The combined list you are viewing, grouped by working group with Priority 1
+          request (or unfunded need where none was given). Pinned projects go first; excluded projects leave the list.</li>
+        <li><strong>Print master sheet and Master sheet CSV.</strong> The combined list you are viewing, grouped by working group with Priority 1
           and all-priority totals. The print version opens as a clean page for printing or saving as PDF; the CSV follows the column order of
-          the master sheet. Federal Agency and Project Type are not in the Tracker and are left for the leads to fill in.</li>
+          the master sheet. Federal agency and project type are not in the Tracker and are left for the leads to fill in.</li>
       </ol>
       <h3>Data</h3>
       <ul>
-        <li><a href="https://eip.laketahoeinfo.org/" target="_blank" rel="noopener">EIP Project Tracker</a> (Lake Tahoe Info), via the nightly snapshot in
-          <a href="https://github.com/trpa-agency/EIP" target="_blank" rel="noopener">trpa-agency/EIP</a>. <span id="aboutData"></span></li>
+        <li><a href="https://eip.laketahoeinfo.org/" target="_blank" rel="noopener noreferrer">EIP Project Tracker</a> (Lake Tahoe Info), via the nightly snapshot in
+          <a href="https://github.com/trpa-agency/EIP" target="_blank" rel="noopener noreferrer">trpa-agency/EIP</a>. <span id="aboutData"></span></li>
       </ul>
       <h3>Caveats</h3>
       <ul id="aboutCaveats">
@@ -607,7 +618,8 @@
           request at all. The two are not reconciled automatically; one of them should be updated.</li>
         <li>Notes travel as one line per project, so line breaks in a note become spaces. Only EIP projects with a Tracker number can be
           picked; non-EIP projects tracked on Lake Tahoe Info appear for reference when switched on.</li>
-        <li>Unfunded need, secured funding, and cost are self-reported by implementers and only as current as their last Tracker update.</li>
+        <li><em>Unfunded need</em> is the estimated total cost minus the funding the implementer reports as secured. It, secured funding, and
+          cost are self-reported by implementers and only as current as their last Tracker update.</li>
         <li>Your own picks count toward the group once they are sent. Picks and notes are also kept in this browser until you clear them.</li>
         <li>The table opens in a reviewer view. <em>All columns</em> above the table adds focus area, stage, secured and spent amounts, and
           the rest of the Tracker record.</li>
@@ -632,7 +644,7 @@
     const JURIS = ["City of South Lake Tahoe", "Douglas County, NV", "El Dorado County, CA", "Placer County, CA", "Washoe County, NV",
       "Carson City County, NV", "Tahoe Regional Planning Agency", "U.S. Forest Service - Lake Tahoe Basin Management Unit", "Alpine County"];
     const LISTS = { ltra: { label: "LTRA", long: "LTRA list" }, other: { label: "Other", long: "Other list" } };
-    const TIER_COLOR = { 1: "#2F6B13", 2: "#8A6D00", 3: "#B5430E" };   // one tier palette for badges, map rings, and charts
+    const TIER_COLOR = { 1: "#2F6B13", 2: "#735A00", 3: "#B5430E" };   // one priority palette for badges, map rings, and charts (matches --t1/--t2/--t3)
     // EIP working groups as named in the current annual prioritization process, with short names for tight spaces. Edit when the roster changes.
     const WG_SHORT = { "Tahoe Fire and Fuels Team": "TFFT", "Water Infrastructure for Fire Suppression Working Group": "Water Infrastructure",
       "Stormwater Quality Improvement Committee": "SWQIC", "Tahoe Watershed Improvement Group": "TWIG", "Aquatic Invasive Species Coordinating Committee": "AIS",
@@ -671,7 +683,7 @@
       // goes to picks_text and notes_text (50,000, added Oct 2026) and a trimmed copy to the originals for the form fallback.
       shortLen: 4000, longLen: 50000,
       roundLabel: "FY28 LTRA cycle", // shown in the panel
-      deadline: "Working group lists are due to the EIP Coordinating Committee by Dec. 22, 2026. The LTRA request goes to the Congressional delegation March 15, 2027.",
+      deadline: "Working group lists are due to the EIP Coordinating Committee by Dec. 22, 2026. The LTRA request goes to the congressional delegation March 15, 2027.",
       // Field names as published (three kept their auto-generated names; names are frozen after publishing)
       fields: { name: "reviewer_name", email: "reviewer_email", agency: "agency", key: "reviewer_key_filled_in_by_the_t", round: "funding_round_filled_in_by_the",
         picks: "your_ranked_picks_project_numbe", notes: "notes", picksLong: "picks_text", notesLong: "notes_text", url: "scenario_url", when: "CreationDate" },
@@ -690,6 +702,9 @@
     const num = (v) => (v == null || v === "" || isNaN(+v)) ? null : +v;
     const median = (a) => { const s = a.filter(x => x != null).sort((x, y) => x - y); if (!s.length) return null; const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
     const todayLocal = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+    // Dates in TRPA style: Jan., Feb., March, April, May, June, July, Aug., Sept., Oct., Nov., Dec.
+    const AP_MONTHS = ["Jan.", "Feb.", "March", "April", "May", "June", "July", "Aug.", "Sept.", "Oct.", "Nov.", "Dec."];
+    const apDate = (d, withYear = true) => { d = d instanceof Date ? d : new Date(d); return `${AP_MONTHS[d.getMonth()]} ${d.getDate()}${withYear ? `, ${d.getFullYear()}` : ""}`; };
     function toast(msg, ms = 2600) {
       const t = $("toast"); t.textContent = msg; t.classList.add("show");
       clearTimeout(toast._t); if (ms) toast._t = setTimeout(() => t.classList.remove("show"), ms);
@@ -812,6 +827,7 @@
       const m = String(text || "").match(/^\s*Criteria addressed:\s*([^.]*)\.?\s*(.*)$/is);
       if (!m) return { c: [], n: String(text || "").trim() };
       const c = m[1].split(/[,;]/).map(s => CRIT_BY_S[s.trim().toLowerCase()]).filter(Boolean);
+      if (!c.length) return { c: [], n: String(text).trim() };   // a hand-written criteria sentence stays in the note
       return { c, n: m[2].trim() };
     }
 
@@ -840,7 +856,7 @@
       const wg = Object.keys(wgs).sort((a, b) => wgs[b] - wgs[a])[0] || "";
       return { n: rows.length, v, tier, med: median(rows.map(r => r.req)), wg, rows };
     }
-    const pickLine = (x) => `${x.who}${x.wg ? ` (${x.wg})` : ""}: Priority ${x.t}${x.req != null ? `, ${fmtUSD(x.req)}` : ""}${x.n ? ` – ${x.n}` : ""}`;
+    const pickLine = (x) => `${x.who}${x.wg ? ` (${x.wg})` : ""}: Priority ${x.t}${x.req != null ? `, ${fmtUSD(x.req)}` : ""}${x.n ? `. ${x.n}` : ""}`;
     // Normalize raw pick entries from a submission or CSV: one per project, list defaulting to the Tracker hint
     function normalizeEntries(entries) {
       const out = {};
@@ -937,12 +953,12 @@
     const HEADER_TIPS = {
       "#": "Position in this list's group ranking: pinned projects first, then Priority 1 votes, then Priority 2, then Priority 3, then name. Blank until someone picks the project. The table opens grouped by working group, as the master sheet is; click this header to see the plain ranking.",
       "Working group": "The working group most of this project's reviewers belong to, which decides where it sits on the master sheet. The table opens in this order: groups in roster order, then rank within each group, then projects nobody has picked.",
-      "": "Pin a project to fund it first, or exclude it from the pool. Click again to undo.",
+      "": "Pin a project to fund it first, or exclude it from the list. Click again to undo.",
       "Project #": "EIP project number. Opens the project's fact sheet on the EIP Project Tracker.",
       "Project": "Project name as entered on the Tracker. Click a row for details, criteria, and notes.",
       "Focus area": "EIP focus area the Tracker assigns the project to.",
       "Lead implementer": "Organization listed as lead implementer on the Tracker.",
-      "Stage": "Project stage on the Tracker. The pool holds Planning/Design and Implementation.",
+      "Stage": "Project stage on the Tracker. The list holds Planning/Design and Implementation.",
       "Est. cost": "Estimated total cost as reported on the Tracker.",
       "Secured": "Funding the implementer reports as secured on the Tracker.",
       "Tracker LTRA": "What the project's expected funding table on the Tracker says about Lake Tahoe Restoration Act money: requested but not secured, and secured before. A hint for the LTRA list and a check against the request entered here.",
@@ -955,10 +971,10 @@
       "My priority": "Your working group's priority for this project on the list you are viewing: 1 (highest), 2, or 3. Click to set or change; blank removes it. A project can be on one of your two lists, not both.",
       "Request": "Your funding request for this project from this list, in dollars. An orange mark means it differs from what the Tracker shows; one of the two should be updated.",
       "Votes": "How many reviewers gave this project Priority 1, 2, and 3 on this list, from everyone whose picks have been sent or imported. Your own count once you send them. Hover for names, requests, and notes.",
-      "Group priority": "The tier most reviewers gave this project on this list (ties go to the higher priority), with the number of reviewers who picked it.",
+      "Group priority": "The priority most reviewers gave this project on this list (ties go to the higher priority), with the number of reviewers who picked it.",
       "Group request": "The median of reviewers' funding requests for this project on this list. Hover for each reviewer's figure.",
       "Note": "Your note on the project: how the criteria were considered, what changed from last year. Sent with your picks. Tick criteria in the detail card.",
-      "Criteria": "How many of the eleven LTRA criteria you ticked for this pick. Click the row to tick them.",
+      "Criteria": "How many of the 11 LTRA criteria you ticked for this pick. Click the row to tick them.",
       "Thresholds": "Threshold categories the project reports against on the Tracker.",
       "Action priority": "The one EIP action priority the Tracker assigns the project for reporting.",
       "Funding sources": "Funding sources with expenditures on the project, from the Tracker.",
@@ -969,7 +985,7 @@
     };
     function initGrid() {
       const theme = agGrid.themeQuartz.withParams({ accentColor: C.blue, fontFamily: "Lexend Deca, system-ui, sans-serif", fontSize: 12,
-        headerFontSize: 11, headerFontWeight: 700, rowHeight: 32, headerHeight: 32, borderColor: "#E1E5EC", foregroundColor: C.navy });
+        headerFontSize: 11, headerFontWeight: 700, rowHeight: 36, headerHeight: 32, borderColor: "#E1E5EC", foregroundColor: C.navy });
       const money = { type: "rightAligned", width: 100, valueFormatter: (p) => fmtUSD(p.value), comparator: (a, b) => (a ?? -1) - (b ?? -1) };
       const mineStyle = { background: "rgba(0,125,195,0.05)" };
       const flags = (p) => {
@@ -977,7 +993,7 @@
         const pinSvg = `<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M9.5 1.5 14.5 6.5l-1.4 1.4-.7-.7-3.2 3.2.4 2.8-1.1 1.1L5.6 11.4 2.1 14.9l-1-1 3.5-3.5L1.7 7.5l1.1-1.1 2.8.4 3.2-3.2-.7-.7z"/></svg>`;
         const exSvg = `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="8" r="6.4"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5"/></svg>`;
         return `<button class="flag-btn pin ${d.pinned ? "on" : ""}" data-act="pin" title="${d.pinned ? "Unpin" : "Pin: fund this project first"}">${pinSvg}</button>` +
-          `<button class="flag-btn ex ${d.excluded ? "on" : ""}" data-act="ex" title="${d.excluded ? "Return to the pool" : "Exclude from the pool"}">${exSvg}</button>`;
+          `<button class="flag-btn ex ${d.excluded ? "on" : ""}" data-act="ex" title="${d.excluded ? "Return to the list" : "Exclude from the list"}">${exSvg}</button>`;
       };
       const withTips = (defs) => defs.map(c => ({ headerTooltip: HEADER_TIPS[c.headerName], ...c }));
       const otherList = (id) => { const pk = myPick(id); return pk && pk.t && pk.l !== listKey ? pk.l : null; };
@@ -988,7 +1004,7 @@
         tooltipShowDelay: 300, tooltipHideDelay: 4000, tooltipInteraction: true,
         overlayNoRowsTemplate: '<span style="padding:1rem;color:#5F6B7E">No projects match these filters. Reset the filters or clear the search.</span>',
         rowClassRules: { "row-excluded": (p) => p.data.excluded, "row-pinned-proj": (p) => p.data.pinned, "row-selected-proj": (p) => p.data.id === selectedId },
-        defaultColDef: { sortable: true, resizable: true, suppressMovable: true, wrapHeaderText: true, autoHeaderHeight: true, tooltipValueGetter: (p) => p.valueFormatted ?? p.value },
+        defaultColDef: { sortable: true, filter: true, resizable: true, suppressMovable: true, wrapHeaderText: true, autoHeaderHeight: true, tooltipValueGetter: (p) => p.valueFormatted ?? p.value },
         columnDefs: withTips([
           // Reviewer-first order: the reviewer's own controls (priority, request, criteria, note) next to the rank, then the project,
           // then the group tallies; Tracker detail follows, most of it hidden until "All columns" (applyColumnVisibility).
@@ -1009,12 +1025,12 @@
             valueFormatter: (p) => p.value == null ? "" : fmtFull(p.value),
             cellRenderer: (p) => { if (p.value == null) return ""; const d = driftNote(p.data, myPick(p.data.id)); return `${fmtFull(p.value)}${d ? ` <span class="drift" title="${escHtml(d)}">!</span>` : ""}`; },
             cellStyle: mineStyle, comparator: (a, b) => (a ?? -1) - (b ?? -1) },
-          { headerName: "Criteria", colId: "crit", width: 80, type: "rightAligned", sortingOrder: bigFirst, valueGetter: (p) => { const pk = myPick(p.data.id); return pk && pk.c ? pk.c.length : 0; },
+          { headerName: "Criteria", colId: "crit", width: 96, type: "rightAligned", sortingOrder: bigFirst, valueGetter: (p) => { const pk = myPick(p.data.id); return pk && pk.c ? pk.c.length : 0; },
             valueFormatter: (p) => p.value ? `${p.value} of ${CRITERIA.length}` : "", tooltipValueGetter: (p) => critText((myPick(p.data.id) || {}).c) || "Click the row to tick criteria", cellStyle: mineStyle },
           { headerName: "Note", colId: "note", width: 170, editable: (p) => EIP_ID.test(p.data.id), cellEditor: "agTextCellEditor", valueGetter: (p) => (myPick(p.data.id) || {}).n ?? "",
             valueSetter: (p) => setMyPick(p.data.id, { n: String(p.newValue || "") }), cellStyle: mineStyle },
           { headerName: "Project", field: "name", flex: 2, minWidth: 220 },
-          { headerName: "Project #", field: "id", width: 112, cellRenderer: (p) => `<a href="${escHtml(p.data.factUrl || p.data.url)}" target="_blank" rel="noopener" title="Fact sheet on the EIP Project Tracker">${escHtml(p.value)}</a>` },
+          { headerName: "Project #", field: "id", width: 112, cellRenderer: (p) => `<a href="${escHtml(p.data.factUrl || p.data.url)}" target="_blank" rel="noopener noreferrer" title="Fact sheet on the EIP Project Tracker">${escHtml(p.value)}</a>` },
           { headerName: "Votes", colId: "votes", width: 96, sortingOrder: bigFirst, valueGetter: (p) => p.data.tl.v[1] * 10000 + p.data.tl.v[2] * 100 + p.data.tl.v[3],
             cellRenderer: (p) => p.data.tl.n ? votesHtml(p.data.tl.v) : "", tooltipValueGetter: (p) => p.data.tl.rows.map(pickLine).join("\n") || "No sent picks for this project on this list yet" },
           { headerName: "Group priority", colId: "gTier", width: 118, sortingOrder: bestFirst, valueGetter: (p) => p.data.tl.tier,
@@ -1042,7 +1058,7 @@
           { headerName: "Action priority", field: "action", width: 200 },
           { headerName: "Funding sources", field: "funding", width: 200, valueFormatter: (p) => (p.value || []).join("; ") },
           { headerName: "Tags", field: "tags", width: 150, valueFormatter: (p) => (p.value || []).join("; ") },
-          { headerName: "Years", colId: "years", width: 90, valueGetter: (p) => [p.data.implStart, p.data.end].filter(v => v != null).join(" – ") },
+          { headerName: "Years", colId: "years", width: 100, valueGetter: (p) => [p.data.implStart, p.data.end].filter(v => v != null).join(" to ") },
           { headerName: "5-Year List", field: "fiveYear", width: 96, valueFormatter: (p) => p.value ? "yes" : "" },
           { headerName: "Funding requests", field: "requests", width: 260 },
         ]),
@@ -1071,9 +1087,9 @@
     }
     let startHintDismissed = false;
     function renderStartHint() {
-      $("startHint").hidden = startHintDismissed || Object.values(review.picks).some(p => p.t) || reviewerCount() > 0 && Object.keys(remote).includes(myKey());
+      $("startHint").toggleAttribute("open", !(startHintDismissed || Object.values(review.picks).some(p => p.t) || reviewerCount() > 0 && Object.keys(remote).includes(myKey())));
     }
-    $("startHintX").addEventListener("click", () => { startHintDismissed = true; renderStartHint(); });
+    $("startHint").addEventListener("calciteNoticeClose", () => { startHintDismissed = true; });
     function applyColumnVisibility() {
       if (!gridApi) return;
       const all = gridApi.getAllGridColumns().map(c => c.getColId());
@@ -1187,10 +1203,10 @@
           <h4>Your pick${mine.t ? ` · ${LISTS[mine.l].long}` : ""}</h4>` : `<div class="dc-pick" style="border-style:dashed"><h4>Not pickable</h4><span class="field-help">This is not an EIP project, so it has no Tracker number to send. Ask the implementer to add it to the EIP.</span></div><div class="dc-pick" hidden>`}
           <div class="row">
             <label class="field" style="flex:1">List
-              <div class="seg" id="dcList">${Object.keys(LISTS).map(l => `<button data-v="${l}" class="${pickList === l ? "active" : ""}">${LISTS[l].label}</button>`).join("")}</div>
+              <div class="seg" id="dcList" role="radiogroup" aria-label="List">${Object.keys(LISTS).map(l => `<button data-v="${l}" role="radio" aria-checked="${pickList === l}" class="${pickList === l ? "active" : ""}">${LISTS[l].label}</button>`).join("")}</div>
             </label>
             <label class="field" style="flex:1.3">Priority
-              <div class="seg tiers" id="dcTier">${[1, 2, 3].map(t => `<button data-v="${t}" class="${mine.t === t ? "active" : ""}">${t}</button>`).join("")}<button data-v="" class="${mine.t ? "" : "active"}" title="No priority">–</button></div>
+              <div class="seg tiers" id="dcTier" role="radiogroup" aria-label="Priority">${[1, 2, 3].map(t => `<button data-v="${t}" role="radio" aria-checked="${mine.t === t}" class="${mine.t === t ? "active" : ""}">${t}</button>`).join("")}<button data-v="" role="radio" aria-checked="${!mine.t}" class="${mine.t ? "" : "active"}" title="No priority">None</button></div>
             </label>
           </div>
           <label class="field">Request ($)${drift ? ` <span class="drift" title="${escHtml(drift)}">! differs from the Tracker</span>` : ""}
@@ -1198,7 +1214,7 @@
           </label>
           ${reqChips(p)}
           <label class="field">LTRA criteria this project meets
-            <div class="chips crit" id="dcCrit">${CRITERIA.map(c => `<button data-k="${c.k}" class="${(mine.c || []).includes(c.k) ? "on" : ""}" title="${escHtml(c.d)}">${escHtml(c.s)}</button>`).join("")}</div>
+            <div class="chips crit" id="dcCrit">${CRITERIA.map(c => `<button data-k="${c.k}" aria-pressed="${(mine.c || []).includes(c.k)}" class="${(mine.c || []).includes(c.k) ? "on" : ""}" title="${escHtml(c.d)}">${escHtml(c.s)}</button>`).join("")}</div>
           </label>
           <label class="field">Note
             <textarea id="dcNote" class="plain" rows="2" placeholder="How the criteria were considered, what changed from last year">${escHtml(mine.n || "")}</textarea>
@@ -1206,7 +1222,7 @@
         </div>
         <div class="dc-score">${p.rank ? `<b>#${p.rank}</b><span>in the ${LISTS[listKey].long} group ranking</span>` : `<span>${p.excluded ? "Excluded from the list" : "No sent picks on this list yet"}</span>`}
           <span style="margin-left:auto">${fundBadge(p.fund, p.pinned)}</span></div>
-        ${tl.n ? `<div class="dc-group">${tierBadge(tl.tier)} <b>${tl.n}</b> reviewer${tl.n === 1 ? "" : "s"} on the ${LISTS[listKey].long}${tl.med != null ? `, group request ${fmtFull(tl.med)}` : ""}<br>${tl.rows.map(s => `${escHtml(s.who)}${s.wg ? ` (${escHtml(wgShort(s.wg))})` : ""} P${s.t}${s.req != null ? ` ${fmtUSD(s.req)}` : ""}${s.n ? ` <span style="color:var(--gray-text)">${escHtml(s.n)}</span>` : ""}`).join("<br>")}</div>` : ""}
+        ${tl.n ? `<div class="dc-group">${tierBadge(tl.tier)} <b>${tl.n}</b> reviewer${tl.n === 1 ? "" : "s"} on the ${LISTS[listKey].long}${tl.med != null ? `, group request ${fmtFull(tl.med)}` : ""}<br>${tl.rows.slice(0, 3).map(s => `${escHtml(s.who)}${s.wg ? ` (${escHtml(wgShort(s.wg))})` : ""} Priority ${s.t}${s.req != null ? ` ${fmtUSD(s.req)}` : ""}${s.note ? ` <span style="color:var(--gray-text)">${escHtml(s.note)}</span>` : ""}`).join("<br>")}${tl.rows.length > 3 ? `<br><span class="cov">and ${tl.rows.length - 3} more; hover Votes in the table for all</span>` : ""}</div>` : ""}
         <details class="more"><summary>Project details from the Tracker</summary>
         <div class="dc-sub">${escHtml(f.short)} · ${escHtml(p.program)}${p.action ? `<br>${escHtml(p.action)}` : ""}</div>
         <dl class="dc-grid">
@@ -1218,17 +1234,17 @@
           <dt>Thresholds</dt><dd>${p.thresholds.length ? escHtml(p.thresholds.join(", ")) : "none listed"}</dd>
           ${p.locArea || p.jurisdictions.length ? `<dt>Where</dt><dd>${escHtml(p.locArea || (p.basinWide ? "Basin-wide" : p.jurisdictions.join("; ")))}</dd>` : ""}
         </dl>
-        <div class="dc-desc" id="dcDesc" title="Click to expand">${escHtml(p.desc)}</div>
+        <button type="button" class="dc-desc-btn" id="dcDescBtn" aria-expanded="false" title="Show the whole description"><div class="dc-desc" id="dcDesc">${escHtml(p.desc)}</div></button>
         </details>
         <div class="dc-links">
-          <calcite-button href="${escHtml(p.factUrl || p.url)}" target="_blank" rel="noopener" icon-start="launch" appearance="outline" kind="brand" scale="s">Fact sheet</calcite-button>
+          <calcite-button href="${escHtml(p.factUrl || p.url)}" target="_blank" rel="noopener noreferrer" icon-start="launch" appearance="outline" kind="brand" scale="s">Fact sheet</calcite-button>
           ${p.pt ? `<calcite-button id="dcZoom" icon-start="zoom-to-object" appearance="outline" kind="brand" scale="s" title="Zoom the map to this project">Zoom to</calcite-button>` : ""}
           <calcite-button id="dcPin" icon-start="pin" appearance="${p.pinned ? "solid" : "outline"}" kind="brand" scale="s">${p.pinned ? "Unpin" : "Pin"}</calcite-button>
           <calcite-button id="dcEx" icon-start="x-circle" appearance="${p.excluded ? "solid" : "outline"}" kind="neutral" scale="s">${p.excluded ? "Restore" : "Exclude"}</calcite-button>
         </div>`;
       $("detailCard").hidden = !open && $("detailCard").hidden;
       $("dcClose").addEventListener("click", hideDetail);
-      $("dcDesc").addEventListener("click", (e) => e.currentTarget.classList.toggle("open"));
+      $("dcDescBtn").addEventListener("click", (e) => { const open = $("dcDesc").classList.toggle("open"); e.currentTarget.setAttribute("aria-expanded", String(open)); });
       $("dcPin").addEventListener("click", () => toggleFlag(p.id, "pin"));
       $("dcEx").addEventListener("click", () => toggleFlag(p.id, "ex"));
       if ($("dcZoom")) $("dcZoom").addEventListener("click", zoomToSelected);
@@ -1241,7 +1257,7 @@
       $("dcReq").addEventListener("change", () => setReq(parseMoney($("dcReq").value)));
       if ($("dcReqChips")) $("dcReqChips").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; setReq(+b.dataset.v); });
       $("dcCrit").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; const c = new Set((myPick(p.id) || {}).c || []);
-        if (c.has(b.dataset.k)) c.delete(b.dataset.k); else c.add(b.dataset.k); setMyPick(p.id, { c: [...c], l: mine.t ? mine.l : listKey }); b.classList.toggle("on"); if (gridApi) gridApi.refreshCells({ force: true }); });
+        if (c.has(b.dataset.k)) c.delete(b.dataset.k); else c.add(b.dataset.k); setMyPick(p.id, { c: [...c], l: mine.t ? mine.l : listKey }); b.classList.toggle("on"); b.setAttribute("aria-pressed", String(b.classList.contains("on"))); if (gridApi) gridApi.refreshCells({ force: true }); });
       $("dcNote").addEventListener("change", () => { setMyPick(p.id, { n: $("dcNote").value.trim(), l: mine.t ? mine.l : listKey }); if (gridApi) gridApi.refreshCells({ force: true }); });
     }
 
@@ -1282,9 +1298,11 @@
         for (const p of picked) { const k = keyFn(p); agg[k] = agg[k] || { 1: 0, 2: 0, 3: 0 }; agg[k][p.tl.tier] += p.tl.med; }
         let keys = Object.keys(agg).sort((a, b) => (agg[b][1] + agg[b][2] + agg[b][3]) - (agg[a][1] + agg[a][2] + agg[a][3])); if (top) keys = keys.slice(0, top);
         keys.reverse(); const lab = keys.map(labelFn);
-        return [1, 2, 3].map(t => ({ type: "bar", orientation: "h", y: lab, x: keys.map(k => agg[k][t] / 1e6), name: `Priority ${t}`, marker: { color: TIER_COLOR[t] }, hovertemplate: `%{y}<br>Priority ${t}: $%{x:.1f}M<extra></extra>` }));
+        return [1, 2, 3].map(t => ({ type: "bar", orientation: "h", y: lab, x: keys.map(k => agg[k][t] / 1e6), name: `Priority ${t}`, marker: { color: TIER_COLOR[t] }, hovertemplate: `Priority ${t}: $%{x:.1f}M<extra>%{y}</extra>` }));
       };
-      const ax = { ...PL, barmode: "stack", xaxis: { ticksuffix: "M", tickprefix: "$", gridcolor: "#EEF1F5", zeroline: false }, yaxis: { automargin: true, tickfont: { size: 10 } } };
+      // Legend on, so the stacks are not color-only
+      const ax = { ...PL, barmode: "stack", showlegend: true, legend: { orientation: "h", y: 1.08, x: 0, font: { size: 10 } }, margin: { ...PL.margin, t: 26 },
+        xaxis: { ticksuffix: "M", tickprefix: "$", gridcolor: "#EEF1F5", zeroline: false }, yaxis: { automargin: true, tickfont: { size: 10 } } };
       Plotly.react("chartWg", stackBy(p => p.tl.wg || "No working group given", k => wgShort(k)), ax, PLC);
       Plotly.react("chartLead", stackBy(p => p.lead, k => k.length > 28 ? k.slice(0, 26) + "…" : k, 12), ax, PLC);
     }
@@ -1312,7 +1330,7 @@
           p.ltraAsk ?? "", p.ltraSecured ?? "", p.targeted ?? "", p.fstatus, p.fiveYear ? "yes" : "", p.spent ?? "", p.fund, p.pinned ? "yes" : "", p.excluded ? "yes" : "",
           mine.t ? LISTS[mine.l].label : "", mine.t ?? "", mine.req != null ? Math.round(mine.req) : "", critText(mine.c), mine.n ?? "", p.thresholds.join(", "), p.funding.join("; "), p.requests, p.tags.join("; "), p.jurisdictions.join("; "), p.factUrl || p.url].map(csvCell).join(","));
       }
-      const meta = `# EIP Funding Priorities ${todayLocal()} · ${LISTS[listKey].long} · ${SURVEY.roundLabel} · available ${envelope() > 0 ? fmtM(envelope() * 1e6) : "none"} · ${reviewerCount()} reviewer lists · ranked by Priority 1, 2, 3 votes`;
+      const meta = csvCell(`# EIP Funding Priorities ${todayLocal()} · ${LISTS[listKey].long} · ${SURVEY.roundLabel} · available ${envelope() > 0 ? fmtM(envelope() * 1e6) : "none"} · ${listReviewerCount(listKey)} reviewer lists with picks on this list · ranked by Priority 1, 2, and 3 votes`);
       download(`eip-priorities-${listKey}-${todayLocal()}.csv`, "﻿" + lines.join("\r\n") + "\r\n" + meta + "\r\n");
     });
     // The combined list for one of the two lists, grouped by working group as the master sheet is: groups in roster order
@@ -1345,7 +1363,7 @@
       }
       lines.push(["ALL", "", "", "TOTAL, all priorities:", Math.round(m.all)].map(csvCell).join(","));
       lines.push(["ALL", "", "", "TOTAL, Priority 1:", Math.round(m.p1)].map(csvCell).join(","));
-      lines.push(`# ${SURVEY.roundLabel} · ${LISTS[listKey].long} · exported ${todayLocal()} · ${listReviewerCount(listKey)} reviewer lists with picks on this list · request = median of reviewers' requests · Federal Agency and Project Type are not in the Tracker`);
+      lines.push(csvCell(`# ${SURVEY.roundLabel} · ${LISTS[listKey].long} · exported ${todayLocal()} · ${listReviewerCount(listKey)} reviewer lists with picks on this list · request = median of reviewers' requests · Federal agency and project type are not in the Tracker`));
       download(`eip-${listKey}-master-${SURVEY.round}-${todayLocal()}.csv`, "﻿" + lines.join("\r\n") + "\r\n");
     });
     // Print-friendly master list: a standalone page in a new tab with the summary table, one section per working group,
@@ -1354,7 +1372,7 @@
       const m = masterGroups(listKey);
       if (!m.n) { toast(`No ${LISTS[listKey].label} picks have been sent or imported yet.`, 4000); return; }
       const title = `${SURVEY.round} ${listKey === "ltra" ? "LTRA Priority List" : "EIP Priority List, other funding"}`;
-      const when = new Date().toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+      const when = apDate(new Date());
       const fontCss = new URL("../tools/assets/fonts/fonts.css", location.href).href;
       const tier = (t) => `<span class="t t${t}">Priority ${t}</span>`;
       const who = (r) => escHtml(r.who.replace(/ · (.+)$/, " ($1)"));                       // "Ana Lee · CTC" reads as "Ana Lee (CTC)" in a table
@@ -1388,15 +1406,15 @@
   .tot td { font-weight: 700; background: #F4F6F9; border-bottom: 2px solid #E1E5EC; }
   .sum { width: auto; min-width: 50%; margin-bottom: 0.4rem; } .sum td, .sum th { padding: 4px 14px 4px 7px; }
   .t { display: inline-block; font-size: 8.5pt; font-weight: 700; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
-  .t1 { background: #E8F5E0; color: #2F6B13; } .t2 { background: #FFF4CC; color: #8A6D00; } .t3 { background: #FDE8DC; color: #B5430E; }
+  .t1 { background: #E8F5E0; color: #2F6B13; } .t2 { background: #FFF4CC; color: #735A00; } .t3 { background: #FDE8DC; color: #B5430E; }
   .toolbar { position: fixed; top: 10px; right: 14px; } .toolbar button { font: inherit; font-weight: 700; color: #fff; background: #007DC3; border: none; border-radius: 999px; padding: 0.4rem 1rem; cursor: pointer; }
   @media print { .toolbar { display: none; } body { margin: 0; } }
 </style></head><body>
 <div class="toolbar"><button onclick="window.print()">Print or save as PDF</button></div>
 <header><h1>${escHtml(title)}</h1><small>Environmental Improvement Program · ${escHtml(when)}</small></header>
-<p class="note">Combined from ${nRev} reviewer list${nRev === 1 ? "" : "s"} with picks on this list, sent through EIP Funding Priorities. Priority is the tier most reviewers gave a project (ties go to the higher priority);
+<p class="note">Combined from ${nRev} reviewer list${nRev === 1 ? "" : "s"} with picks on this list, sent through EIP Funding Priorities. Priority is the one most reviewers gave a project (ties go to the higher priority);
   the request is the middle value of reviewers' requests, and totals add those values. The Reviewers column shows how many reviewers picked the project and at which priority. Criteria are the Lake Tahoe Restoration Act
-  criteria any reviewer ticked for the project. Working group leads settle the final tier and dollar figure. Federal agency and project type are not in the Tracker and are to be added by the leads.</p>
+  criteria any reviewer ticked for the project. Working group leads settle the final priority and dollar figure. Federal agency and project type are not in the Tracker and are to be added by the leads.</p>
 ${summary}${sections}
 <p class="note">EIP Funding Priorities, maps.trpa.gov · project records from the EIP Project Tracker (eip.laketahoeinfo.org) · ${escHtml(SURVEY.roundLabel)}</p>
 </body></html>`;
@@ -1449,7 +1467,7 @@ ${summary}${sections}
         const f = (v) => [1, 2, 3].filter(t => v[t]).map(t => `${v[t]} P${t}`).join(", ") || "none"; return `LTRA: ${f(c.ltra)} · Other: ${f(c.other)}`; };
       for (const [k, rv] of Object.entries(remote)) {
         const me = k === myKey();
-        const when = rv.when ? new Date(rv.when).toLocaleString([], { month: "short", day: "numeric" }) : "";
+        const when = rv.when ? apDate(rv.when, false) : "";
         rows.push(`<li class="rrow${me ? " me" : ""}" title="Sent${rv.when ? " " + new Date(rv.when).toLocaleString() : ""}. P1, P2, P3 are Priority 1, 2, 3 picks."><span class="r-who">${escHtml(whoLabel(rv.who, rv.agency))}${me ? ' <em>you</em>' : ""}<small>${escHtml(wgShort(rv.wg) || "no working group")} · ${counts(rv.picks)}</small></span><span class="r-when">${escHtml(when)}</span></li>`);
       }
       for (const [who, m] of Object.entries(imports)) {
@@ -1519,7 +1537,7 @@ ${summary}${sections}
         sub.lists[l].map(id => { const pk = review.picks[id]; return `<li>${tierBadge(pk.t)} <span>${escHtml((proj(id) || {}).name || id)}</span> <span class="fine">${escHtml(id)}${pk.req != null ? ` · ${fmtFull(pk.req)}` : " · no request"}</span>${fullNote(pk) ? `<span class="fine note-line">${escHtml(fullNote(pk))}</span>` : ""}</li>`; }).join("") + "</ul>"
         : `<div class="send-h">${LISTS[l].long}</div><p class="fine">No picks on this list.</p>`).join("");
       const noReq = [...sub.lists.ltra, ...sub.lists.other].filter(id => review.picks[id].req == null).length;
-      $("sendNote").textContent = (Object.keys(remote).includes(fnv(sub.email.toLowerCase())) ? "You have sent picks before. This replaces them; only your latest submission counts. " : "Only your latest submission counts, so you can send again later. ")
+      $("sendNote").textContent = (Object.keys(remote).includes(fnv(sub.email.toLowerCase())) ? "You have sent picks before. This replaces them; only what you sent last counts. " : "Only what you sent last counts, so you can send again later. ")
         + (noReq ? `${noReq} pick${noReq === 1 ? " has" : "s have"} no funding request; you can still send.` : "");
       $("sendErr").hidden = true; $("sendForm").hidden = true; $("sendGo").loading = false; $("sendGo").disabled = false;
       $("sendDialog").open = true;
@@ -1531,7 +1549,7 @@ ${summary}${sections}
         const body = new URLSearchParams({ f: "json", adds: JSON.stringify([{ attributes: sub.attrs }]), rollbackOnFailure: "true" });
         const r = await fetch(`${SURVEY.submitUrl}/applyEdits`, { method: "POST", body }).then(x => x.json());
         const res = r.addResults && r.addResults[0];
-        if (r.error || !res || !res.success) throw new Error((r.error && r.error.message) || (res && res.error && res.error.description) || "The server did not accept the submission.");
+        if (r.error || !res || !res.success) throw new Error((r.error && r.error.message) || (res && res.error && res.error.description) || "The server did not accept the picks.");
         $("sendDialog").open = false;
         const n = sub.lists.ltra.length + sub.lists.other.length;
         toast(`Sent ${n} pick${n === 1 ? "" : "s"} as ${whoLabel(sub.name, sub.agency)}.`, 5000);
@@ -1630,7 +1648,7 @@ ${summary}${sections}
     const syncChips = () => document.querySelectorAll(".chips:not(.crit) button").forEach(b => b.setAttribute("aria-pressed", b.classList.contains("on") ? "true" : "false"));
     [$("stageChips"), $("focusChips"), $("fundChips")].forEach(el => el.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; b.classList.toggle("on"); syncChips(); recompute(); }));
     const segClick = (id, fn) => $(id).addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return;
-      $(id).querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b)); fn(b.dataset.v); });
+      $(id).querySelectorAll("button").forEach(x => { x.classList.toggle("active", x === b); x.setAttribute("aria-checked", String(x === b)); }); fn(b.dataset.v); });
     segClick("stateSeg", () => recompute());
     segClick("modeSeg", (v) => { fillMode = v; recompute(); });
     $("envInput").addEventListener("input", () => { const v = num($("envInput").value); envelopes[listKey] = v != null && v > 0 ? v : null; recomputeSoon(); });
@@ -1667,7 +1685,7 @@ ${summary}${sections}
     // drawer
     document.querySelector(".dtabs").addEventListener("click", (e) => {
       const b = e.target.closest("button"); if (!b) return;
-      activeTab = b.dataset.tab; document.querySelectorAll(".dtabs button").forEach(x => x.classList.toggle("active", x === b));
+      activeTab = b.dataset.tab; document.querySelectorAll(".dtabs button").forEach(x => { x.classList.toggle("active", x === b); x.setAttribute("aria-selected", String(x === b)); });
       $("gridWrap").hidden = activeTab !== "list"; $("chartsWrap").hidden = activeTab !== "charts"; $("drawerTools").hidden = activeTab !== "list";
       if (activeTab === "charts") { renderCharts(); setTimeout(() => ["chartCum", "chartWg", "chartLead"].forEach(id => Plotly.Plots.resize(id)), 50); }
     });
@@ -1675,7 +1693,8 @@ ${summary}${sections}
     $("maxBtn").addEventListener("click", () => { const on = document.body.classList.toggle("drawer-max"); $("maxBtn").classList.toggle("on", on); $("maxBtn").textContent = on ? "Show map" : "Table only";
       if (!on && view) setTimeout(() => window.dispatchEvent(new Event("resize")), 50); });
     try { localStorage.removeItem("eipPriorities.drawerMax"); } catch {}
-    if (isPhone()) { document.body.classList.add("drawer-max"); $("maxBtn").classList.add("on"); $("maxBtn").textContent = "Show map"; }   // phones open on the table
+    // Phones and portrait tablets open on the table; the stacked layout below 1024 leaves the map and table too short to share
+    if ((window.innerWidth || screen.width || 1280) < 1024) { document.body.classList.add("drawer-max"); $("maxBtn").classList.add("on"); $("maxBtn").textContent = "Show map"; }
     $("drawerToggle").addEventListener("click", () => { document.body.classList.toggle("drawer-collapsed"); $("drawerToggleIcon").icon = document.body.classList.contains("drawer-collapsed") ? "chevron-up" : "chevron-down"; });
     $("panelToggle").addEventListener("click", () => { document.body.classList.toggle("panel-collapsed"); $("panelToggleIcon").icon = document.body.classList.contains("panel-collapsed") ? "chevron-right" : "chevron-left"; });
     $("aboutBtn").addEventListener("click", () => { $("aboutDialog").open = true; });
@@ -1711,7 +1730,7 @@ ${summary}${sections}
     const b64e = (o) => btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     const b64d = (s) => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/")))));
     $("shareBtn").addEventListener("click", async () => {
-      const url = `${location.origin}${location.pathname}#s=${b64e(scenario())}`;
+      const url = shareUrl();
       try { await navigator.clipboard.writeText(url); toast("Link copied. It reopens this view: list, filters, available funding, and pins. Picks are not in the link; they travel through Send my picks.", 5000); }
       catch { prompt("Copy this link", url); }
     });
@@ -1743,12 +1762,13 @@ ${summary}${sections}
       $("reviewerName").value = review.reviewer || ""; $("reviewerAgency").value = review.agency || ""; $("reviewerEmail").value = review.email || ""; $("reviewerWg").value = review.wg || "";
       $("surveyRow").hidden = !surveyOn();
       renderReviewers();
+      $("gridLoading").hidden = true; $("grid").hidden = false;
       initGrid();
       const sc = readHash();
       if (sc) applyScenario(sc); else setList("ltra");
       if (SURVEY.viewUrl) loadRemote(false);
       const active = projects.filter(p => p.active);
-      $("aboutData").textContent = `${projects.length.toLocaleString()} projects in the snapshot${snapshotDate ? `, refreshed ${snapshotDate.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}` : ""}. ` +
+      $("aboutData").textContent = `${projects.length.toLocaleString()} projects in the snapshot${snapshotDate ? `, refreshed ${apDate(snapshotDate)}` : ""}. ` +
         `${active.length} EIP projects are in planning or implementation, ${active.filter(p => p.hasLtra).length} of them with LTRA history on the Tracker.`;
     })();
   </script>
