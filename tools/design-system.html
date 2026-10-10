@@ -107,9 +107,10 @@
 
     /* ── Swatches ── */
     .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.7rem; margin: 0.6rem 0; }
-    .sw { border: 1px solid var(--gray-border); border-radius: 8px; overflow: hidden; background: #fff; cursor: pointer; text-align: left; font-family: inherit; padding: 0; transition: box-shadow 0.15s; }
+    .sw { display: block; width: 100%; border: 1px solid var(--gray-border); border-radius: 8px; overflow: hidden; background: #fff; cursor: pointer; text-align: left; font-family: inherit; padding: 0; margin: 0; transition: box-shadow 0.15s; }
     .sw:hover { box-shadow: var(--brand-shadow); }
-    .sw .chip { height: 72px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0.4rem 0.55rem; }
+    /* inset hairline so near-white fills (White, Page, Border, Cream) still read as a filled chip */
+    .sw .chip { width: 100%; height: 72px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0.4rem 0.55rem; box-sizing: border-box; box-shadow: inset 0 0 0 1px rgba(0, 59, 113, 0.12); }
     .sw .chip span { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; padding: 0.05rem 0.4rem; border-radius: 999px; }
     .sw .body { padding: 0.5rem 0.6rem 0.55rem; }
     .sw .name { font-weight: 700; font-size: 0.82rem; color: var(--trpa-navy); }
@@ -1121,7 +1122,7 @@ const BUFFER  = { type: "simple-fill", color: [0, 0, 0, 0], outline: { color: "#
     const onDark = lum(c.hex) > 0.4;
     const badgeStyle = onDark ? 'background:rgba(0,0,0,0.55);color:#fff' : 'background:rgba(255,255,255,0.9);color:#003B71';
     return `<button type="button" class="sw" data-hex="${c.hex}" title="Copy ${c.hex}">
-      <div class="chip" style="background:${c.hex};${c.hex === '#FFFFFF' ? 'border-bottom:1px solid #E2E6EC' : ''}"><span style="${badgeStyle}">${r.toFixed(1)}:1 ${grade}</span></div>
+      <div class="chip" style="background:${c.hex}"><span style="${badgeStyle}">${r.toFixed(1)}:1 ${grade}</span></div>
       <div class="body"><div class="name">${c.name}</div><div class="hex"><span class="mono">${c.hex}</span><span>${c.pms || ''}</span></div>
       <div class="hex"><span>rgb(${rgbStr(c.hex)})</span></div><div class="role">${c.role}</div><div class="tok mono">${c.tok}</div></div></button>`;
   }
