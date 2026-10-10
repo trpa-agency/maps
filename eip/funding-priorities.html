@@ -592,18 +592,18 @@
           after a confirmation. Sent picks land in TRPA's ArcGIS Online; the tool reads everyone's latest picks back (without email addresses).</li>
         <li><strong>How picks combine.</strong> For each project the tool counts how many reviewers called it Priority 1, Priority 2, and
           Priority 3. The ranking is by Priority 1 votes, then Priority 2, then Priority 3, then name. <em>Group priority</em> is the priority most
-          reviewers gave (ties go to the higher priority); <em>Group request</em> is the median of their requests; <em>Working group</em> is the
-          group most of its reviewers named (ties go to the reviewer who gave the higher priority, then to the first reviewer by name).
-          Projects nobody picked have no rank. The
+          reviewers gave (ties go to the higher priority); <em>Group request</em> is the median of their requests; <em>Working group</em> lists
+          every group whose reviewers picked it. Projects nobody picked have no rank. The
           table opens grouped by working group, as the master sheet is. The working group leads settle the final priority and dollar figure
           from this picture.</li>
         <li><strong>Projects you can pick from.</strong> Filter by focus area, implementer, stage, funding status, Tracker LTRA history, program,
           tag, funding source, and state.</li>
         <li><strong>Available funding.</strong> Enter a dollar amount for the current list. Picked projects are funded in rank order by their
           request (or unfunded need where none was given). Pinned projects go first; excluded projects leave the list.</li>
-        <li><strong>Print master sheet and Master sheet CSV.</strong> The combined list you are viewing, grouped by working group with Priority 1
-          and all-priority totals. The print version opens as a clean page for printing or saving as PDF; the CSV follows the column order of
-          the master sheet. Federal agency and project type are not in the Tracker and are left for the leads to fill in.</li>
+        <li><strong>Print master sheet and Master sheet CSV.</strong> One section per working group, as the master sheet has one tab per group:
+          the projects that group's own reviewers picked, combined across those reviewers, with Priority 1 and all-priority totals. A project
+          picked by two groups appears under both and is marked. The print version opens as a clean page for printing or saving as PDF; the CSV
+          follows the column order of the master sheet. Federal agency and project type are not in the Tracker and are left for the leads to fill in.</li>
       </ol>
       <h3>Data</h3>
       <ul>
@@ -850,14 +850,18 @@
       return reviewerLists().flatMap(r => { const p = r.picks[id]; return p && p.t && p.l === l ? [{ who: r.who, wg: r.wg, t: p.t, req: p.req ?? null, n: fullNote(p), crit: p.c || [], note: p.n || "" }] : []; })
         .sort((a, b) => a.t - b.t || a.who.localeCompare(b.who));
     }
-    // Tally: votes per tier, the tier most reviewers gave (ties to the higher priority), median request, working group most named
-    function tally(id, l) {
-      const rows = picksFor(id, l), v = [0, 0, 0, 0];
-      for (const r of rows) v[r.t]++;
+    // Combine a set of pick rows: votes per priority, the priority most reviewers gave (ties to the higher one), median request
+    function tallyRows(rows) {
+      const v = [0, 0, 0, 0]; for (const r of rows) v[r.t]++;
       const tier = rows.length ? [1, 2, 3].reduce((best, t) => v[t] > v[best] ? t : best, 1) : null;
-      const wgs = {}; for (const r of rows) if (r.wg) wgs[r.wg] = (wgs[r.wg] || 0) + 1;
-      const wg = Object.keys(wgs).sort((a, b) => wgs[b] - wgs[a])[0] || "";
-      return { n: rows.length, v, tier, med: median(rows.map(r => r.req)), wg, rows };
+      return { n: rows.length, v, tier, med: median(rows.map(r => r.req)), rows };
+    }
+    // Tally for one project on one list across every reviewer. wgs lists each working group that picked it, roster order;
+    // wg is the first of those (used to place the row in the table's default order).
+    function tally(id, l) {
+      const t = tallyRows(picksFor(id, l));
+      const wgs = [...new Set(t.rows.map(r => r.wg).filter(Boolean))].sort((a, b) => wgRank(a) - wgRank(b) || a.localeCompare(b));
+      return { ...t, wgs, wg: wgs[0] || "" };
     }
     const pickLine = (x) => `${x.who}${x.wg ? ` (${x.wg})` : ""}: Priority ${x.t}${x.req != null ? `, ${fmtUSD(x.req)}` : ""}${x.n ? `. ${x.n}` : ""}`;
     // Normalize raw pick entries from a submission or CSV: one per project, list defaulting to the Tracker hint
@@ -955,7 +959,7 @@
     }
     const HEADER_TIPS = {
       "#": "Position in this list's group ranking: pinned projects first, then Priority 1 votes, then Priority 2, then Priority 3, then name. Blank until someone picks the project. The table opens grouped by working group, as the master sheet is; click this header to see the plain ranking.",
-      "Working group": "The working group most of this project's reviewers belong to, which decides where it sits on the master sheet (ties go to the reviewer with the higher priority, then the first by name). The table opens in this order: groups in roster order, then rank within each group, then projects nobody has picked.",
+      "Working group": "Every working group whose reviewers picked this project, in roster order. The master sheet lists the project under each of them. The table opens in this order: first group in roster order, then rank within it, then projects nobody has picked.",
       "": "Pin a project to fund it first, or exclude it from the list. Click again to undo.",
       "Project #": "EIP project number. Opens the project's fact sheet on the EIP Project Tracker.",
       "Project": "Project name as entered on the Tracker. Click a row for details, criteria, and notes.",
@@ -1041,8 +1045,8 @@
             tooltipValueGetter: (p) => p.data.tl.n ? `${p.data.tl.n} reviewer${p.data.tl.n === 1 ? "" : "s"}: ${p.data.tl.v[1]} said Priority 1, ${p.data.tl.v[2]} Priority 2, ${p.data.tl.v[3]} Priority 3` : "" },
           { headerName: "Group request", colId: "gReq", width: 112, type: "rightAligned", sortingOrder: bigFirst, valueGetter: (p) => p.data.tl.med, valueFormatter: (p) => p.value == null ? "" : fmtFull(p.value),
             comparator: (a, b) => (a ?? -1) - (b ?? -1), tooltipValueGetter: (p) => p.data.tl.rows.filter(r => r.req != null).map(r => `${r.who}: ${fmtFull(r.req)}`).join("\n") || "" },
-          { headerName: "Working group", colId: "wg", width: 130, valueGetter: (p) => p.data.tl.wg, valueFormatter: (p) => wgShort(p.value), tooltipValueGetter: (p) => p.value || "",
-            sort: "asc", sortIndex: 0, sortingOrder: ["asc", "desc", null], comparator: (a, b) => wgRank(a) - wgRank(b) || String(a).localeCompare(String(b)) },
+          { headerName: "Working group", colId: "wg", width: 140, valueGetter: (p) => p.data.tl.wg, valueFormatter: (p) => p.data.tl.wgs.map(wgShort).join(", "),
+            tooltipValueGetter: (p) => p.data.tl.wgs.join("; ") || "", sort: "asc", sortIndex: 0, sortingOrder: ["asc", "desc", null], comparator: (a, b) => wgRank(a) - wgRank(b) || String(a).localeCompare(String(b)) },
           { headerName: "Lead implementer", field: "lead", flex: 1.2, minWidth: 160 },
           { headerName: "Tracker LTRA", colId: "tltra", width: 170, valueGetter: (p) => trackerLtra(p.data) },
           { headerName: "Est. cost", field: "cost", ...money },
@@ -1347,27 +1351,39 @@
     });
     // The combined list for one of the two lists, grouped by working group as the master sheet is: groups in roster order
     // (unknown or missing groups last), projects by group tier then Priority 1 votes then name, with per-group and overall totals
+    // One block per SUBMITTING working group, as the master sheet has one tab per group: a group's block holds the projects its own
+    // reviewers picked, combined across those reviewers only. A project picked by two groups appears in both blocks, marked as such.
     function masterGroups(l) {
-      const rows = projects.filter(p => p.active || picksFor(p.id, l).length).map(p => ({ p, tl: tally(p.id, l) })).filter(x => x.tl.n);
-      const byWg = {}; for (const x of rows) { const k = x.tl.wg || "No working group given"; (byWg[k] = byWg[k] || []).push(x); }
-      const wgOrder = (w) => { const i = WORKING_GROUPS.indexOf(w); return i < 0 ? 99 : i; };
-      const groups = Object.keys(byWg).sort((a, b) => wgOrder(a) - wgOrder(b) || a.localeCompare(b)).map(wg => {
-        const items = byWg[wg].sort((a, b) => a.tl.tier - b.tl.tier || b.tl.v[1] - a.tl.v[1] || a.p.name.localeCompare(b.p.name));
+      const NONE = "No working group given", buckets = {};
+      for (const r of reviewerLists()) {
+        const wg = r.wg || NONE;
+        for (const [id, pk] of Object.entries(r.picks)) {
+          if (!pk.t || pk.l !== l) continue;
+          const p = proj(id); if (!p) continue;
+          const b = buckets[wg] = buckets[wg] || {};
+          (b[id] = b[id] || []).push({ who: r.who, wg: r.wg, t: pk.t, req: pk.req ?? null, n: fullNote(pk), crit: pk.c || [], note: pk.n || "" });
+        }
+      }
+      const listedIn = {}; for (const [wg, b] of Object.entries(buckets)) for (const id of Object.keys(b)) (listedIn[id] = listedIn[id] || []).push(wg);
+      const groups = Object.keys(buckets).sort((a, b) => wgRank(a === NONE ? "" : a) - wgRank(b === NONE ? "" : b) || a.localeCompare(b)).map(wg => {
+        const items = Object.entries(buckets[wg]).map(([id, rows]) => ({ p: proj(id), tl: { ...tallyRows(rows.sort((x, y) => x.t - y.t || x.who.localeCompare(y.who))), wg, also: listedIn[id].filter(w => w !== wg) } }))
+          .sort((a, b) => a.tl.tier - b.tl.tier || b.tl.v[1] - a.tl.v[1] || a.p.name.localeCompare(b.p.name));
         let all = 0, p1 = 0; for (const { tl } of items) if (tl.med != null) { all += tl.med; if (tl.tier === 1) p1 += tl.med; }
         return { wg, items, all, p1 };
       });
-      return { groups, all: groups.reduce((a, g) => a + g.all, 0), p1: groups.reduce((a, g) => a + g.p1, 0), n: rows.length };
+      const n = groups.reduce((a, g) => a + g.items.length, 0);
+      return { groups, all: groups.reduce((a, g) => a + g.all, 0), p1: groups.reduce((a, g) => a + g.p1, 0), n, distinct: Object.keys(listedIn).length };
     }
     // Master sheet layout as CSV
     $("masterBtn").addEventListener("click", () => {
       const m = masterGroups(listKey);
       if (!m.n) { toast(`No ${LISTS[listKey].label} picks have been sent or imported yet.`, 4000); return; }
-      const head = ["Working group", "Federal Agency", "Implementer", "Project", `${SURVEY.round} Request`, "EIP Tracker #", "Priority Ranking", "Project Type", "Notes", "Reviewers", "Priority votes (1/2/3)", "Tracker LTRA request", "Tracker stage"];
+      const head = ["Working group", "Federal Agency", "Implementer", "Project", `${SURVEY.round} Request`, "EIP Tracker #", "Priority Ranking", "Project Type", "Notes", "Reviewers", "Priority votes (1/2/3)", "Tracker LTRA request", "Tracker stage; also listed by"];
       const lines = [head.map(csvCell).join(",")];
       for (const g of m.groups) {
         for (const { p, tl } of g.items) {
           const stageNote = p.active ? p.stage : `${p.stage} (not in planning or implementation)`;
-          lines.push([g.wg, "", p.lead, p.name, tl.med != null ? Math.round(tl.med) : "", p.id, tl.tier, "", tl.rows.map(r => `${r.who}: ${r.n || "(no note)"}`).join(" | "), tl.n, `${tl.v[1]}/${tl.v[2]}/${tl.v[3]}`, p.ltraAsk ?? "", stageNote].map(csvCell).join(","));
+          lines.push([g.wg, "", p.lead, p.name, tl.med != null ? Math.round(tl.med) : "", p.id, tl.tier, "", tl.rows.map(r => `${r.who}: ${r.n || "(no note)"}`).join(" | "), tl.n, `${tl.v[1]}/${tl.v[2]}/${tl.v[3]}`, p.ltraAsk ?? "", stageNote + (tl.also.length ? `; also on: ${tl.also.join(", ")}` : "")].map(csvCell).join(","));
         }
         lines.push([g.wg, "", "", "Total of all Priorities:", Math.round(g.all)].map(csvCell).join(","));
         lines.push([g.wg, "", "", "Total of all Priority 1 Projects:", Math.round(g.p1)].map(csvCell).join(","));
@@ -1392,10 +1408,10 @@
       const nRev = listReviewerCount(listKey);
       const summary = `<table class="sum"><thead><tr><th>Working group</th><th class="r">All priorities</th><th class="r">Priority 1</th><th class="r">Projects</th></tr></thead><tbody>` +
         m.groups.map(g => `<tr><td>${escHtml(g.wg)}</td><td class="r">${fmtFull(g.all)}</td><td class="r">${fmtFull(g.p1)}</td><td class="r">${g.items.length}</td></tr>`).join("") +
-        `<tr class="tot"><td>Total</td><td class="r">${fmtFull(m.all)}</td><td class="r">${fmtFull(m.p1)}</td><td class="r">${m.n}</td></tr></tbody></table>`;
+        `<tr class="tot"><td>Total</td><td class="r">${fmtFull(m.all)}</td><td class="r">${fmtFull(m.p1)}</td><td class="r">${m.n}${m.n !== m.distinct ? ` <small>(${m.distinct} distinct)</small>` : ""}</td></tr></tbody></table>`;
       const sections = m.groups.map(g => `<section><h2>${escHtml(g.wg)} <small>${g.items.length} project${g.items.length === 1 ? "" : "s"} · ${fmtFull(g.all)} requested, ${fmtFull(g.p1)} in Priority 1</small></h2>
         <table><thead><tr><th>Priority</th><th>Project</th><th>Implementer</th><th>EIP #</th><th class="r">${SURVEY.round} request</th><th>Reviewers</th><th>Notes</th></tr></thead><tbody>` +
-        g.items.map(({ p, tl }) => `<tr><td>${tier(tl.tier)}</td><td><b>${escHtml(p.name.trim())}</b>${p.active ? "" : `<br><em class="warn">${escHtml(p.stage)} on the Tracker, not in planning or implementation</em>`}${critUnion(tl.rows) ? `<br><small>Criteria: ${escHtml(critUnion(tl.rows))}</small>` : ""}</td><td>${escHtml(p.lead)}</td><td class="mono">${escHtml(p.id)}</td>` +
+        g.items.map(({ p, tl }) => `<tr><td>${tier(tl.tier)}</td><td><b>${escHtml(p.name.trim())}</b>${p.active ? "" : `<br><em class="warn">${escHtml(p.stage)} on the Tracker, not in planning or implementation</em>`}${critUnion(tl.rows) ? `<br><small>Criteria: ${escHtml(critUnion(tl.rows))}</small>` : ""}${tl.also.length ? `<br><small>Also ${tl.also.map(w => w === "No working group given" ? "picked by a reviewer with no working group" : `on the ${escHtml(wgShort(w))} list`).join(" and ")}</small>` : ""}</td><td>${escHtml(p.lead)}</td><td class="mono">${escHtml(p.id)}</td>` +
           `<td class="r">${tl.med != null ? fmtFull(tl.med) : "<em>none given</em>"}${p.ltraAsk > 0 && listKey === "ltra" ? `<br><small>Tracker: ${fmtFull(p.ltraAsk)}</small>` : ""}</td>` +
           `<td>${tl.n} <small>(${[1, 2, 3].filter(t => tl.v[t]).map(t => `${tl.v[t]} at Priority ${t}`).join(", ")})</small><br><small>${tl.rows.map(who).join("; ")}</small></td>` +
           `<td class="notes">${tl.rows.filter(r => r.note).map(r => `<div><b>${who(r)}:</b> ${escHtml(r.note)}</div>`).join("") || "<em>none</em>"}</td></tr>`).join("") +
@@ -1424,9 +1440,10 @@
 </style></head><body>
 <div class="toolbar"><button onclick="window.print()">Print or save as PDF</button></div>
 <header><h1>${escHtml(title)}</h1><small>Environmental Improvement Program · ${escHtml(when)}</small></header>
-<p class="note">Combined from ${nRev} reviewer list${nRev === 1 ? "" : "s"} with picks on this list, sent through EIP Funding Priorities. Priority is the one most reviewers gave a project (ties go to the higher priority);
-  the request is the middle value of reviewers' requests, and totals add those values. The Reviewers column shows how many reviewers picked the project and at which priority. Criteria are the Lake Tahoe Restoration Act
-  criteria any reviewer ticked for the project. Working group leads settle the final priority and dollar figure. Federal agency and project type are not in the Tracker and are to be added by the leads.</p>
+<p class="note">Combined from ${nRev} reviewer list${nRev === 1 ? "" : "s"} with picks on this list, sent through EIP Funding Priorities. Each section is one working group's list: the projects its own reviewers picked, combined across
+  those reviewers. A project picked by two groups appears in both sections and is marked. Priority is the one most of the group's reviewers gave (ties go to the higher priority); the request is the middle value of their requests,
+  and totals add those values. The Reviewers column shows how many picked the project and at which priority. Criteria are the Lake Tahoe Restoration Act criteria any of them ticked. Working group leads settle the final priority
+  and dollar figure. Federal agency and project type are not in the Tracker and are to be added by the leads.</p>
 ${summary}${sections}
 <p class="note">EIP Funding Priorities, maps.trpa.gov · project records from the EIP Project Tracker (eip.laketahoeinfo.org) · ${escHtml(SURVEY.roundLabel)}</p>
 </body></html>`;
