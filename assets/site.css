@@ -1,22 +1,11 @@
 /* TRPA Maps, shared styles (trpa-brand) */
+@import url("trpa-tokens.css");   /* palette, semantic tokens, Calcite mapping */
 :root {
-  --trpa-blue:    #0072CE;
-  --trpa-navy:    #003B71;
-  --trpa-earth:   #B47E00;
-  --trpa-forest:  #4A6118;
-  --trpa-brick:   #9C3E27;
-  --trpa-olive:   #B5A64C;
-  --trpa-orange:  #E87722;
-  --trpa-purple:  #7B6A8A;
-  --trpa-ice:     #B4CBE8;
-
+  /* gallery pages keep their flatter grays; --gray-border here overrides the token value */
   --gray-dark:    #333333;
   --gray-medium:  #666666;
   --gray-light:   #F5F5F5;
   --gray-border:  #DDDDDD;
-
-  --calcite-color-brand: var(--trpa-blue);
-  --calcite-color-brand-hover: var(--trpa-navy);
 }
 
 html, body {

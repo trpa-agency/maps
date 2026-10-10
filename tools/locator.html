@@ -18,13 +18,15 @@
   <!-- Brand fonts: self-hosted so exports render identically offline. -->
   <link href="assets/fonts/fonts.css" rel="stylesheet" />
 
+  <link rel="stylesheet" href="../assets/trpa-tokens.css" />
   <style>
     :root {
+      /* Neutrals and the Calcite mapping come from ../assets/trpa-tokens.css; the
+         --brand-* values below are overwritten at runtime by applyBrand() */
       --brand-primary: #007DC3;
       --brand-accent:  #F16022;
       --brand-dark:    #0B1F41;
       --brand-font:    'Lexend Deca', system-ui, sans-serif;
-      --white: #FFFFFF; --gray-bg: #F5F7FA; --gray-border: #E2E6EC;
       --shadow: 0 2px 10px rgba(11,31,65,0.18);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
