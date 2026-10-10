@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRPA Design System</title>
+  <meta name="description" content="Colors, type, components, and page patterns for TRPA web tools. One system, three brands: agency, Environmental Improvement Program, and Tahoe Living." />
+  <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
+
+  <!-- Fonts: Open Sans (agency), Lexend Deca (EIP), Montserrat (Tahoe Living) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Lexend+Deca:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- UMD libraries first, then Calcite (ESM) -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@33.3.2/dist/ag-grid-community.min.js"></script>
+  <script type="module" src="https://js.arcgis.com/calcite-components/5.0"></script>
+  <link rel="stylesheet" href="https://js.arcgis.com/calcite-components/5.0/calcite.css" />
+
+  <!-- Design tokens: the file this page documents -->
+  <link rel="stylesheet" href="../assets/trpa-tokens.css" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
+    html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+    html, body { font-family: var(--brand-font); color: var(--trpa-navy); background: var(--gray-bg); font-size: 15px; line-height: 1.6; }
+    a { color: var(--trpa-blue); }
+    :focus-visible { outline: 2px solid var(--trpa-blue); outline-offset: 2px; }
+    h1, h2, h3, h4 { font-weight: 700; line-height: 1.25; }
+    code, pre, .mono { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; }
+    code { font-size: 0.82em; background: #fff; border: 1px solid var(--gray-border); border-radius: 4px; padding: 0 0.3em; color: var(--trpa-brick); }
+    pre { position: relative; background: #0c2036; color: #e6eef8; padding: 0.9rem 1rem; padding-right: 4.6rem; border-radius: 8px; overflow-x: auto; line-height: 1.5; font-size: 12.5px; margin: 0.6rem 0 0.2rem; }
+    pre code { background: none; border: none; color: inherit; padding: 0; font-size: inherit; }
+    .cmt { color: #7fa8cf; }
+    .copy-btn { position: absolute; top: 8px; right: 8px; font-family: var(--brand-font); font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+      background: rgba(255,255,255,0.12); color: #e6eef8; border: 1px solid rgba(255,255,255,0.28); border-radius: 5px; padding: 3px 9px; cursor: pointer; }
+    .copy-btn:hover { background: rgba(255,255,255,0.22); }
+    .copy-btn.done { background: var(--trpa-forest); border-color: var(--trpa-forest); color: #fff; }
+
+    /* ── App header (shared tool shell) ── */
+    #appHeader { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 0.45rem 1rem; background: #fff; border-bottom: 1px solid var(--gray-border); box-shadow: 0 1px 4px rgba(0,59,113,0.06); z-index: 40; }
+    .hdr-brand { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+    .hdr-brand img { height: 36px; width: auto; }
+    .htitle { display: flex; flex-direction: column; line-height: 1.15; }
+    .hagency { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--trpa-blue); }
+    .hname { font-size: 0.98rem; font-weight: 700; color: var(--trpa-navy); margin: 0; }
+    .hdr-back { font-size: 0.72rem; font-weight: 600; color: var(--gray-text); text-decoration: none; border-left: 1px solid var(--gray-border); padding-left: 0.7rem; white-space: nowrap; }
+    .hdr-back:hover { color: var(--trpa-blue); }
+    .hdr-links { display: flex; align-items: center; gap: 0.3rem; }
+    .beta-chip { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--brand-accent-text);
+      border: 1px solid var(--brand-accent-text); border-radius: 999px; padding: 0.1rem 0.5rem; margin-right: 0.4rem; }
+
+    /* ── Layout: sticky nav + content ── */
+    .page { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 2rem; max-width: 1280px; margin: 0 auto; padding: 1.5rem 1.5rem 4rem; }
+    nav.toc { position: sticky; top: 70px; align-self: start; max-height: calc(100vh - 90px); overflow-y: auto; font-size: 0.8rem; }
+    nav.toc .toc-group { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray-text); margin: 0.9rem 0 0.3rem; }
+    nav.toc a { display: block; color: var(--trpa-navy); text-decoration: none; padding: 0.22rem 0.6rem; border-left: 2px solid transparent; border-radius: 0 5px 5px 0; }
+    nav.toc a:hover { background: #fff; }
+    nav.toc a.active { border-left-color: var(--trpa-blue); color: var(--trpa-blue); font-weight: 600; background: #fff; }
+    main { min-width: 0; }
+
+    .brand-pick { background: #fff; border: 1px solid var(--gray-border); border-radius: 8px; padding: 0.7rem 0.75rem 0.8rem; margin-bottom: 0.4rem; }
+    .brand-pick .lbl { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray-text); margin-bottom: 0.4rem; }
+    .brand-pick .seg { display: flex; flex-direction: column; border-radius: 7px; overflow: hidden; border: 1px solid var(--gray-border); }
+    .brand-pick .seg button { border: none; background: #fff; cursor: pointer; font-family: inherit; font-size: 0.76rem; font-weight: 600; color: var(--gray-text);
+      padding: 0.4rem 0.6rem; text-align: left; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--gray-border); }
+    .brand-pick .seg button:last-child { border-bottom: none; }
+    .brand-pick .seg button i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: 0 0 auto; }
+    .brand-pick .seg button.active { background: var(--trpa-blue); color: #fff; }
+    .brand-pick .seg button.active i { outline: 2px solid #fff; }
+    .brand-pick .hint { font-size: 0.68rem; color: var(--gray-text); line-height: 1.4; margin-top: 0.45rem; }
+
+    /* ── Content typography ── */
+    .hero { background: var(--trpa-navy); color: #fff; border-radius: 10px; padding: 1.8rem 2rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; }
+    .hero .over { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--trpa-ice); }
+    .hero h1 { font-size: 1.9rem; margin: 0.2rem 0 0.5rem; }
+    .hero p { max-width: 62ch; color: #d6e3f2; font-size: 0.95rem; }
+    .hero .stripe { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; display: flex; }
+    .hero .stripe i { flex: 1; }
+    section.ds { background: #fff; border: 1px solid var(--gray-border); border-radius: 10px; padding: 1.5rem 1.75rem 1.75rem; margin-bottom: 1.25rem; }
+    section.ds > h2 { font-size: 1.35rem; color: var(--trpa-navy); padding-bottom: 0.5rem; border-bottom: 2px solid var(--trpa-ice); margin-bottom: 0.9rem; display: flex; align-items: baseline; gap: 0.7rem; }
+    section.ds > h2 .num { font-size: 0.72rem; font-weight: 700; color: var(--trpa-blue); letter-spacing: 0.08em; }
+    section.ds h3 { font-size: 1rem; margin: 1.5rem 0 0.4rem; color: var(--trpa-navy); }
+    section.ds h3:first-of-type { margin-top: 0.4rem; }
+    section.ds h4 { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--gray-text); margin: 1rem 0 0.4rem; }
+    section.ds p { margin: 0.4rem 0; max-width: 75ch; }
+    section.ds p.lead { font-size: 1.02rem; color: var(--trpa-navy); }
+    section.ds ul, section.ds ol { margin: 0.4rem 0 0.4rem 1.25rem; max-width: 75ch; }
+    section.ds li { margin: 0.2rem 0; }
+    .note { font-size: 0.82rem; color: var(--gray-text); line-height: 1.5; }
+    .callout { border-left: 4px solid var(--trpa-orange); background: #fdf3ea; padding: 0.6rem 0.9rem; border-radius: 0 6px 6px 0; margin: 0.8rem 0; font-size: 0.9rem; max-width: 75ch; }
+    .callout.blue { border-left-color: var(--trpa-blue); background: #eef6fd; }
+    .callout.green { border-left-color: var(--trpa-forest); background: #eef3e4; }
+    table.ds { border-collapse: collapse; width: 100%; margin: 0.6rem 0; font-size: 0.85rem; }
+    table.ds th, table.ds td { border: 1px solid var(--gray-border); padding: 0.45rem 0.65rem; text-align: left; vertical-align: top; }
+    table.ds th { background: var(--gray-bg); font-weight: 700; font-size: 0.74rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray-text); }
+    table.ds td code { white-space: nowrap; }
+    .do-dont { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem; margin: 0.6rem 0; }
+    .do-dont > div { border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.85rem; border: 1px solid var(--gray-border); }
+    .do-dont .do { border-top: 4px solid var(--trpa-forest); }
+    .do-dont .dont { border-top: 4px solid var(--trpa-brick); }
+    .do-dont b { display: block; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.3rem; }
+    .do-dont .do b { color: var(--trpa-forest); } .do-dont .dont b { color: var(--trpa-brick); }
+    .do-dont ul { margin: 0 0 0 1.1rem; }
+
+    /* ── Swatches ── */
+    .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.7rem; margin: 0.6rem 0; }
+    .sw { border: 1px solid var(--gray-border); border-radius: 8px; overflow: hidden; background: #fff; cursor: pointer; text-align: left; font-family: inherit; padding: 0; transition: box-shadow 0.15s; }
+    .sw:hover { box-shadow: var(--brand-shadow); }
+    .sw .chip { height: 72px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0.4rem 0.55rem; }
+    .sw .chip span { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; padding: 0.05rem 0.4rem; border-radius: 999px; }
+    .sw .body { padding: 0.5rem 0.6rem 0.55rem; }
+    .sw .name { font-weight: 700; font-size: 0.82rem; color: var(--trpa-navy); }
+    .sw .hex { font-size: 0.74rem; color: var(--gray-text); display: flex; justify-content: space-between; }
+    .sw .role { font-size: 0.7rem; color: var(--gray-text); line-height: 1.35; margin-top: 0.25rem; }
+    .sw .tok { font-size: 0.66rem; color: var(--trpa-brick); margin-top: 0.2rem; }
+    .ramp { display: flex; height: 34px; border-radius: 6px; overflow: hidden; border: 1px solid var(--gray-border); margin: 0.4rem 0; }
+    .ramp i { flex: 1; }
+    .ramp-row { display: grid; grid-template-columns: 150px 1fr; gap: 0.8rem; align-items: center; font-size: 0.8rem; margin: 0.3rem 0; }
+    .ramp-row .ramp { margin: 0; }
+    .cat-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.6rem 0; }
+    .cat-pill { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.3rem 0.9rem 0.3rem 0.7rem; border-radius: 999px; border: 1px solid var(--gray-border); background: #fff; color: var(--trpa-navy); font-size: 0.82rem; font-weight: 600; border-left: 4px solid var(--c); }
+    .cat-pill code { font-size: 0.68rem; color: var(--gray-text); background: none; border: none; }
+
+    /* ── Type specimens ── */
+    .type-row { display: grid; grid-template-columns: 170px 1fr 150px; gap: 1rem; align-items: baseline; padding: 0.55rem 0; border-bottom: 1px solid var(--gray-border); }
+    .type-row:last-child { border-bottom: none; }
+    .type-row .meta { font-size: 0.72rem; color: var(--gray-text); line-height: 1.4; }
+    .type-row .meta b { display: block; color: var(--trpa-navy); font-size: 0.78rem; }
+    .type-row .css { font-size: 0.68rem; color: var(--trpa-brick); text-align: right; }
+    .font-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.75rem; margin: 0.6rem 0; }
+    .font-card { border: 1px solid var(--gray-border); border-radius: 8px; padding: 0.9rem 1rem; background: #fff; }
+    .font-card .big { font-size: 2rem; line-height: 1.1; font-weight: 700; }
+    .font-card .alpha { font-size: 0.82rem; margin-top: 0.4rem; color: var(--gray-text); word-break: break-all; }
+    .font-card .use { font-size: 0.74rem; color: var(--gray-text); margin-top: 0.5rem; }
+    .font-card .use b { color: var(--trpa-navy); }
+
+    /* ── Token specimens (radius, shadow, spacing) ── */
+    .spec-row { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0.6rem 0; align-items: flex-end; }
+    .spec { text-align: center; font-size: 0.7rem; color: var(--gray-text); }
+    .spec .box { width: 90px; height: 60px; background: #fff; border: 1px solid var(--gray-border); margin: 0 auto 0.3rem; }
+    .spec b { display: block; color: var(--trpa-navy); font-size: 0.74rem; }
+    .spacing i { display: block; background: var(--trpa-ice); height: 14px; margin: 0 auto 0.3rem; }
+
+    /* ── Logos ── */
+    .logo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; margin: 0.6rem 0; }
+    .logo-tile { border: 1px solid var(--gray-border); border-radius: 8px; padding: 1.2rem; display: flex; align-items: center; justify-content: center; min-height: 120px; }
+    .logo-tile img { max-height: 64px; max-width: 100%; }
+    .logo-tile.dark { background: var(--trpa-navy); }
+    .logo-tile.blue { background: var(--trpa-blue); }
+    .logo-cap { font-size: 0.74rem; color: var(--gray-text); margin-top: 0.3rem; }
+
+    /* ── Icons ── */
+    .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 0.5rem; margin: 0.6rem 0; }
+    .icon-tile { border: 1px solid var(--gray-border); border-radius: 8px; padding: 0.7rem 0.4rem 0.5rem; text-align: center; font-size: 0.64rem; color: var(--gray-text); background: #fff; cursor: pointer; font-family: inherit; }
+    .icon-tile:hover { border-color: var(--trpa-blue); }
+    .icon-tile calcite-icon { color: var(--trpa-navy); display: block; margin: 0 auto 0.35rem; }
+    .icon-tile span { display: block; word-break: break-all; }
+
+    /* ── Specimen frames (brand-scoped) ── */
+    .brand-scope { font-family: var(--brand-font); color: var(--brand-text); }
+    .frame { background: var(--brand-page); border: 1px dashed #C9D2DE; border-radius: 10px; padding: 1.1rem 1.2rem; margin: 0.6rem 0 0.4rem; position: relative; }
+    .frame::before { content: attr(data-label); position: absolute; top: -0.6rem; left: 0.9rem; background: #fff; padding: 0 0.4rem; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray-text); font-family: 'Open Sans', sans-serif; }
+    .frame .brand-tag { position: absolute; top: -0.6rem; right: 0.9rem; background: var(--brand-primary); color: #fff; padding: 0 0.5rem; border-radius: 999px; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; font-family: 'Open Sans', sans-serif; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .row + .row { margin-top: 0.6rem; }
+    .row .rl { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--gray-text); width: 110px; flex: 0 0 auto; }
+    .stack { display: flex; flex-direction: column; gap: 0.6rem; }
+    .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+
+    /* Components documented below, written against semantic tokens */
+    .seg { display: flex; border-radius: var(--brand-radius-control); overflow: hidden; border: 1px solid var(--gray-border); }
+    .seg button { flex: 1; border: none; background: #fff; cursor: pointer; font-family: var(--brand-font); min-height: 30px; font-size: 0.74rem; font-weight: 600; color: var(--gray-text); padding: 0.35rem 0.7rem; transition: all 120ms; }
+    .seg button.active { background: var(--brand-primary-text); color: #fff; font-weight: 700; }
+    .pill { display: inline-flex; align-items: center; gap: 0.45rem; border: 1.5px solid #C9D2DE; background: #fff; color: var(--brand-text); border-radius: var(--brand-radius-pill); padding: 0.3rem 0.8rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: var(--brand-font); min-height: 28px; transition: border-color 0.12s, background 0.12s; }
+    .pill:hover { border-color: var(--brand-primary); }
+    .pill .n { font-size: 0.66rem; font-weight: 700; background: var(--brand-primary-light); border-radius: 999px; padding: 0 0.45rem; color: var(--gray-text); }
+    .pill.active { background: var(--brand-dark); border-color: var(--brand-dark); color: #fff; }
+    .pill.active .n { background: rgba(255,255,255,0.18); color: #fff; }
+    .pill.dot i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); display: inline-block; opacity: 0.45; }
+    .pill.dot.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 10%, #fff); }
+    .pill.dot.on i { opacity: 1; }
+    .tag { display: inline-block; background: var(--gray-bg); border: 1px solid var(--gray-border); border-radius: 999px; padding: 0.05rem 0.55rem; font-size: 0.7rem; color: var(--brand-text); }
+    .chip-lu { font-size: 0.68rem; font-weight: 600; border-radius: 999px; padding: 0.15rem 0.55rem; background: var(--brand-primary-light); border: 1px solid color-mix(in srgb, var(--brand-primary) 30%, #fff); color: var(--brand-text); }
+    .badge { display: inline-block; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 0 0.5rem; line-height: 1.6; }
+    .badge.accent { background: var(--brand-accent); color: #fff; }
+    .badge.info { background: var(--status-info-light); color: var(--brand-text); }
+    .badge.danger { background: var(--status-danger-light); color: var(--status-danger); }
+    .badge.success { background: var(--status-success-light); color: var(--status-success); }
+    .badge.neutral { background: var(--gray-bg); color: var(--gray-text); border: 1px solid var(--gray-border); }
+    .badge.solid { background: var(--brand-primary); color: #fff; }
+    .status-dot { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.8rem; }
+    .status-dot i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+    .field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.7rem; font-weight: 600; color: var(--gray-text); }
+    .field-help { font-size: 0.68rem; font-weight: 400; line-height: 1.4; color: var(--gray-text); }
+    .field select, .field input[type="text"] { font-family: var(--brand-font); font-size: 0.82rem; color: var(--brand-text); background: #fff; border: 1.5px solid var(--gray-border); border-radius: var(--brand-radius-control); padding: 0.32rem 0.6rem; width: 100%; }
+    .field select:focus, .field input:focus { outline: none; border-color: var(--brand-primary); }
+    .search-box { display: flex; align-items: center; gap: 0.5rem; background: var(--gray-bg); border: 1.5px solid var(--gray-border); border-radius: var(--brand-radius-control); padding: 0.3rem 0.7rem; }
+    .search-box:focus-within { border-color: var(--brand-primary); background: #fff; }
+    .search-box calcite-icon { color: var(--brand-primary-text); flex-shrink: 0; }
+    .search-box input { flex: 1; border: none; outline: none; background: transparent; font-family: var(--brand-font); font-size: 0.9rem; color: var(--brand-text); padding: 0.2rem 0; min-width: 0; }
+    .search-box input::placeholder { color: var(--gray-text); }
+    .suggest { background: #fff; border-radius: var(--brand-radius); box-shadow: var(--brand-shadow); overflow: hidden; margin-top: 0.3rem; }
+    .suggest-group { padding: 0.4rem 0.85rem 0.15rem; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--gray-text); border-bottom: 1px solid #eef1f5; }
+    .suggest-item { padding: 0.5rem 0.85rem; border-bottom: 1px solid #eef1f5; display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
+    .suggest-item:hover, .suggest-item.active { background: var(--gray-bg); }
+    .suggest-item .p { font-size: 0.85rem; font-weight: 600; } .suggest-item .s { font-size: 0.72rem; color: var(--gray-text); }
+    .suggest-item .apn { color: var(--brand-primary-text); font-weight: 700; }
+
+    .panel-sec { display: flex; flex-direction: column; gap: 0.55rem; background: #fff; border: 1px solid var(--gray-border); border-radius: var(--brand-radius); padding: 0.9rem 1rem; }
+    .sec-title { display: flex; align-items: center; gap: 0.45rem; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--gray-text); }
+    .sec-num { display: inline-flex; align-items: center; justify-content: center; width: 1.15rem; height: 1.15rem; border-radius: 50%; background: var(--brand-primary); color: #fff; font-size: 0.66rem; }
+    .sec-tool { margin-left: auto; border: 1px solid var(--gray-border); background: #fff; cursor: pointer; color: var(--gray-text); min-height: 26px; padding: 0.15rem 0.6rem; border-radius: var(--brand-radius-pill); font-family: var(--brand-font); font-size: 0.68rem; font-weight: 600; letter-spacing: 0; text-transform: none; display: inline-flex; align-items: center; gap: 0.2rem; }
+    .sec-tool:hover { color: var(--brand-primary-text); border-color: var(--brand-primary-text); }
+    .sec-help { margin-top: -0.25rem; font-size: 0.74rem; line-height: 1.45; color: var(--gray-text); }
+
+    .app-card { background: #fff; border: 1px solid var(--gray-border); border-radius: var(--brand-radius); overflow: hidden; text-decoration: none; color: inherit; display: flex; flex-direction: column; max-width: 300px; transition: box-shadow 0.15s, transform 0.15s; }
+    .app-card:hover { box-shadow: var(--brand-shadow); transform: translateY(-2px); }
+    .app-card .thumb { height: 110px; background: var(--brand-primary-light); border-bottom: 3px solid var(--brand-primary); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; color: var(--brand-dark); opacity: 0.9; }
+    .app-card .body { padding: 0.8rem 0.95rem 0.6rem; flex: 1; }
+    .app-card h5 { font-size: 0.95rem; font-weight: 700; color: var(--brand-dark); margin: 0 0 0.25rem; }
+    .app-card p { font-size: 0.78rem; color: var(--gray-text); line-height: 1.5; margin: 0; }
+    .app-card .foot { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; padding: 0.5rem 0.95rem 0.65rem; font-size: 0.7rem; color: var(--gray-text); }
+    .beta-pill { display: inline-block; vertical-align: 2px; background: var(--brand-accent); color: #fff; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 999px; padding: 0.1rem 0.5rem; margin-left: 0.3rem; }
+    .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+    .kpi { background: #fff; border: 1px solid var(--gray-border); border-radius: var(--brand-radius); padding: 0.55rem 0.7rem; border-top: 3px solid var(--brand-primary); }
+    .kpi .v { font-size: 1.3rem; font-weight: 700; color: var(--brand-dark); line-height: 1.2; }
+    .kpi .v.up { color: var(--status-success); } .kpi .v.down { color: var(--status-danger); }
+    .kpi .l { font-size: 0.64rem; color: var(--gray-text); margin-top: 0.1rem; }
+    .kpi.accent { border-top-color: var(--brand-accent); } .kpi.success { border-top-color: var(--status-success); }
+    dl.kv { display: grid; grid-template-columns: max-content 1fr; gap: 0.2rem 0.8rem; font-size: 0.8rem; background: #fff; border: 1px solid var(--gray-border); border-radius: var(--brand-radius); padding: 0.7rem 0.9rem; }
+    dl.kv dt { color: var(--gray-text); } dl.kv dd { font-weight: 600; }
+    .well { font-size: 0.78rem; line-height: 1.45; background: var(--brand-primary-light); border-radius: 6px; padding: 0.45rem 0.6rem; }
+
+    .ds-callout { border-left: 4px solid var(--brand-accent); background: var(--brand-accent-light); padding: 0.6rem 0.9rem; border-radius: 0 6px 6px 0; font-size: 0.85rem; }
+    .ds-callout.info { border-left-color: var(--brand-primary); background: var(--brand-primary-light); }
+    .toast { display: inline-flex; align-items: center; gap: 0.8rem; background: var(--brand-dark); color: #fff; padding: 0.5rem 1rem; border-radius: var(--brand-radius); font-size: 0.82rem; box-shadow: var(--brand-shadow); }
+    .toast button { border: 1px solid rgba(255,255,255,0.55); background: transparent; color: #fff; font-family: var(--brand-font); font-size: 0.74rem; font-weight: 700; padding: 0.15rem 0.6rem; border-radius: 6px; cursor: pointer; }
+    .empty { font-size: 0.85rem; line-height: 1.55; color: var(--gray-text); background: #fff; border: 1px dashed var(--gray-border); border-radius: var(--brand-radius); padding: 0.8rem 1rem; }
+    .empty strong { color: var(--brand-text); }
+    .legend-card { background: rgba(255,255,255,0.94); border-radius: var(--brand-radius); box-shadow: var(--brand-shadow); padding: 0.45rem 0.75rem; font-size: 0.7rem; display: inline-flex; flex-direction: column; gap: 0.2rem; }
+    .legend-card span { display: flex; align-items: center; gap: 0.4rem; } .legend-card i { width: 14px; height: 10px; border-radius: 2px; display: inline-block; }
+    #dsGrid { height: 300px; width: 100%; }
+    #dsChart { width: 100%; height: 280px; }
+    .chart-card { background: #fff; border: 1px solid var(--gray-border); border-radius: var(--brand-radius); padding: 0.9rem 1rem; }
+    .chart-card h5 { font-size: 0.9rem; font-weight: 700; margin: 0 0 0.3rem; color: var(--brand-dark); }
+    .chart-card .src { font-size: 0.7rem; color: var(--gray-text); margin-top: 0.3rem; }
+
+    /* ── Pattern wireframes ── */
+    .wire { width: 100%; max-width: 760px; display: block; margin: 0.5rem 0; }
+    .wire text { font-family: 'Open Sans', sans-serif; }
+    .anno { counter-reset: a; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0.35rem 1.2rem; font-size: 0.82rem; margin: 0.5rem 0; max-width: none !important; list-style: none; margin-left: 0 !important; }
+    .anno li { padding-left: 1.6rem; position: relative; }
+    .anno li::before { counter-increment: a; content: counter(a); position: absolute; left: 0; top: 0.2rem; width: 1.15rem; height: 1.15rem; border-radius: 50%; background: var(--trpa-blue); color: #fff; font-size: 0.66rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+    .res-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem; margin: 0.6rem 0; }
+    .res { border: 1px solid var(--gray-border); border-radius: 8px; padding: 0.8rem 1rem; background: #fff; font-size: 0.84rem; }
+    .res b { display: block; color: var(--trpa-navy); margin-bottom: 0.15rem; }
+    .res .note { margin-top: 0.3rem; }
+
+    footer.site-footer { background: var(--trpa-navy); color: var(--trpa-ice); padding: 1.6rem 1.5rem; font-size: 0.82rem; }
+    footer .inner { max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; }
+    footer a { color: #fff; }
+
+    @media (max-width: 900px) {
+      .page { grid-template-columns: 1fr; gap: 1rem; padding: 1rem; }
+      nav.toc { position: static; max-height: none; display: flex; flex-wrap: wrap; gap: 0.2rem 0.4rem; align-items: center; }
+      nav.toc .toc-group { width: 100%; margin: 0.4rem 0 0.1rem; }
+      nav.toc a { border-left: none; border: 1px solid var(--gray-border); border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 0.74rem; background: #fff; }
+      nav.toc a.active { border-color: var(--trpa-blue); }
+      .brand-pick { width: 100%; }
+      .brand-pick .seg { flex-direction: row; }
+      .brand-pick .seg button { border-bottom: none; border-right: 1px solid var(--gray-border); justify-content: center; }
+      .brand-pick .seg button:last-child { border-right: none; }
+      .type-row { grid-template-columns: 1fr; gap: 0.2rem; } .type-row .css { text-align: left; }
+      .hdr-back, .hdr-links .lbl { display: none; }
+      section.ds { padding: 1.1rem 1rem 1.25rem; }
+      .kpis { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 400px) { .beta-chip { display: none; } }
+  </style>
+</head>
+<body>
+
+<header id="appHeader">
+  <div class="hdr-brand">
+    <a href="https://www.trpa.gov" title="Tahoe Regional Planning Agency"><img src="../assets/TRPALogo_COLOR.png" alt="Tahoe Regional Planning Agency logo" /></a>
+    <div class="htitle">
+      <span class="hagency">Tahoe Regional Planning Agency</span>
+      <h1 class="hname">Design System</h1>
+    </div>
+    <a class="hdr-back" href="../tools/">All maps and apps</a>
+  </div>
+  <div class="hdr-links">
+    <span class="beta-chip" title="Living document. Components are documented from the tools that ship on this site.">Beta</span>
+    <calcite-button appearance="outline" kind="brand" scale="s" icon-start="file-code" href="../assets/trpa-tokens.css" target="_blank" rel="noopener" title="Open the shared tokens stylesheet">trpa-tokens.css</calcite-button>
+    <calcite-button appearance="outline" kind="neutral" scale="s" icon-start="code" href="https://github.com/trpa-agency/maps" target="_blank" rel="noopener" title="GitHub repository trpa-agency/maps"><span class="lbl">Source</span></calcite-button>
+  </div>
+</header>
+
+<div class="page">
+  <nav class="toc" aria-label="Sections">
+    <div class="brand-pick">
+      <div class="lbl">Preview brand</div>
+      <div class="seg" role="radiogroup" aria-label="Brand used by the component specimens">
+        <button type="button" class="active" data-brand="" style="--c:#0072CE" aria-checked="true" role="radio"><i></i>TRPA agency</button>
+        <button type="button" data-brand="eip" style="--c:#6EBE44" aria-checked="false" role="radio"><i></i>EIP</button>
+        <button type="button" data-brand="tahoe-living" style="--c:#5B7B6B" aria-checked="false" role="radio"><i></i>Tahoe Living</button>
+      </div>
+      <div class="hint">Re-themes every live specimen below with one attribute, <code>data-brand</code>. The page shell stays agency blue.</div>
+    </div>
+    <div class="toc-group">Start</div>
+    <a href="#overview">Overview</a>
+    <a href="#brands">Brands by category</a>
+    <div class="toc-group">Foundations</div>
+    <a href="#color">Color</a>
+    <a href="#typography">Typography</a>
+    <a href="#shape">Shape, shadow, spacing</a>
+    <a href="#logos">Logos</a>
+    <a href="#icons">Icons</a>
+    <div class="toc-group">Components</div>
+    <a href="#buttons">Buttons</a>
+    <a href="#selection">Pills, chips, badges</a>
+    <a href="#forms">Form controls</a>
+    <a href="#cards">Cards and tiles</a>
+    <a href="#feedback">Notices and feedback</a>
+    <a href="#overlays">Dialogs and tabs</a>
+    <a href="#tables">Tables</a>
+    <a href="#charts">Charts</a>
+    <div class="toc-group">Patterns</div>
+    <a href="#shell">App shell</a>
+    <a href="#pages">Page types</a>
+    <a href="#maps">Map conventions</a>
+    <a href="#states">States</a>
+    <a href="#a11y">Accessibility</a>
+    <a href="#writing">Writing for the interface</a>
+    <div class="toc-group">Use it</div>
+    <a href="#tokens">Tokens and snippets</a>
+    <a href="#references">References</a>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <div class="over">TRPA Maps</div>
+      <h1>Design System</h1>
+      <p>The colors, type, components, and page patterns behind TRPA's web tools, documented from the tools that ship on maps.trpa.gov. Built on Esri's Calcite Design System, with TRPA's brand layered on top and two sub-brands for program work.</p>
+      <div class="stripe"><i style="background:#0072CE"></i><i style="background:#003B71"></i><i style="background:#E87722"></i><i style="background:#4A6118"></i><i style="background:#9C3E27"></i><i style="background:#B5A64C"></i><i style="background:#7B6A8A"></i><i style="background:#B4CBE8"></i></div>
+    </div>
+
+    <!-- ═══════════════ OVERVIEW ═══════════════ -->
+    <section class="ds" id="overview">
+      <h2><span class="num">01</span>Overview</h2>
+      <p class="lead">One system, three brands. Every TRPA browser tool is a single HTML file built on the same four libraries, styled by one token file, and wrapped in one of three brand layers chosen by the program it serves.</p>
+      <h3>How the layers fit</h3>
+      <table class="ds">
+        <tr><th style="width:160px">Layer</th><th>What it is</th><th>Where it lives</th></tr>
+        <tr><td><b>Calcite</b></td><td>Esri's design system supplies the components: buttons, selects, switches, dialogs, tabs, notices, loaders, icons. We do not restyle them beyond brand tokens.</td><td><code>js.arcgis.com/calcite-components/5.0</code></td></tr>
+        <tr><td><b>Tokens</b></td><td>Raw palettes, semantic brand tokens, status colors, chart colorways, shape and shadow, and the Calcite variable mapping. Three brand layers scoped by <code>data-brand</code>.</td><td><code>assets/trpa-tokens.css</code></td></tr>
+        <tr><td><b>Shell</b></td><td>Header, side panel, map, drawer, footer. The structural chrome is always agency blue even when the content inside carries a sub-brand.</td><td>This page, section <a href="#shell">App shell</a></td></tr>
+        <tr><td><b>Custom components</b></td><td>The few things Calcite does not cover: segmented controls, filter pills, KPI tiles, panel sections, search with suggestions, app cards. Documented here with CSS written against the tokens.</td><td>This page, sections 07 to 14</td></tr>
+        <tr><td><b>Skills</b></td><td>The same rules in a form Claude Code can read: <code>trpa-brand</code>, <code>trpa-eip-brand</code>, <code>tahoe-living-brand</code>, <code>trpa-dashboard-stack</code>.</td><td>Claude skill library</td></tr>
+      </table>
+      <h3>Required stack</h3>
+      <ul>
+        <li><b>Calcite Design System 5.0</b> for UI components and icons.</li>
+        <li><b>ArcGIS Maps SDK for JavaScript 4.31</b> for maps and spatial queries.</li>
+        <li><b>Plotly.js 2.35</b> for every chart.</li>
+        <li><b>AG Grid Community 33</b> for every data table.</li>
+      </ul>
+      <p class="note">Loaded from CDN in that order of concern, with the UMD libraries (Plotly, AG Grid, jsPDF) placed before the ArcGIS SDK script so Dojo does not swallow them. No build tools, no frameworks, no Bootstrap or Tailwind beside Calcite.</p>
+      <div class="callout blue">Documentation here describes what the shipped tools do today. When a tool and this page disagree, fix one of them; the page is not aspirational.</div>
+    </section>
+
+    <!-- ═══════════════ BRANDS ═══════════════ -->
+    <section class="ds" id="brands">
+      <h2><span class="num">02</span>Brands by category</h2>
+      <p>Pick the brand by the program the tool serves, not by taste. The TRPA agency brand is the default and the only one allowed for regulatory, permitting, planning, and transportation tools. Sub-brands apply only to their programs.</p>
+      <table class="ds">
+        <tr><th>Brand</th><th>Use for</th><th>Primary</th><th>Dark</th><th>Accent</th><th>Font</th><th>Corners</th><th>Attribute</th></tr>
+        <tr><td><b>TRPA agency</b></td><td>Planning, permitting, transportation, monitoring, data, gallery pages, anything on trpa.gov or maps.trpa.gov by default</td><td><span class="status-dot"><i style="background:#0072CE"></i>#0072CE</span></td><td><span class="status-dot"><i style="background:#003B71"></i>#003B71</span></td><td><span class="status-dot"><i style="background:#E87722"></i>#E87722</span></td><td>Open Sans</td><td>8px cards, 7px controls</td><td><code>(none)</code></td></tr>
+        <tr><td><b>EIP</b></td><td>Environmental Improvement Program, Forest Health, Aquatic Invasive Species, Stormwater, the EIP Project Tracker family</td><td><span class="status-dot"><i style="background:#007DC3"></i>#007DC3</span></td><td><span class="status-dot"><i style="background:#0B1F41"></i>#0B1F41</span></td><td><span class="status-dot"><i style="background:#F16022"></i>#F16022</span></td><td>Lexend Deca</td><td>Pill-rounded controls</td><td><code>data-brand="eip"</code></td></tr>
+        <tr><td><b>Tahoe Living</b></td><td>Housing and community engagement for tahoeliving.org and Cultivating Community materials. Housing tools for staff or trpa.gov stay agency.</td><td><span class="status-dot"><i style="background:#5B7B6B"></i>#5B7B6B</span></td><td><span class="status-dot"><i style="background:#2D5A3D"></i>#2D5A3D</span></td><td><span class="status-dot"><i style="background:#C4704B"></i>#C4704B</span></td><td>Montserrat</td><td>12px cards, warm neutrals</td><td><code>data-brand="tahoe-living"</code></td></tr>
+      </table>
+      <h3>Site categories</h3>
+      <p>maps.trpa.gov groups apps into categories, each with a color from the agency palette. The color marks the category on gallery cards and section headings. It is a label, not a theme: a Planning app is still agency blue inside.</p>
+      <div class="cat-row" id="catRow"><span class="note">Loading categories from apps.json</span></div>
+      <h3>Mixing brands</h3>
+      <div class="do-dont">
+        <div class="do"><b>Do</b><ul><li>Keep the header, back link, and footer in the agency shell on every tool, with the program logo added beside the TRPA logo for EIP tools.</li><li>Switch the sub-brand on the content area only, with one attribute.</li><li>Use the sub-brand's chart colorway inside its content.</li></ul></div>
+        <div class="dont"><b>Don't</b><ul><li>Recolor Calcite buttons to a category color. Buttons are always the brand primary.</li><li>Invent a palette for a new program. Use the agency palette until a program has its own brand guide.</li><li>Put Tahoe Living's warm cream behind an agency tool.</li></ul></div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ COLOR ═══════════════ -->
+    <section class="ds" id="color">
+      <h2><span class="num">03</span>Color</h2>
+      <p>Hex values are the agency's Pantone conversions. Click any swatch to copy its hex. The badge on each swatch is the contrast ratio against white: <b>AA text</b> passes 4.5 to 1 for body text, <b>AA large</b> passes 3 to 1 for icons, large type, and borders, and <b>fill only</b> means use it as a fill with dark text on top.</p>
+
+      <h3>TRPA agency palette</h3>
+      <h4>Primary</h4>
+      <div class="swatches" data-palette="trpa-primary"></div>
+      <h4>Agency earth palette</h4>
+      <div class="swatches" data-palette="trpa-earth"></div>
+      <div class="callout">Orange, earth, olive, and ice fail contrast as text on white. Use them as fills, borders, and chart marks. When orange must carry text, such as a Beta chip, use the text step <code>--brand-accent-text</code> (#B55A10) instead.</div>
+
+      <h3>Neutrals</h3>
+      <p>Grays are tinted toward navy, never pure. The light background is the page color; white is the surface color for panels, cards, and controls.</p>
+      <div class="swatches" data-palette="neutrals"></div>
+
+      <h3>Status</h3>
+      <p>Status colors come from the agency palette so an alert never looks imported. Each has a light tint for backgrounds and, where the base fails as text, a darker text step.</p>
+      <div class="swatches" data-palette="status"></div>
+      <div class="row" style="margin-top:0.6rem">
+        <span class="status-dot"><i style="background:#4A6118"></i>Complete, passing, on track</span>
+        <span class="status-dot"><i style="background:#E87722"></i>Needs attention, beta, pending</span>
+        <span class="status-dot"><i style="background:#9C3E27"></i>Error, excluded, declining</span>
+        <span class="status-dot"><i style="background:#0072CE"></i>Informational, selected</span>
+      </div>
+
+      <h3>EIP palette</h3>
+      <p>Four Pantone colors from the EIP brand guide. EIP Blue measures 4.45 to 1 on white, just under AA for text, so text-sized blue uses <code>--eip-blue-text</code> (#0068A8); fills keep EIP Blue. The same rule gives orange its text step.</p>
+      <div class="swatches" data-palette="eip"></div>
+      <h3>Tahoe Living palette</h3>
+      <p>Earth tones with warm neutrals. The page background is cream, not gray, and borders are sand-tinted. Only sage, forest, and pine pass as text on white.</p>
+      <div class="swatches" data-palette="tl"></div>
+
+      <h3>Chart colorways</h3>
+      <p>Categorical series cycle through the brand colorway in order. Keep to four series where possible; past four, consider a different chart. The preview brand switch repaints the chart in the Charts section.</p>
+      <div class="ramp-row"><span>TRPA agency</span><div class="ramp" data-ramp="#0072CE,#003B71,#E87722,#4A6118,#9C3E27,#B5A64C,#7B6A8A,#B4CBE8"></div></div>
+      <div class="ramp-row"><span>EIP</span><div class="ramp" data-ramp="#007DC3,#6EBE44,#F16022,#0B1F41,#2F6B13,#735A00,#7B6A8A,#B4CBE8"></div></div>
+      <div class="ramp-row"><span>Tahoe Living</span><div class="ramp" data-ramp="#5B7B6B,#C4704B,#6BA3BE,#D4A843,#3D6B4E,#8B6F5E,#7B8E9A,#2D5A3D"></div></div>
+      <h4>Sequential and diverging</h4>
+      <p>Sequential data uses tints of the brand primary from ice to navy. Diverging data runs brick to blue through a neutral light gray, or for EIP, orange to green through white. Never use a rainbow.</p>
+      <div class="ramp-row"><span>Sequential (agency)</span><div class="ramp" data-ramp="#EAF1F9,#B4CBE8,#7FA9DB,#3F8AD6,#0072CE,#004F9A,#003B71"></div></div>
+      <div class="ramp-row"><span>Diverging (agency)</span><div class="ramp" data-ramp="#9C3E27,#C47A63,#E5B9AB,#EDEFF2,#A9C7E6,#4F93D6,#0072CE"></div></div>
+      <div class="ramp-row"><span>Priority tiers (EIP)</span><div class="ramp" data-ramp="#2F6B13,#735A00,#B5430E"></div></div>
+      <p class="note">The EIP priority ramp darkens green and orange with an earth tone between so each tier label clears 4.5 to 1 on its light tint (#E8F5E0, #FFF4CC, #FDE8DC). This is the ramp the Funding Priorities tool uses.</p>
+      <h4>Map symbology</h4>
+      <ul>
+        <li><b>Selection</b> is brand primary at 28 percent fill with a 2px outline.</li>
+        <li><b>Subject or focus feature</b> is accent orange at 50 percent fill with a 3px outline.</li>
+        <li><b>Buffers and study areas</b> are a dashed accent outline with no fill.</li>
+        <li><b>Basemap</b> is <code>gray-vector</code> so data colors read over it.</li>
+      </ul>
+    </section>
+
+    <!-- ═══════════════ TYPOGRAPHY ═══════════════ -->
+    <section class="ds" id="typography">
+      <h2><span class="num">04</span>Typography</h2>
+      <p>Each brand has one web typeface. Agency documents use Calibri 11pt, and maps use Syntax, per the TRPA Style Guide. Open Sans is the web stand-in for Calibri.</p>
+      <div class="font-cards">
+        <div class="font-card" style="font-family:'Open Sans',sans-serif"><div class="big">Open Sans</div><div class="alpha">Aa Bb Cc 0123456789 Lake Tahoe Region</div><div class="use"><b>TRPA agency.</b> Weights 400, 600, 700. Google Fonts, or self-hosted in <code>tools/assets/fonts</code> for exports.</div></div>
+        <div class="font-card" style="font-family:'Lexend Deca',sans-serif"><div class="big">Lexend Deca</div><div class="alpha">Aa Bb Cc 0123456789 Lake Tahoe Region</div><div class="use"><b>EIP.</b> Weights 400 to 700. Section labels in the EIP print brand use Calder Dark; on the web use Lexend Deca in uppercase with letter spacing.</div></div>
+        <div class="font-card" style="font-family:'Montserrat',sans-serif"><div class="big">Montserrat</div><div class="alpha">Aa Bb Cc 0123456789 Lake Tahoe Region</div><div class="use"><b>Tahoe Living.</b> Weights 400 to 700. Body 16px with line height 1.7 for a more relaxed reading rhythm.</div></div>
+      </div>
+      <h3>Type scale for tools</h3>
+      <p>Tools run at a 14px base because they are dense, map-first workspaces. Documentation and gallery pages run at 15px. Hierarchy comes from weight, case, and letter spacing rather than from large size jumps.</p>
+      <div id="typeScale"></div>
+      <h3>Rules</h3>
+      <ul>
+        <li>Body text is brand dark (navy), never pure black.</li>
+        <li>Help text and labels are <code>--gray-text</code> (#6B7688). Lighter grays are decoration only.</li>
+        <li>Uppercase is reserved for small labels: overlines, section titles, badges, column headers. Never uppercase a sentence.</li>
+        <li>Sentence case for buttons, headings, and labels. Title Case only for proper names like Regional Plan.</li>
+        <li>Numbers in data use tabular alignment where columns compare values; thousands get a comma, no needless decimals.</li>
+      </ul>
+    </section>
+
+    <!-- ═══════════════ SHAPE ═══════════════ -->
+    <section class="ds" id="shape">
+      <h2><span class="num">05</span>Shape, shadow, spacing</h2>
+      <h3>Corner radius</h3>
+      <div class="spec-row">
+        <div class="spec"><div class="box" style="border-radius:4px"></div><b>4px</b>year tags, code, inline badges with square feel</div>
+        <div class="spec"><div class="box" style="border-radius:7px"></div><b>7px</b>agency controls: inputs, selects, segmented</div>
+        <div class="spec"><div class="box" style="border-radius:8px"></div><b>8px</b>agency cards, panels, dialogs, popups</div>
+        <div class="spec"><div class="box" style="border-radius:12px"></div><b>12px</b>Tahoe Living cards; EIP list switch</div>
+        <div class="spec"><div class="box" style="border-radius:999px;width:120px;height:40px"></div><b>999px</b>pills, chips, tags, all EIP controls</div>
+      </div>
+      <p class="note">EIP rounds everything into pills, including Calcite buttons via <code>--calcite-button-corner-radius: 999px</code>. The agency keeps squarer 7px and 8px corners. Tahoe Living sits between at 8px controls and 12px cards.</p>
+      <h3>Elevation</h3>
+      <div class="spec-row">
+        <div class="spec"><div class="box" style="box-shadow:none"></div><b>Flat</b>panels and wells, hairline border only</div>
+        <div class="spec"><div class="box" style="box-shadow:0 1px 4px rgba(0,59,113,0.06);border:none"></div><b>Header</b><code>--brand-shadow-sm</code></div>
+        <div class="spec"><div class="box" style="box-shadow:0 2px 10px rgba(0,59,113,0.16);border:none"></div><b>Floating</b><code>--brand-shadow</code>: suggestions, map cards, toasts</div>
+        <div class="spec"><div class="box" style="box-shadow:0 4px 14px rgba(0,59,113,0.18);border:none;transform:translateY(-2px)"></div><b>Card hover</b>lift 2px plus a deeper shadow</div>
+      </div>
+      <p class="note">Shadows are tinted with the brand dark color, not black, so they read as depth rather than dirt.</p>
+      <h3>Spacing</h3>
+      <p>Spacing follows a loose 0.25rem step. The common stops:</p>
+      <div class="spec-row spacing">
+        <div class="spec"><i style="width:4px"></i><b>4px</b>icon gaps</div>
+        <div class="spec"><i style="width:8px"></i><b>8px</b>chips, rows</div>
+        <div class="spec"><i style="width:12px"></i><b>12px</b>field groups</div>
+        <div class="spec"><i style="width:16px"></i><b>16px</b>panel padding, card padding</div>
+        <div class="spec"><i style="width:18px"></i><b>18px</b>panel section gap</div>
+        <div class="spec"><i style="width:32px"></i><b>32px</b>page gutters</div>
+      </div>
+      <h3>Panel widths</h3>
+      <p>Side panels scale with the window: <code>clamp(300px, 25vw, 380px)</code> for the agency tools, 400px fixed when the panel holds charts, and full width stacked under the map on phones. A drag handle on the divider lets users set their own width.</p>
+    </section>
+
+    <!-- ═══════════════ LOGOS ═══════════════ -->
+    <section class="ds" id="logos">
+      <h2><span class="num">06</span>Logos</h2>
+      <p>Two logo systems. The TRPA agency logo is the lake silhouette with stacked text, and it appears on every tool. The EIP logo is the mountain and water mark, added beside the TRPA logo on EIP tools. Tahoe Living carries its own wordmark in the header and puts the TRPA logo in the footer.</p>
+      <div class="logo-grid">
+        <div><div class="logo-tile"><img src="../assets/TRPALogo_COLOR.png" alt="TRPA color logo" /></div><div class="logo-cap"><b>TRPA color</b> on white or light backgrounds. <code>assets/TRPALogo_COLOR.png</code></div></div>
+        <div><div class="logo-tile dark"><img src="../assets/TRPALogo_WHITE.png" alt="TRPA white logo" /></div><div class="logo-cap"><b>TRPA white</b> on navy or blue. <code>assets/TRPALogo_WHITE.png</code></div></div>
+        <div><div class="logo-tile"><img src="assets/eip-logo.png" alt="Lake Tahoe Environmental Improvement Program logo" /></div><div class="logo-cap"><b>EIP primary</b> horizontal, full color. <code>tools/assets/eip-logo.png</code></div></div>
+        <div><div class="logo-tile blue"><img src="../assets/TRPALogo_WHITE.png" alt="TRPA white logo on TRPA Blue" /></div><div class="logo-cap"><b>On TRPA Blue</b> always use the white variant.</div></div>
+      </div>
+      <h3>Rules</h3>
+      <ul>
+        <li>Header height for the logo is 36px in tool headers and 56px in the gallery header.</li>
+        <li>Clear space around the EIP mark equals the height of the icon.</li>
+        <li>No stretching, recoloring, drop shadows, or placement on photographs.</li>
+        <li>On exported maps and slides, the TRPA logo sits bottom right.</li>
+      </ul>
+    </section>
+
+    <!-- ═══════════════ ICONS ═══════════════ -->
+    <section class="ds" id="icons">
+      <h2><span class="num">07</span>Icons</h2>
+      <p>Calcite UI Icons, 1px outline style, through <code>&lt;calcite-icon icon="name" scale="s"&gt;</code> or the <code>icon-start</code> attribute on buttons. These are the icons the tools use; click one to copy its name. Browse the full set at <a href="https://developers.arcgis.com/calcite-design-system/icons/" target="_blank" rel="noopener">Calcite icons</a>.</p>
+      <div class="icon-grid" id="iconGrid"></div>
+      <h4>Pairings</h4>
+      <table class="ds">
+        <tr><th>Action</th><th>Icon</th><th>Action</th><th>Icon</th></tr>
+        <tr><td>Download CSV</td><td><code>file-csv</code></td><td>Open in new tab</td><td><code>launch</code></td></tr>
+        <tr><td>Download PDF or print</td><td><code>print</code></td><td>Zoom to feature</td><td><code>zoom-to-object</code></td></tr>
+        <tr><td>Download image</td><td><code>image</code></td><td>Copy to clipboard</td><td><code>copy-to-clipboard</code></td></tr>
+        <tr><td>Search</td><td><code>search</code></td><td>Refresh data</td><td><code>refresh</code></td></tr>
+        <tr><td>Remove or exclude</td><td><code>x-circle</code></td><td>Close</td><td><code>x</code></td></tr>
+        <tr><td>Show table</td><td><code>table</code></td><td>Pin or favorite</td><td><code>pin</code></td></tr>
+        <tr><td>Save</td><td><code>save</code></td><td>Submit</td><td><code>send</code></td></tr>
+      </table>
+    </section>
+
+    <!-- ═══════════════ COMPONENTS ═══════════════ -->
+    <div class="brand-scope" id="specimens">
+
+    <section class="ds" id="buttons">
+      <h2><span class="num">08</span>Buttons</h2>
+      <p>All buttons are <code>calcite-button</code>. Three appearances by importance, three kinds by meaning, two scales. One solid brand button per view: it is the action the panel exists for. Everything else is outline or transparent.</p>
+      <div class="frame" data-label="calcite-button"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <div class="row"><span class="rl">Solid brand</span>
+          <calcite-button appearance="solid" kind="brand" scale="s" icon-start="search">Find parcels</calcite-button>
+          <calcite-button appearance="solid" kind="brand" scale="m" icon-start="print">Print labels</calcite-button>
+          <calcite-button appearance="solid" kind="brand" scale="s" disabled>Disabled</calcite-button>
+          <calcite-button appearance="solid" kind="brand" scale="s" loading>Loading</calcite-button>
+        </div>
+        <div class="row"><span class="rl">Outline brand</span>
+          <calcite-button appearance="outline" kind="brand" scale="s" icon-start="file-csv">CSV</calcite-button>
+          <calcite-button appearance="outline" kind="brand" scale="s" icon-start="image">PNG</calcite-button>
+          <calcite-button appearance="outline" kind="brand" scale="s" icon-start="zoom-to-object">Zoom to</calcite-button>
+          <calcite-button appearance="outline" kind="brand" scale="s" icon-start="launch" href="#buttons">Open tracker</calcite-button>
+        </div>
+        <div class="row"><span class="rl">Neutral</span>
+          <calcite-button appearance="outline" kind="neutral" scale="s">Cancel</calcite-button>
+          <calcite-button appearance="transparent" kind="neutral" scale="s" icon-start="download">Download picks</calcite-button>
+          <calcite-button appearance="transparent" kind="neutral" scale="s" icon-start="x" label="Close table"></calcite-button>
+        </div>
+        <div class="row"><span class="rl">Danger</span>
+          <calcite-button appearance="solid" kind="danger" scale="s" icon-start="trash">Clear all picks</calcite-button>
+          <calcite-button appearance="outline" kind="danger" scale="s" icon-start="x-circle">Exclude</calcite-button>
+        </div>
+        <div class="row"><span class="rl">Full width</span>
+          <div style="width:280px"><calcite-button appearance="solid" kind="brand" scale="s" width="full" icon-start="print">Print labels</calcite-button></div>
+          <div style="width:280px"><calcite-button appearance="outline" kind="brand" scale="s" width="full" icon-start="file-csv">Download CSV</calcite-button></div>
+        </div>
+      </div>
+      <table class="ds">
+        <tr><th>Appearance</th><th>Meaning</th><th>Example</th></tr>
+        <tr><td><code>solid</code> + <code>kind="brand"</code></td><td>The primary action. One per panel or dialog.</td><td>Find parcels, Print labels, Save, Send picks</td></tr>
+        <tr><td><code>outline</code> + <code>kind="brand"</code></td><td>Secondary actions, exports, navigation to another tool</td><td>CSV, PNG, Zoom to, Open tracker</td></tr>
+        <tr><td><code>outline</code> + <code>kind="neutral"</code></td><td>Cancel and dismiss in dialogs</td><td>Cancel</td></tr>
+        <tr><td><code>transparent</code> + <code>kind="neutral"</code></td><td>Tertiary and icon-only: close, collapse, fallbacks</td><td>Close table, Download picks</td></tr>
+        <tr><td><code>kind="danger"</code></td><td>Destructive, confirmed in a dialog first</td><td>Clear all picks</td></tr>
+      </table>
+      <ul>
+        <li>Scale <code>s</code> inside panels, drawers, and dialogs; <code>m</code> only for a lone primary action like a search submit.</li>
+        <li>Pinned export buttons at the bottom of a panel use <code>width="full"</code> so they line up.</li>
+        <li>A disabled button gets a <code>title</code> that says what unlocks it.</li>
+        <li>Buttons that open another site get <code>icon-start="launch"</code>, <code>target="_blank"</code>, and <code>rel="noopener"</code>.</li>
+      </ul>
+      <pre><code>&lt;calcite-button appearance="solid" kind="brand" scale="s" icon-start="print" width="full"&gt;Print labels&lt;/calcite-button&gt;
+&lt;calcite-button appearance="outline" kind="brand" scale="s" icon-start="file-csv"&gt;CSV&lt;/calcite-button&gt;
+&lt;calcite-button appearance="transparent" kind="neutral" scale="s" icon-start="x" label="Close table"&gt;&lt;/calcite-button&gt;</code></pre>
+      <h4>Brand the buttons with tokens, not CSS</h4>
+      <pre><code><span class="cmt">/* trpa-tokens.css already maps these; shown for tools that inline their tokens */</span>
+:root {
+  --calcite-color-brand:       var(--brand-primary);
+  --calcite-color-brand-hover: var(--brand-primary-hover);
+  --calcite-color-brand-press: var(--brand-primary-hover);
+  --calcite-font-family:       var(--brand-font);
+}
+[data-brand="eip"] calcite-button { --calcite-button-corner-radius: 999px; }</code></pre>
+    </section>
+
+    <section class="ds" id="selection">
+      <h2><span class="num">09</span>Pills, chips, badges</h2>
+      <p>Small rounded things do four different jobs. Keep the jobs distinct so users can tell a control from a label.</p>
+      <div class="frame" data-label="Segmented control"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <div class="row"><span class="rl">Choose one</span>
+          <div class="seg" style="width:260px"><button type="button" class="active">Address</button><button type="button">APN</button><button type="button">Project</button></div>
+          <div class="seg" style="width:180px"><button type="button">Feet</button><button type="button" class="active">Meters</button></div>
+        </div>
+      </div>
+      <p class="note">A custom <code>.seg</code>: a row of buttons with one <code>.active</code>. For mutually exclusive choices with two to four short options. Longer lists use <code>calcite-select</code>.</p>
+      <div class="frame" data-label="Filter pills"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <div class="row"><span class="rl">Toggle many</span>
+          <button type="button" class="pill active">Tahoe Open Data <span class="n">412</span></button>
+          <button type="button" class="pill">Lake Tahoe Info <span class="n">38</span></button>
+          <button type="button" class="pill">REST services <span class="n">196</span></button>
+          <button type="button" class="pill" style="opacity:.4;cursor:default">Partner <span class="n">0</span></button>
+        </div>
+        <div class="row"><span class="rl">Colored sets</span>
+          <button type="button" class="pill dot on" style="--c:#4A6118"><i></i>Forest Health</button>
+          <button type="button" class="pill dot on" style="--c:#0072CE"><i></i>Stormwater</button>
+          <button type="button" class="pill dot" style="--c:#7B6A8A"><i></i>AIS</button>
+          <button type="button" class="pill dot" style="--c:#B47E00"><i></i>Recreation</button>
+        </div>
+      </div>
+      <p class="note">Pills are controls: click toggles, double-click isolates, a count shows what each one holds, and an empty pill fades. The colored variant carries a category dot that fills in when on.</p>
+      <div class="frame" data-label="Tags, chips, badges (labels, not controls)"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <div class="row"><span class="rl">Tags</span><span class="tag">Zoning</span><span class="tag">Parcels</span><span class="tag">Mailing Labels</span><span class="chip-lu">Residential, single family</span></div>
+        <div class="row"><span class="rl">Badges</span>
+          <span class="badge accent">Subject</span><span class="badge info">Owner-occupied</span><span class="badge danger">Incomplete</span><span class="badge success">Funded</span><span class="badge neutral">Same as 025-123-45</span><span class="badge solid">2024</span>
+        </div>
+        <div class="row"><span class="rl">Status chips</span><span class="beta-chip">Beta</span><span class="beta-pill" style="margin:0">Beta</span><span class="status-dot"><i style="background:#6EBE44"></i>Updated Oct. 1, 2026</span></div>
+      </div>
+      <table class="ds">
+        <tr><th>Thing</th><th>Job</th><th>Shape</th></tr>
+        <tr><td>Segmented control</td><td>Pick exactly one of a few</td><td>Joined buttons, control radius, active is primary fill</td></tr>
+        <tr><td>Filter pill</td><td>Toggle a filter on or off, show its count</td><td>Pill, 1.5px border, active is brand dark fill</td></tr>
+        <tr><td>Tag</td><td>Label a card or row with a topic</td><td>Pill, light gray fill, hairline border, small text</td></tr>
+        <tr><td>Badge</td><td>Flag a state inside a table or list</td><td>Pill, uppercase 0.62rem, tinted fill with matching text</td></tr>
+        <tr><td>Beta chip</td><td>Mark a tool as beta in the header or on a card</td><td>Header: outlined accent text. Card: solid accent fill</td></tr>
+      </table>
+    </section>
+
+    <section class="ds" id="forms">
+      <h2><span class="num">10</span>Form controls</h2>
+      <p>Calcite controls wherever one exists: <code>calcite-select</code>, <code>calcite-switch</code>, <code>calcite-combobox</code>, <code>calcite-slider</code>, <code>calcite-input</code>. Each sits in a <code>.field</code> with a small uppercase label and, when the choice needs explaining, one line of help text under it.</p>
+      <div class="frame" data-label="Fields"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <div class="two">
+          <div class="stack">
+            <label class="field">Notice distance
+              <div class="row" style="gap:0.45rem"><div style="flex:1"><calcite-input type="number" value="300" scale="s" suffix-text="ft"></calcite-input></div><div class="seg" style="width:120px"><button type="button" class="active">Feet</button><button type="button">Meters</button></div></div>
+              <span class="field-help">Measured from the subject parcel boundary. Most TRPA notices use 300 feet.</span>
+            </label>
+            <label class="field">Jurisdiction
+              <calcite-select scale="s"><calcite-option value="all" selected>All jurisdictions</calcite-option><calcite-option>City of South Lake Tahoe</calcite-option><calcite-option>El Dorado County</calcite-option><calcite-option>Placer County</calcite-option><calcite-option>Washoe County</calcite-option><calcite-option>Douglas County</calcite-option></calcite-select>
+            </label>
+            <label class="field">Working groups
+              <calcite-combobox scale="s" placeholder="Pick one or more" selection-mode="multiple"><calcite-combobox-item value="fh" heading="Forest Health" selected></calcite-combobox-item><calcite-combobox-item value="sw" heading="Stormwater"></calcite-combobox-item><calcite-combobox-item value="ais" heading="Aquatic Invasive Species"></calcite-combobox-item></calcite-combobox>
+            </label>
+          </div>
+          <div class="stack">
+            <label class="field">Year
+              <calcite-slider min="2012" max="2026" value="2024" label-handles ticks="2" scale="s"></calcite-slider>
+            </label>
+            <div class="field">Options
+              <label class="status-dot" style="font-weight:400;font-size:0.8rem"><calcite-switch scale="s" checked></calcite-switch>Include owner-occupied parcels</label>
+              <label class="status-dot" style="font-weight:400;font-size:0.8rem"><calcite-switch scale="s"></calcite-switch>Show parcel labels on the map</label>
+            </div>
+            <label class="field">Plain select (no Calcite)
+              <select><option>Residential units</option><option>Tourist accommodation units</option><option>Commercial floor area</option></select>
+              <span class="field-help">A native select styled with tokens is fine inside dense panels where Calcite's height would crowd the layout.</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <h3>Search with suggestions</h3>
+      <p>Every map tool starts with a search box: address, APN, or project name, with grouped suggestions as you type. The search icon is brand primary, the box fills gray until focus, and the APN in a result is bold brand text.</p>
+      <div class="frame" data-label="Search box"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <div style="max-width:420px">
+          <div class="search-box"><calcite-icon icon="search" scale="s"></calcite-icon><input type="text" value="128 Market" aria-label="Search address, APN, or project" /><calcite-icon icon="x" scale="s" style="color:var(--gray-text)"></calcite-icon></div>
+          <div class="suggest">
+            <div class="suggest-group">Addresses</div>
+            <div class="suggest-item active"><span class="p">128 Market St, Stateline</span><span class="s"><span class="apn">1318-23-110-003</span> · Douglas County</span></div>
+            <div class="suggest-item"><span class="p">1280 Market Ln, South Lake Tahoe</span><span class="s"><span class="apn">025-451-12</span> · City of South Lake Tahoe</span></div>
+            <div class="suggest-group">EIP projects</div>
+            <div class="suggest-item"><span class="p">Market Street Stormwater Improvements</span><span class="s">EIP 01.01.02.0045 · Completed</span></div>
+          </div>
+        </div>
+      </div>
+      <pre><code>&lt;label class="field"&gt;Notice distance
+  &lt;calcite-input type="number" value="300" scale="s" suffix-text="ft"&gt;&lt;/calcite-input&gt;
+  &lt;span class="field-help"&gt;Measured from the subject parcel boundary.&lt;/span&gt;
+&lt;/label&gt;</code></pre>
+    </section>
+
+    <section class="ds" id="cards">
+      <h2><span class="num">11</span>Cards and tiles</h2>
+      <h3>Panel section</h3>
+      <p>The side panel is a numbered sequence of sections. Each has an uppercase title with a numbered dot, an optional tool on the right, and one line of help that says what the step does. The numbers make the workflow legible without instructions.</p>
+      <div class="frame" data-label="Panel section"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <div class="stack" style="max-width:360px">
+          <div class="panel-sec">
+            <div class="sec-title"><span class="sec-num">1</span>Subject parcels<button type="button" class="sec-tool"><calcite-icon icon="x" scale="s"></calcite-icon>Clear</button></div>
+            <p class="sec-help">Search or click the map. Add as many parcels as the notice covers.</p>
+            <div class="row"><span class="chip-lu">025-451-12</span><span class="chip-lu">025-451-13</span></div>
+          </div>
+          <div class="panel-sec">
+            <div class="sec-title"><span class="sec-num">2</span>Notice distance</div>
+            <p class="sec-help">Measured from the subject parcel boundary.</p>
+            <div class="seg"><button type="button" class="active">300 ft</button><button type="button">500 ft</button><button type="button">Custom</button></div>
+          </div>
+        </div>
+      </div>
+      <h3>KPI tiles</h3>
+      <p>Three across, a 3px top border in the series color, a large number, and a small label. Up and down deltas use success and danger text.</p>
+      <div class="frame" data-label="KPI tiles"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <div class="kpis" style="max-width:460px">
+          <div class="kpi"><div class="v">1,284</div><div class="l">Residential units</div></div>
+          <div class="kpi accent"><div class="v">312</div><div class="l">Tourist accommodation units</div></div>
+          <div class="kpi success"><div class="v up">+46</div><div class="l">Units since 2012</div></div>
+        </div>
+      </div>
+      <h3>Key and value list, wells</h3>
+      <div class="frame" data-label="Detail blocks"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <div class="two">
+          <dl class="kv"><dt>APN</dt><dd>025-451-12</dd><dt>Jurisdiction</dt><dd>City of South Lake Tahoe</dd><dt>Zoning</dt><dd>Tourist Core Area Plan</dd><dt>Land use</dt><dd>Commercial</dd></dl>
+          <div class="stack"><div class="well"><strong>Now:</strong> 4 residential units, 0 tourist accommodation units, 2,400 square feet of commercial floor area.</div><div class="legend-card"><span><i style="background:#0072CE;opacity:.45"></i>Parcels on the list</span><span><i style="background:#E87722"></i>Subject parcel</span><span><i style="border:2px dashed #E87722;height:6px"></i>Notice buffer</span></div></div>
+        </div>
+      </div>
+      <h3>App card</h3>
+      <p>The gallery card: thumbnail with a 3px category-colored bottom border, title with optional Beta pill, two-line description, tags, and the host domain. The whole card is the link and lifts on hover.</p>
+      <div class="frame" data-label="Gallery app card"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <a class="app-card" href="public-notice.html"><div class="thumb">P</div><div class="body"><h5>Public Notice List<span class="beta-pill">Beta</span></h5><p>Build the owner mailing list for a public notice. Pick the subject parcels, set a distance, review who is inside it, and export.</p></div><div class="foot"><span><span class="tag">Permitting</span> <span class="tag">Parcels</span></span><span>maps.trpa.gov</span></div></a>
+      </div>
+    </section>
+
+    <section class="ds" id="feedback">
+      <h2><span class="num">12</span>Notices and feedback</h2>
+      <p><code>calcite-notice</code> for inline messages that stay. A callout for guidance in documentation. A toast for a short confirmation that disappears. Status text under the pinned footer for progress.</p>
+      <div class="frame" data-label="calcite-notice"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <div class="stack">
+          <calcite-notice open kind="info" icon="information" scale="s"><div slot="message">Source: TRPA Parcel Service. Assessor data refreshed nightly from the four county assessors.</div></calcite-notice>
+          <calcite-notice open kind="warning" icon="exclamation-mark-triangle" scale="s"><div slot="title">Parcel search unavailable on the office network</div><div slot="message">Searching by address uses the public parcel service, which the internal network blocks. Click the map instead, or use a personal connection.</div></calcite-notice>
+          <calcite-notice open kind="danger" icon="x-octagon" scale="s"><div slot="message">The export failed. Nothing was saved. Try again, or download the CSV and build labels in Word.</div></calcite-notice>
+          <calcite-notice open kind="success" icon="check-circle" scale="s"><div slot="message">Picks sent. Your working group lead can see them in the combined list.</div></calcite-notice>
+        </div>
+      </div>
+      <div class="frame" data-label="Callouts and toasts"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <div class="stack">
+          <div class="ds-callout">Set up a redirect from the old gis.trpa.org URL once DNS and traffic cut over.</div>
+          <div class="ds-callout info">Program and indicator data lives in Lake Tahoe Info, described in the Developer Guide.</div>
+          <div><span class="toast">Added 3 parcels to the list<button type="button">Undo</button></span></div>
+        </div>
+      </div>
+      <ul>
+        <li>Notices say what happened, what it means, and what to do, in that order. Danger notices say what was and was not saved.</li>
+        <li>Toasts hold one sentence and at most one action, usually Undo. They sit bottom center over the map.</li>
+        <li>Never block the map with a modal for information. Modals are for decisions and multi-step exports.</li>
+      </ul>
+    </section>
+
+    <section class="ds" id="overlays">
+      <h2><span class="num">13</span>Dialogs and tabs</h2>
+      <h3>Dialog</h3>
+      <p><code>calcite-dialog</code>, modal, scale <code>s</code>. Heading states the task. Footer: Cancel as outline neutral on the right next to a single solid brand action. Secondary actions like Copy go in <code>footer-start</code>.</p>
+      <div class="frame" data-label="calcite-dialog"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <calcite-button appearance="solid" kind="brand" scale="s" icon-start="print" id="openDlg">Open export dialog</calcite-button>
+        <calcite-dialog id="dsDialog" heading="Export mailing labels" modal width-scale="s" scale="s">
+          <div class="stack" style="font-size:0.85rem;padding:0.2rem 0">
+            <p style="margin:0">38 labels for 36 owners. Two owners appear twice because they hold adjacent parcels.</p>
+            <label class="field">Label stock<calcite-select scale="s"><calcite-option selected>Avery 5160, 30 per sheet</calcite-option><calcite-option>Avery 5161, 20 per sheet</calcite-option></calcite-select></label>
+            <label class="status-dot" style="font-size:0.8rem"><calcite-switch scale="s" checked></calcite-switch>Merge duplicate mailing addresses</label>
+          </div>
+          <calcite-button slot="footer-start" appearance="outline" kind="brand" scale="s" icon-start="copy-to-clipboard">Copy addresses</calcite-button>
+          <calcite-button slot="footer-end" appearance="outline" kind="neutral" scale="s" id="closeDlg">Cancel</calcite-button>
+          <calcite-button slot="footer-end" appearance="solid" kind="brand" scale="s" icon-start="print">Download PDF</calcite-button>
+        </calcite-dialog>
+      </div>
+      <h3>Tabs</h3>
+      <p><code>calcite-tabs</code> to switch a panel between views of the same thing, such as Parcel, Compare, and Table. Tab labels are one or two words. Tabs never hide the primary action.</p>
+      <div class="frame" data-label="calcite-tabs"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <calcite-tabs scale="s" style="background:#fff;border:1px solid var(--gray-border);border-radius:var(--brand-radius);max-width:460px">
+          <calcite-tab-nav slot="title-group"><calcite-tab-title selected icon-start="pin">Parcel</calcite-tab-title><calcite-tab-title icon-start="compare">Compare</calcite-tab-title><calcite-tab-title icon-start="table">Table</calcite-tab-title></calcite-tab-nav>
+          <calcite-tab selected><div style="padding:0.9rem" class="note">Detail for the selected parcel: address, tiles, and a change list by year.</div></calcite-tab>
+          <calcite-tab><div style="padding:0.9rem" class="note">Two years side by side with a change table.</div></calcite-tab>
+          <calcite-tab><div style="padding:0.9rem" class="note">The AG Grid drawer, with CSV export.</div></calcite-tab>
+        </calcite-tabs>
+      </div>
+      <h3>Loading</h3>
+      <div class="frame" data-label="Loaders"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <div class="row" style="gap:2rem;align-items:center">
+          <calcite-loader inline label="Loading parcels" scale="s"></calcite-loader><span class="note">inline, next to the status text</span>
+          <div style="flex:1;min-width:200px"><calcite-progress type="determinate" value="0.62" label="Fetching 2,000 of 3,214 parcels"></calcite-progress><div class="note" style="margin-top:0.2rem">Fetching 2,000 of 3,214 parcels</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ds" id="tables">
+      <h2><span class="num">14</span>Tables</h2>
+      <p>AG Grid Community with the Quartz theme, parameterized to the brand. Headers are small uppercase gray text on a light fill, rows are 30px, the accent color is brand primary. Every grid gets sorting, resizing, and a CSV export button nearby. This one lists the apps in the site registry.</p>
+      <div class="frame" data-label="AG Grid, themeQuartz.withParams"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <div class="row" style="justify-content:space-between;margin-bottom:0.5rem"><span class="note" id="gridCount">Loading apps.json</span><calcite-button appearance="outline" kind="brand" scale="s" icon-start="file-csv" id="gridCsv">CSV</calcite-button></div>
+        <div id="dsGrid"></div>
+      </div>
+      <pre><code>const theme = agGrid.themeQuartz.withParams({
+  accentColor: "#0072CE", fontFamily: "Open Sans, system-ui, sans-serif", fontSize: 12,
+  headerFontSize: 11, headerTextColor: "#6B7688", headerBackgroundColor: "#F3F6FA",
+  rowHeight: 30, headerHeight: 32, spacing: 5, borderColor: "#E2E6EC", foregroundColor: "#003B71"
+});
+gridApi = agGrid.createGrid(el, { theme, columnDefs, rowData,
+  defaultColDef: { sortable: true, resizable: true, filter: true, minWidth: 80 },
+  suppressCellFocus: true });</code></pre>
+      <ul>
+        <li>Numbers right-aligned with <code>valueFormatter: p =&gt; p.value?.toLocaleString() ?? "—"</code>.</li>
+        <li>Row state through <code>rowClassRules</code>: excluded rows gray and struck through, the subject row on a faint accent tint.</li>
+        <li>Badges render inside cells with the same <code>.badge</code> classes as everywhere else.</li>
+        <li>Pagination only on standalone table pages. Inside a drawer, the grid scrolls.</li>
+      </ul>
+    </section>
+
+    <section class="ds" id="charts">
+      <h2><span class="num">15</span>Charts</h2>
+      <p>Plotly.js with the brand layout: transparent backgrounds, the brand font in brand dark, light gridlines, no mode bar, responsive. Chart titles are an <code>h5</code> above the plot, not Plotly's title, and the source line sits under it.</p>
+      <div class="frame" data-label="Plotly, brand layout"><span class="brand-tag" data-brand-name>TRPA agency</span>
+        <div class="chart-card"><h5>Sample series by jurisdiction</h5><div id="dsChart"></div><div class="src">Illustrative values. Colorway and font follow the preview brand.</div></div>
+      </div>
+      <pre><code>const BRAND_COLORS = ['#0072CE', '#003B71', '#E87722', '#4A6118', '#9C3E27', '#B5A64C', '#7B6A8A', '#B4CBE8'];
+const PLOT_LAYOUT = {
+  font: { family: 'Open Sans, system-ui, sans-serif', color: '#003B71', size: 12 },
+  paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+  margin: { t: 10, r: 10, b: 40, l: 48 },
+  xaxis: { gridcolor: '#E8EDF3', linecolor: '#E2E6EC' },
+  yaxis: { gridcolor: '#E8EDF3', linecolor: '#E2E6EC', zeroline: false },
+  colorway: BRAND_COLORS, hoverlabel: { font: { family: 'Open Sans, sans-serif' } },
+  legend: { orientation: 'h', y: -0.2 }
+};
+const PLOT_CONFIG = { displayModeBar: false, responsive: true };</code></pre>
+      <ul>
+        <li>Four series or fewer. Beyond that, small multiples or a table.</li>
+        <li>Symbols are fine in charts and tables (percent sign, dollar sign) even though body text spells them out.</li>
+        <li>Sparklines in tiles are Plotly too, 40px tall, no axes, one line in brand primary.</li>
+        <li>Sequential maps and heatmaps use the blue sequential ramp; diverging uses brick to blue.</li>
+      </ul>
+    </section>
+
+    </div><!-- /brand-scope -->
+
+    <!-- ═══════════════ PATTERNS ═══════════════ -->
+    <section class="ds" id="shell">
+      <h2><span class="num">16</span>App shell</h2>
+      <p>Every map tool shares one shell: a thin white header, a side panel of numbered steps with pinned actions, the map, and a results drawer that slides up under the map. On phones the panel stacks below the map. The shell is always agency; only the content inside takes a sub-brand.</p>
+      <svg class="wire" viewBox="0 0 760 420" role="img" aria-label="Wireframe of the app shell: header, side panel, map, results drawer">
+        <rect x="0.5" y="0.5" width="759" height="419" rx="8" fill="#F5F7FA" stroke="#C9D2DE"/>
+        <rect x="1" y="1" width="758" height="46" rx="8" fill="#fff"/><line x1="1" y1="47" x2="759" y2="47" stroke="#E2E6EC"/>
+        <circle cx="30" cy="24" r="12" fill="#0072CE"/><rect x="50" y="13" width="120" height="6" rx="3" fill="#0072CE"/><rect x="50" y="25" width="150" height="9" rx="3" fill="#003B71"/>
+        <rect x="222" y="18" width="90" height="12" rx="3" fill="#E2E6EC"/>
+        <rect x="620" y="14" width="40" height="20" rx="10" fill="none" stroke="#B55A10"/><rect x="672" y="14" width="76" height="20" rx="4" fill="none" stroke="#0072CE"/>
+        <rect x="1" y="48" width="286" height="371" fill="#fff"/><line x1="287" y1="48" x2="287" y2="419" stroke="#E2E6EC"/>
+        <rect x="16" y="64" width="254" height="30" rx="7" fill="#F5F7FA" stroke="#E2E6EC"/><circle cx="32" cy="79" r="5" fill="none" stroke="#0072CE" stroke-width="2"/><rect x="46" y="76" width="110" height="6" rx="3" fill="#C9D2DE"/>
+        <g><circle cx="24" cy="120" r="7" fill="#0072CE"/><rect x="38" y="116" width="100" height="7" rx="3" fill="#6B7688"/><rect x="16" y="132" width="230" height="5" rx="2" fill="#C9D2DE"/><rect x="16" y="146" width="254" height="26" rx="7" fill="#fff" stroke="#E2E6EC"/><rect x="17" y="147" width="84" height="24" rx="6" fill="#0072CE"/></g>
+        <g><circle cx="24" cy="200" r="7" fill="#0072CE"/><rect x="38" y="196" width="80" height="7" rx="3" fill="#6B7688"/><rect x="16" y="212" width="200" height="5" rx="2" fill="#C9D2DE"/><rect x="16" y="226" width="120" height="26" rx="7" fill="#fff" stroke="#E2E6EC"/><rect x="146" y="226" width="124" height="26" rx="7" fill="#fff" stroke="#E2E6EC"/></g>
+        <g><circle cx="24" cy="280" r="7" fill="#0072CE"/><rect x="38" y="276" width="110" height="7" rx="3" fill="#6B7688"/><rect x="16" y="292" width="60" height="18" rx="9" fill="#E8F1F8"/><rect x="82" y="292" width="60" height="18" rx="9" fill="#E8F1F8"/><rect x="148" y="292" width="48" height="18" rx="9" fill="#E8F1F8"/></g>
+        <line x1="1" y1="350" x2="286" y2="350" stroke="#E2E6EC"/><rect x="16" y="362" width="254" height="22" rx="6" fill="#0072CE"/><rect x="16" y="390" width="124" height="22" rx="6" fill="#fff" stroke="#0072CE"/><rect x="146" y="390" width="124" height="22" rx="6" fill="#fff" stroke="#0072CE"/>
+        <rect x="288" y="48" width="471" height="226" fill="#E9EDF2"/>
+        <g stroke="#fff" stroke-width="2" fill="#DCE2EA"><rect x="330" y="80" width="60" height="44"/><rect x="394" y="80" width="60" height="44"/><rect x="458" y="80" width="60" height="44"/><rect x="330" y="128" width="60" height="44"/><rect x="458" y="128" width="60" height="44"/><rect x="330" y="176" width="60" height="44"/><rect x="394" y="176" width="60" height="44"/><rect x="458" y="176" width="60" height="44"/></g>
+        <rect x="394" y="128" width="60" height="44" fill="#E87722" fill-opacity="0.5" stroke="#E87722" stroke-width="3"/>
+        <rect x="310" y="62" width="228" height="176" rx="30" fill="none" stroke="#E87722" stroke-width="2.5" stroke-dasharray="8 5"/>
+        <g fill="#fff" stroke="#C9D2DE"><rect x="727" y="60" width="24" height="24" rx="4"/><rect x="727" y="90" width="24" height="24" rx="4"/><rect x="727" y="120" width="24" height="24" rx="4"/></g>
+        <rect x="600" y="60" width="112" height="56" rx="6" fill="#fff" stroke="#E2E6EC"/><rect x="610" y="70" width="10" height="7" fill="#0072CE" fill-opacity=".5"/><rect x="626" y="71" width="60" height="5" rx="2" fill="#C9D2DE"/><rect x="610" y="86" width="10" height="7" fill="#E87722"/><rect x="626" y="87" width="50" height="5" rx="2" fill="#C9D2DE"/><rect x="610" y="102" width="10" height="7" fill="none" stroke="#E87722" stroke-dasharray="2 2"/><rect x="626" y="103" width="56" height="5" rx="2" fill="#C9D2DE"/>
+        <rect x="288" y="275" width="471" height="144" fill="#fff"/><line x1="288" y1="275" x2="759" y2="275" stroke="#E2E6EC"/>
+        <rect x="302" y="286" width="90" height="7" rx="3" fill="#6B7688"/><rect x="400" y="286" width="40" height="7" rx="3" fill="#003B71"/><rect x="600" y="282" width="80" height="16" rx="5" fill="#fff" stroke="#E2E6EC"/><rect x="690" y="282" width="56" height="16" rx="5" fill="#fff" stroke="#0072CE"/>
+        <rect x="288" y="306" width="471" height="20" fill="#F3F6FA"/>
+        <g fill="#C9D2DE"><rect x="302" y="334" width="60" height="5" rx="2"/><rect x="380" y="334" width="120" height="5" rx="2"/><rect x="520" y="334" width="90" height="5" rx="2"/><rect x="302" y="356" width="60" height="5" rx="2"/><rect x="380" y="356" width="140" height="5" rx="2"/><rect x="520" y="356" width="70" height="5" rx="2"/><rect x="302" y="378" width="60" height="5" rx="2"/><rect x="380" y="378" width="110" height="5" rx="2"/><rect x="520" y="378" width="100" height="5" rx="2"/><rect x="302" y="400" width="60" height="5" rx="2"/><rect x="380" y="400" width="130" height="5" rx="2"/></g>
+        <rect x="288" y="348" width="471" height="18" fill="#E87722" fill-opacity="0.08"/>
+        <g font-size="11" font-weight="700" fill="#fff"><g><circle cx="12" cy="12" r="9" fill="#0072CE"/><text x="12" y="16" text-anchor="middle">1</text></g><g><circle cx="12" cy="79" r="9" fill="#0072CE"/><text x="12" y="83" text-anchor="middle">2</text></g><g><circle cx="276" cy="120" r="9" fill="#0072CE"/><text x="276" y="124" text-anchor="middle">3</text></g><g><circle cx="276" cy="373" r="9" fill="#0072CE"/><text x="276" y="377" text-anchor="middle">4</text></g><g><circle cx="300" cy="60" r="9" fill="#0072CE"/><text x="300" y="64" text-anchor="middle">5</text></g><g><circle cx="300" cy="287" r="9" fill="#0072CE"/><text x="300" y="291" text-anchor="middle">6</text></g><g><circle cx="740" cy="160" r="9" fill="#0072CE"/><text x="740" y="164" text-anchor="middle">7</text></g></g>
+      </svg>
+      <ol class="anno">
+        <li><b>Header.</b> White, 1px bottom border. Logo at 36px, agency overline in brand blue, tool name, a back link to "All maps and apps". Right side: Beta chip, about button, external links.</li>
+        <li><b>Search.</b> First thing in the panel. Address, APN, or project with grouped suggestions.</li>
+        <li><b>Numbered sections.</b> Each step of the workflow: title, one line of help, controls. Collapsible when long.</li>
+        <li><b>Pinned footer.</b> Status line plus the primary action and full-width exports. Never scrolls away.</li>
+        <li><b>Map.</b> Gray vector basemap, selection in blue, subject in orange, dashed buffer. Legend card top right, Home and tool buttons on the right edge.</li>
+        <li><b>Drawer.</b> AG Grid results under the map, with a count, quick filter, CSV, and a collapse control. 42 percent of height by default.</li>
+        <li><b>Map tools.</b> Esri-style square buttons; an active tool fills brand primary, an active refine tool fills accent.</li>
+      </ol>
+      <pre><code>&lt;body&gt;                                   <span class="cmt">&lt;!-- data-brand="eip" here for EIP tools --&gt;</span>
+  &lt;header id="appHeader"&gt;…&lt;/header&gt;
+  &lt;div id="appBody"&gt;
+    &lt;aside id="sidePanel"&gt;
+      &lt;div id="panelScroll"&gt; &lt;section class="panel-sec"&gt;… &lt;/div&gt;
+      &lt;div id="panelFooter"&gt; status + calcite-buttons &lt;/div&gt;
+    &lt;/aside&gt;
+    &lt;button id="panelToggle"&gt;&lt;/button&gt;
+    &lt;div id="mapWrap"&gt;
+      &lt;div id="viewDiv"&gt;&lt;/div&gt;
+      &lt;div id="drawer"&gt; AG Grid &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/body&gt;</code></pre>
+      <p class="note">Body is a flex column at <code>100dvh</code> with <code>overflow: hidden</code>; only the panel and drawer scroll. Below 760px the panel moves under the map, and the divider turns into a horizontal toggle.</p>
+    </section>
+
+    <section class="ds" id="pages">
+      <h2><span class="num">17</span>Page types</h2>
+      <table class="ds">
+        <tr><th style="width:150px">Type</th><th>Shape</th><th>Base size</th><th>Example</th></tr>
+        <tr><td><b>Map tool</b></td><td>The app shell above. Full viewport, no page scroll.</td><td>14px</td><td><a href="public-notice.html">Public Notice List</a>, <a href="parcel-explorer.html">Parcel Change Explorer</a>, <a href="locator.html">Project Locator</a></td></tr>
+        <tr><td><b>Table tool</b></td><td>Navy header band with title and an updated pill, filter pill rows, a tall AG Grid, notes below.</td><td>15px</td><td><a href="data-inventory.html">Tahoe Data Inventory</a></td></tr>
+        <tr><td><b>Document</b></td><td>Navy header with overline, title, subtitle, and a meta line. One 880px column. Blue uppercase section bands, h2 rules in ice, dark code blocks with copy buttons, callouts, striped tables.</td><td>15px</td><td><a href="open-data-policy.html">Open Data Policy</a></td></tr>
+        <tr><td><b>Gallery</b></td><td>Navy site header with 56px logo, 5px blue accent bar, search and category pills, card grid in sections, navy footer. Driven by <code>apps.json</code>.</td><td>15px</td><td><a href="../">maps.trpa.gov</a>, <a href="./">Tools</a></td></tr>
+        <tr><td><b>Reference</b></td><td>This page: app header, sticky section nav, white section cards on the gray page.</td><td>15px</td><td>Design System</td></tr>
+      </table>
+      <h3>Every page has</h3>
+      <ul>
+        <li>The TRPA logo linking to trpa.gov and a way back to "All maps and apps".</li>
+        <li>A <code>&lt;title&gt;</code> and meta description written in TRPA style.</li>
+        <li>The favicon from <code>assets/favicon.ico</code>.</li>
+        <li>An entry in <code>apps.json</code> with a 400 by 266 thumbnail, so the gallery finds it.</li>
+        <li>A Beta chip while the tool is in review, and <code>"beta": true</code> in the registry.</li>
+      </ul>
+    </section>
+
+    <section class="ds" id="maps">
+      <h2><span class="num">18</span>Map conventions</h2>
+      <ul>
+        <li><b>Basemap</b> <code>gray-vector</code>. Imagery only on explicit toggle.</li>
+        <li><b>Initial view</b> centered on the lake, <code>[-120.04, 39.09]</code>, zoom 10, unless the tool opens on a feature.</li>
+        <li><b>Widgets</b> Home always. Legend when more than one symbol is on the map. Attribution stays on. No Zoom widget on phones.</li>
+        <li><b>Selection</b> brand primary, 28 percent fill, 2px outline. <b>Subject</b> accent, 50 percent fill, 3px outline. <b>Buffers</b> dashed accent, no fill.</li>
+        <li><b>Popups</b> use the brand font, 380px wide, with the same tiles, badges, and key-value blocks as the panel.</li>
+        <li><b>Highlight</b> on hover from the grid: the matching feature flashes in accent.</li>
+        <li><b>Exports</b> add the TRPA logo bottom right, a scale bar, and a one-line source credit.</li>
+        <li><b>Services</b> come from <code>maps.trpa.org/server/rest/services</code>. On the office network, fetches fail on CORS; use JSONP with <code>callback=</code> as the fallback.</li>
+      </ul>
+      <pre><code>const SELECT = { type: "simple-fill", color: [0, 114, 206, 0.28], outline: { color: "#0072CE", width: 2 } };
+const SUBJECT = { type: "simple-fill", color: [232, 119, 34, 0.5], outline: { color: "#E87722", width: 3 } };
+const BUFFER  = { type: "simple-fill", color: [0, 0, 0, 0], outline: { color: "#E87722", width: 3, style: "dash" } };</code></pre>
+    </section>
+
+    <section class="ds" id="states">
+      <h2><span class="num">19</span>States</h2>
+      <p>A panel is empty, loading, showing results, or failing. Design all four.</p>
+      <div class="brand-scope frame" data-label="Empty, loading, error">
+        <div class="two">
+          <div class="empty"><strong>No parcel selected.</strong> Search an address or APN above, or click a parcel on the map. You can add more than one.</div>
+          <div class="empty" style="display:flex;gap:0.6rem;align-items:center"><calcite-loader inline scale="s" label="Loading"></calcite-loader><span>Loading 2012 to 2026 history for 025-451-12</span></div>
+          <div class="empty" style="border-color:var(--status-danger);color:var(--status-danger)"><strong style="color:inherit">The parcel service did not respond.</strong> Nothing changed. Try again in a minute, or click the map instead of searching.</div>
+          <div class="empty"><strong>No parcels inside 300 feet.</strong> Widen the distance, or check that the subject parcel is right.</div>
+        </div>
+      </div>
+      <ul>
+        <li>Empty states explain the first action in one sentence and the second in another.</li>
+        <li>Loading states say what is loading and, when it is long, how far along.</li>
+        <li>Errors say what failed, what was saved, and what to try. No stack traces, no codes.</li>
+        <li>Disabled buttons carry a <code>title</code> explaining what enables them.</li>
+      </ul>
+    </section>
+
+    <section class="ds" id="a11y">
+      <h2><span class="num">20</span>Accessibility</h2>
+      <ul>
+        <li><b>Contrast.</b> Text meets WCAG 2.2 AA at 4.5 to 1. Help text is #6B7688, not lighter. EIP Blue and all oranges get their text steps when they carry words.</li>
+        <li><b>Focus.</b> <code>:focus-visible</code> draws a 2px brand outline with 2px offset on everything, including custom buttons.</li>
+        <li><b>Targets.</b> Minimum 28px tall for in-panel controls, 44px for anything a phone thumb hits.</li>
+        <li><b>Labels.</b> Icon-only buttons set <code>label</code> or <code>aria-label</code>. Fields wrap their control in a <code>label</code>.</li>
+        <li><b>Hover is not the only state.</b> <code>:active</code> mirrors <code>:hover</code> so touch gets feedback.</li>
+        <li><b>Color is not the only signal.</b> Status badges carry words. Chart series have a legend. Excluded rows are struck through as well as grayed.</li>
+        <li><b>Motion.</b> Transitions stay under 150ms. Nothing animates on load.</li>
+        <li><b>Viewport.</b> <code>100dvh</code> with a <code>100vh</code> fallback so phone browser chrome does not hide the footer.</li>
+      </ul>
+    </section>
+
+    <section class="ds" id="writing">
+      <h2><span class="num">21</span>Writing for the interface</h2>
+      <p>Interface copy follows the TRPA Style Guide, with a few adaptations for buttons and labels.</p>
+      <table class="ds">
+        <tr><th style="width:200px">Rule</th><th>Do</th><th>Don't</th></tr>
+        <tr><td>Sentence case</td><td>Download CSV, Notice distance</td><td>Download Csv, NOTICE DISTANCE</td></tr>
+        <tr><td>Verbs on buttons</td><td>Find parcels, Print labels, Send picks</td><td>OK, Submit, Go</td></tr>
+        <tr><td>Spell out in body text</td><td>50 percent, 300 feet</td><td>50%, 300' (fine in charts and tables)</td></tr>
+        <tr><td>Oxford comma</td><td>address, APN, or project</td><td>address, APN or project</td></tr>
+        <tr><td>Dates</td><td>Oct. 1, 2026</td><td>October 1st, 2026, 10/1/26</td></tr>
+        <tr><td>Numbers</td><td>three parcels, 38 labels, 1,284 units</td><td>3 parcels, 1284 units</td></tr>
+        <tr><td>Acronyms</td><td>tourist accommodation unit (TAU) on first use</td><td>TAU with no expansion</td></tr>
+        <tr><td>Proper names</td><td>Lake Tahoe Basin, the basin, Regional Plan, area plan</td><td>Lake Tahoe basin, the Basin, regional plan</td></tr>
+        <tr><td>Plain words</td><td>people who rent, who is inside the notice distance</td><td>renter-occupied households, buffer intersect result set</td></tr>
+        <tr><td>Help text</td><td>One sentence that says what the choice does and when to use it</td><td>A paragraph, or nothing</td></tr>
+      </table>
+      <p class="note">Tahoe Living copy is warmer and uses we and you. Agency copy stays plain and neutral. Both avoid jargon for committee and public audiences.</p>
+    </section>
+
+    <!-- ═══════════════ RESOURCES ═══════════════ -->
+    <section class="ds" id="tokens">
+      <h2><span class="num">22</span>Tokens and snippets</h2>
+      <p>Link the token file and the brand follows. Tools that must stay fully self-contained paste the <code>:root</code> block instead; this page and the skills are the places to copy from.</p>
+      <pre><code>&lt;link rel="stylesheet" href="https://maps.trpa.gov/assets/trpa-tokens.css" /&gt;
+<span class="cmt">&lt;!-- then, for an EIP tool --&gt;</span>
+&lt;body data-brand="eip"&gt;</code></pre>
+      <div class="row" style="margin:0.6rem 0 0.2rem">
+        <calcite-button appearance="solid" kind="brand" scale="s" icon-start="copy-to-clipboard" id="copyTokens">Copy trpa-tokens.css</calcite-button>
+        <calcite-button appearance="outline" kind="brand" scale="s" icon-start="file-code" href="../assets/trpa-tokens.css" target="_blank" rel="noopener">Open the file</calcite-button>
+        <span class="note" id="copyTokensNote"></span>
+      </div>
+      <h3>Semantic tokens</h3>
+      <table class="ds">
+        <tr><th>Token</th><th>Agency</th><th>EIP</th><th>Tahoe Living</th><th>Use</th></tr>
+        <tr><td><code>--brand-primary</code></td><td>#0072CE</td><td>#007DC3</td><td>#5B7B6B</td><td>Links, active fills, primary buttons, selection</td></tr>
+        <tr><td><code>--brand-primary-text</code></td><td>#0072CE</td><td>#0068A8</td><td>#5B7B6B</td><td>Primary color at text size (AA)</td></tr>
+        <tr><td><code>--brand-primary-hover</code></td><td>#003B71</td><td>#0B1F41</td><td>#2D5A3D</td><td>Hover and press</td></tr>
+        <tr><td><code>--brand-primary-light</code></td><td>#E8F1F8</td><td>#E0F0FA</td><td>#EAF0EC</td><td>Selected rows, wells, chips</td></tr>
+        <tr><td><code>--brand-dark</code></td><td>#003B71</td><td>#0B1F41</td><td>#2D5A3D</td><td>Headings, dark headers, active filter pills, toasts</td></tr>
+        <tr><td><code>--brand-accent</code></td><td>#E87722</td><td>#F16022</td><td>#C4704B</td><td>Subject features, beta, highlight fills</td></tr>
+        <tr><td><code>--brand-accent-text</code></td><td>#B55A10</td><td>#B5430E</td><td>#A85D3D</td><td>Accent at text size</td></tr>
+        <tr><td><code>--brand-text</code></td><td>#003B71</td><td>#0B1F41</td><td>#2C2C2C</td><td>Body text</td></tr>
+        <tr><td><code>--brand-page</code></td><td>#F5F7FA</td><td>#F5F7FA</td><td>#F7F3ED</td><td>Page background</td></tr>
+        <tr><td><code>--gray-text</code></td><td>#6B7688</td><td>#6B7688</td><td>#5A5A5A</td><td>Help text, labels, column headers</td></tr>
+        <tr><td><code>--gray-border</code></td><td>#E2E6EC</td><td>#E2E6EC</td><td>#E0DDD7</td><td>Hairlines, control borders</td></tr>
+        <tr><td><code>--brand-font</code></td><td>Open Sans</td><td>Lexend Deca</td><td>Montserrat</td><td>Everything</td></tr>
+        <tr><td><code>--brand-radius</code></td><td>8px</td><td>10px</td><td>12px</td><td>Cards, dialogs, popups</td></tr>
+        <tr><td><code>--brand-radius-control</code></td><td>7px</td><td>999px</td><td>8px</td><td>Inputs, segmented controls</td></tr>
+        <tr><td><code>--status-success</code> / <code>-danger</code> / <code>-warning</code></td><td>forest / brick / orange</td><td>#2F6B13 / #B3261E / EIP orange</td><td>pine / #A85D3D / gold</td><td>Badges, deltas, notices</td></tr>
+        <tr><td><code>--chart-1</code> to <code>--chart-8</code></td><td colspan="3">The three colorways in the Color section</td><td>Plotly colorway, map renderers</td></tr>
+      </table>
+      <h3>Claude Code skills</h3>
+      <p>The same rules live as skills so generated tools come out on brand without pasting this page in. Pair a brand skill with the stack skill on every build.</p>
+      <div class="res-grid">
+        <div class="res"><b>trpa-brand</b>Agency palette, Open Sans, logo rules, TRPA Style Guide writing rules, Plotly layout.</div>
+        <div class="res"><b>trpa-eip-brand</b>EIP Pantone palette, Lexend Deca, logo variants including Forest Health, the four-color chart cycle.</div>
+        <div class="res"><b>tahoe-living-brand</b>Sage and terracotta palette, Montserrat, warm neutrals, housing semantic colors, bilingual notes.</div>
+        <div class="res"><b>trpa-dashboard-stack</b>Calcite, ArcGIS SDK, Plotly, AG Grid: load order, page template, fetch pagination, conventions.</div>
+      </div>
+    </section>
+
+    <section class="ds" id="references">
+      <h2><span class="num">23</span>References</h2>
+      <p>Systems this one borrows from. Calcite supplies the components; the others shaped how the documentation is organized: foundations before components, semantic tokens over raw hex, chart palettes as a first-class section, and a department-level brand layered over a shared base.</p>
+      <div class="res-grid">
+        <div class="res"><b><a href="https://developers.arcgis.com/calcite-design-system/" target="_blank" rel="noopener">Calcite Design System</a></b>Esri. Foundations (color, typography, icons), 35-plus web components, semantic tokens with -1, -2, -3 hierarchy. Our component layer.<div class="note">Current version pages list 5.x; this site pins 5.0.</div></div>
+        <div class="res"><b><a href="https://designsystem.digital.gov/" target="_blank" rel="noopener">U.S. Web Design System</a></b>Design tokens for color, spacing, and type; a components library; an accessible color tool with contrast "magic numbers". Model for the token layer and for Section 508 defaults.</div>
+        <div class="res"><b><a href="https://design-system.service.gov.uk/styles/colour/" target="_blank" rel="noopener">GOV.UK Design System</a></b>Functional color names (brand, link, focus, error, success) over a Pantone palette, and the rule that departments add their color without recoloring core components. Model for the status tokens and the "do not recolor buttons" rule.</div>
+        <div class="res"><b><a href="https://designsystem.gov.scot/guidance/charts/data-visualisation-colour-palettes" target="_blank" rel="noopener">Scottish Government chart palettes</a></b>Categorical, sequential, and focus palettes derived from the brand with contrast adjustments, and a four-color ceiling per chart. Model for the Chart colorways section.</div>
+        <div class="res"><b><a href="https://design.education.gov.uk/design-system/styles/colour" target="_blank" rel="noopener">UK Department for Education</a></b>A department brand layered on GOV.UK. Model for how EIP and Tahoe Living sit on the agency base.</div>
+        <div class="res"><b><a href="https://www.maricopa.gov/6808/Brand-Standards-Guide-at-a-Glance" target="_blank" rel="noopener">Maricopa County brand standards</a></b>A county agency palette with named primaries and a sparingly used secondary set. Closest peer example of a public agency publishing color roles.</div>
+      </div>
+      <p class="note">Last reviewed Oct. 9, 2026. Maintained by TRPA GIS. Suggest changes through the <a href="https://github.com/trpa-agency/maps/issues" target="_blank" rel="noopener">maps repository</a>.</p>
+    </section>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <div class="inner">
+    <div>Tahoe Regional Planning Agency<br />128 Market Street, Stateline, NV 89449 &middot; <a href="https://www.trpa.gov">trpa.gov</a></div>
+    <div><a href="../">All maps and apps</a> &middot; <a href="https://maps.trpa.org/server/rest/services">REST Services</a> &middot; <a href="https://www.tahoeopendata.org">Tahoe Open Data</a> &middot; <a href="https://www.laketahoeinfo.org">Lake Tahoe Info</a></div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  /* ── Color math ── */
+  function hexToRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+  function lum(h) { return hexToRgb(h).map(c => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }).reduce((a, c, i) => a + c * [0.2126, 0.7152, 0.0722][i], 0); }
+  function contrast(a, b) { const l1 = lum(a), l2 = lum(b); return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05); }
+  function rgbStr(h) { return hexToRgb(h).join(', '); }
+
+  /* ── Palettes ── */
+  const PALETTES = {
+    'trpa-primary': [
+      { name: 'TRPA Blue', hex: '#0072CE', pms: 'PMS 285C', tok: '--trpa-blue', role: 'Primary. Links, buttons, active states, selection, chart series 1.' },
+      { name: 'Navy', hex: '#003B71', pms: 'PMS 541', tok: '--trpa-navy', role: 'Body text, dark headers and footers, active filter pills. Use instead of black.' },
+      { name: 'Ice', hex: '#B4CBE8', pms: 'PMS 2708', tok: '--trpa-ice', role: 'Light accent, thumbnail placeholders, footer text on navy, h2 rules.' }
+    ],
+    'trpa-earth': [
+      { name: 'Orange', hex: '#E87722', pms: 'PMS 138', tok: '--trpa-orange', role: 'Accent. Subject features, beta, highlights, warnings.' },
+      { name: 'Forest', hex: '#4A6118', pms: 'PMS 378', tok: '--trpa-forest', role: 'Vegetation and forest data. Success state.' },
+      { name: 'Brick', hex: '#9C3E27', pms: 'PMS 484', tok: '--trpa-brick', role: 'Soil data. Error and decline state. Inline code color.' },
+      { name: 'Earth', hex: '#B47E00', pms: 'PMS 1395', tok: '--trpa-earth', role: 'Land data. Data and Developers category.' },
+      { name: 'Olive', hex: '#B5A64C', pms: 'PMS 618', tok: '--trpa-olive', role: 'Muted warm. Chart series 6, secondary backgrounds.' },
+      { name: 'Purple', hex: '#7B6A8A', pms: 'PMS 667', tok: '--trpa-purple', role: 'Tertiary. Tools category, commercial floor area, genealogy events.' }
+    ],
+    'neutrals': [
+      { name: 'White', hex: '#FFFFFF', tok: '--white', role: 'Surfaces: panels, cards, controls, header.' },
+      { name: 'Page', hex: '#F5F7FA', tok: '--gray-bg', role: 'Page background, inset wells, unfocused search.' },
+      { name: 'Border', hex: '#E2E6EC', tok: '--gray-border', role: 'Hairlines, control borders, grid lines.' },
+      { name: 'Text gray', hex: '#6B7688', tok: '--gray-text', role: 'Help text, labels, column headers. The lightest gray allowed for words.' },
+      { name: 'Muted', hex: '#8A93A3', tok: '--gray-muted', role: 'Icons and decoration only. Fails AA for text.' },
+      { name: 'Code', hex: '#0C2036', tok: '(pre background)', role: 'Dark code blocks in documentation pages.' }
+    ],
+    'status': [
+      { name: 'Success', hex: '#4A6118', tok: '--status-success', role: 'Complete, funded, up. Tint #EEF3E4.' },
+      { name: 'Warning', hex: '#E87722', tok: '--status-warning', role: 'Needs attention, pending. Text step #B55A10, tint #FDF3EA.' },
+      { name: 'Danger', hex: '#9C3E27', tok: '--status-danger', role: 'Error, excluded, down. Tint #FBE9E4.' },
+      { name: 'Info', hex: '#0072CE', tok: '--status-info', role: 'Informational notices, selection. Tint #E8F1F8.' }
+    ],
+    'eip': [
+      { name: 'EIP Blue', hex: '#007DC3', pms: 'P 285 C', tok: '--eip-blue', role: 'Primary fills, headers, water data. Text uses #0068A8.' },
+      { name: 'EIP Green', hex: '#6EBE44', pms: 'P 802 C', tok: '--eip-green', role: 'Positive indicators, nature, status dots. Text uses #2F6B13.' },
+      { name: 'EIP Orange', hex: '#F16022', pms: 'P 1505 C', tok: '--eip-orange', role: 'Accent. Text uses #B5430E.' },
+      { name: 'EIP Navy', hex: '#0B1F41', pms: 'P 282 C', tok: '--eip-navy', role: 'Body text, dark backgrounds, footers.' },
+      { name: 'Blue text', hex: '#0068A8', tok: '--eip-blue-text', role: 'EIP Blue darkened one step for words and Calcite brand.' },
+      { name: 'Alert text', hex: '#B5430E', tok: '--eip-alert-text', role: 'EIP Orange darkened for words, beta chip, tier 3.' }
+    ],
+    'tl': [
+      { name: 'Sage', hex: '#5B7B6B', tok: '--tl-sage', role: 'Primary. Nav, headers, links, chart series 1.' },
+      { name: 'Forest', hex: '#2D5A3D', tok: '--tl-forest', role: 'Dark. Hover, footer, headings.' },
+      { name: 'Terracotta', hex: '#C4704B', tok: '--tl-terracotta', role: 'Accent. Primary CTA buttons, very low income.' },
+      { name: 'Gold', hex: '#D4A843', tok: '--tl-gold', role: 'Badges, callout borders, low income, ADUs.' },
+      { name: 'Sky', hex: '#6BA3BE', tok: '--tl-sky', role: 'Info, lake references, multi-family.' },
+      { name: 'Pine', hex: '#3D6B4E', tok: '--tl-pine', role: 'Environmental indicators, deed-restricted.' },
+      { name: 'Cream', hex: '#F7F3ED', tok: '--tl-cream', role: 'Page background. Never #F5F5F5.' },
+      { name: 'Sand border', hex: '#E0DDD7', tok: '--tl-border', role: 'Borders and dividers, warm-tinted.' }
+    ]
+  };
+
+  function swatch(c) {
+    const r = contrast(c.hex, '#FFFFFF');
+    const grade = r >= 4.5 ? 'AA text' : r >= 3 ? 'AA large' : 'fill only';
+    const onDark = lum(c.hex) > 0.4;
+    const badgeStyle = onDark ? 'background:rgba(0,0,0,0.55);color:#fff' : 'background:rgba(255,255,255,0.9);color:#003B71';
+    return `<button type="button" class="sw" data-hex="${c.hex}" title="Copy ${c.hex}">
+      <div class="chip" style="background:${c.hex};${c.hex === '#FFFFFF' ? 'border-bottom:1px solid #E2E6EC' : ''}"><span style="${badgeStyle}">${r.toFixed(1)}:1 ${grade}</span></div>
+      <div class="body"><div class="name">${c.name}</div><div class="hex"><span class="mono">${c.hex}</span><span>${c.pms || ''}</span></div>
+      <div class="hex"><span>rgb(${rgbStr(c.hex)})</span></div><div class="role">${c.role}</div><div class="tok mono">${c.tok}</div></div></button>`;
+  }
+  document.querySelectorAll('.swatches[data-palette]').forEach(el => { el.innerHTML = PALETTES[el.dataset.palette].map(swatch).join(''); });
+  document.querySelectorAll('.ramp[data-ramp]').forEach(el => { el.innerHTML = el.dataset.ramp.split(',').map(h => `<i style="background:${h}" title="${h}"></i>`).join(''); });
+
+  function flash(el, text) { const old = el.dataset.flash || el.textContent; el.dataset.flash = old; el.textContent = text; setTimeout(() => { el.textContent = old; }, 1200); }
+  document.addEventListener('click', (e) => {
+    const sw = e.target.closest('.sw'); if (sw) { navigator.clipboard?.writeText(sw.dataset.hex); flash(sw.querySelector('.name'), 'Copied'); return; }
+    const ic = e.target.closest('.icon-tile'); if (ic) { navigator.clipboard?.writeText(ic.dataset.icon); flash(ic.querySelector('span'), 'Copied'); return; }
+  });
+
+  /* ── Code copy buttons ── */
+  document.querySelectorAll('pre').forEach(pre => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'copy-btn'; b.textContent = 'Copy';
+    b.addEventListener('click', () => { navigator.clipboard?.writeText(pre.querySelector('code').innerText); b.textContent = 'Copied'; b.classList.add('done'); setTimeout(() => { b.textContent = 'Copy'; b.classList.remove('done'); }, 1400); });
+    pre.appendChild(b);
+  });
+  $('copyTokens').addEventListener('click', async () => {
+    try { const css = await (await fetch('../assets/trpa-tokens.css')).text(); await navigator.clipboard.writeText(css); $('copyTokensNote').textContent = `Copied ${css.split('\n').length} lines.`; }
+    catch (err) { $('copyTokensNote').textContent = 'Copy failed. Open the file and copy it from there.'; }
+  });
+
+  /* ── Type scale ── */
+  const TYPE = [
+    { label: 'Page title', spec: 'Gallery h1, 1.6rem 700', css: 'font-size:1.6rem;font-weight:700;line-height:1.2', text: 'TRPA Maps' },
+    { label: 'Tool name', spec: 'Header, 0.98rem 700', css: 'font-size:0.98rem;font-weight:700', text: 'Public Notice List' },
+    { label: 'Agency overline', spec: '0.58rem 700, 0.07em tracking, uppercase, brand blue', css: 'font-size:0.58rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#0072CE', text: 'Tahoe Regional Planning Agency' },
+    { label: 'Section heading', spec: 'Document h2, 1.25rem 700', css: 'font-size:1.25rem;font-weight:700', text: 'How data is delivered' },
+    { label: 'Panel section title', spec: '0.68rem 700, 0.07em tracking, uppercase, gray text', css: 'font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#6B7688', text: 'Subject parcels' },
+    { label: 'KPI value', spec: '1.15rem to 2rem 700, brand dark', css: 'font-size:1.6rem;font-weight:700;line-height:1.2', text: '1,284' },
+    { label: 'Body (tool)', spec: '14px 400, line height 1.6', css: 'font-size:14px', text: 'Pick the subject parcels, set a notice distance, and review who is inside it.' },
+    { label: 'Body (document)', spec: '15px 400, line height 1.6', css: 'font-size:15px', text: 'There is no restriction on the use or distribution of the data in this portal.' },
+    { label: 'Result primary', spec: '0.85rem 600', css: 'font-size:0.85rem;font-weight:600', text: '128 Market St, Stateline' },
+    { label: 'Help text', spec: '0.7rem to 0.78rem 400, gray text', css: 'font-size:0.74rem;color:#6B7688', text: 'Measured from the subject parcel boundary. Most TRPA notices use 300 feet.' },
+    { label: 'Field label', spec: '0.7rem 600, gray text', css: 'font-size:0.7rem;font-weight:600;color:#6B7688', text: 'Notice distance' },
+    { label: 'Badge', spec: '0.62rem 700, 0.04em tracking, uppercase', css: 'font-size:0.62rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase', text: 'Owner-occupied' },
+    { label: 'Code', spec: 'Consolas or Menlo, 12.5px to 13px', css: 'font-family:Consolas,Menlo,monospace;font-size:13px;color:#9C3E27', text: 'maps.trpa.org/server/rest/services' }
+  ];
+  $('typeScale').innerHTML = TYPE.map(t => `<div class="type-row"><div class="meta"><b>${t.label}</b>${t.spec}</div><div style="${t.css}">${t.text}</div><div class="css mono">${t.css.split(';').slice(0, 2).join('; ')}</div></div>`).join('');
+
+  /* ── Icons ── */
+  const ICONS = ['search','download','file-csv','print','image','launch','zoom-to-object','refresh','copy-to-clipboard','pin','x','x-circle','table','upload','save','send','play','information','layers','legend','home','filter','pencil','check-circle','exclamation-mark-triangle','x-octagon','compare','chevron-left','chevron-right','trash','file-code','code','question','gear','map','pin-tear','measure','basemap'];
+  $('iconGrid').innerHTML = ICONS.map(i => `<button type="button" class="icon-tile" data-icon="${i}" title="Copy icon name"><calcite-icon icon="${i}" scale="m"></calcite-icon><span>${i}</span></button>`).join('');
+
+  /* ── Site categories and app grid from apps.json ── */
+  let gridApi = null, allApps = [];
+  fetch('../apps.json').then(r => r.json()).then(reg => {
+    const cats = reg.categories || [];
+    $('catRow').innerHTML = cats.map(c => `<span class="cat-pill" style="--c:${c.color}">${c.name}<code>${c.color}</code></span>`).join('');
+    const catName = Object.fromEntries(cats.map(c => [c.slug, c.name]));
+    allApps = (reg.apps || []).map(a => ({ title: a.title, category: catName[a.category] || a.category, tags: (a.tags || []).join(', '), beta: !!a.beta, host: /^[a-z]+:\/\//i.test(a.url) ? new URL(a.url).hostname.replace(/^www\./, '') : 'maps.trpa.gov' }));
+    $('gridCount').textContent = `${allApps.length} apps in apps.json`;
+    buildGrid();
+  }).catch(() => { $('catRow').innerHTML = '<span class="note">Could not load apps.json (serve this page over http).</span>'; $('gridCount').textContent = 'apps.json unavailable'; });
+
+  function brandVars(scope) {
+    const cs = getComputedStyle(scope);
+    const v = (n) => cs.getPropertyValue(n).trim();
+    return { font: v('--brand-font') || 'Open Sans, system-ui, sans-serif', text: v('--brand-text') || '#003B71', primary: v('--brand-primary') || '#0072CE', grayText: v('--gray-text') || '#6B7688', border: v('--gray-border') || '#E2E6EC',
+      colors: [1,2,3,4,5,6,7,8].map(i => v('--chart-' + i)).filter(Boolean) };
+  }
+  function buildGrid() {
+    if (!window.agGrid || !allApps.length) return;
+    const b = brandVars($('specimens'));
+    const theme = agGrid.themeQuartz.withParams({ accentColor: b.primary, fontFamily: b.font, fontSize: 12, headerFontSize: 11, headerTextColor: b.grayText, headerBackgroundColor: '#F3F6FA', rowHeight: 30, headerHeight: 32, spacing: 5, borderColor: b.border, foregroundColor: b.text });
+    if (gridApi) gridApi.destroy();
+    gridApi = agGrid.createGrid($('dsGrid'), { theme, rowData: allApps, suppressCellFocus: true,
+      defaultColDef: { sortable: true, resizable: true, filter: true, minWidth: 80 },
+      columnDefs: [
+        { field: 'title', headerName: 'App', flex: 2, minWidth: 180 },
+        { field: 'category', headerName: 'Category', flex: 1 },
+        { field: 'tags', headerName: 'Tags', flex: 2 },
+        { field: 'beta', headerName: 'Status', width: 100, cellRenderer: p => p.value ? '<span class="badge accent">Beta</span>' : '<span class="badge success">Live</span>' },
+        { field: 'host', headerName: 'Host', flex: 1 }
+      ] });
+  }
+  $('gridCsv').addEventListener('click', () => gridApi && gridApi.exportDataAsCsv({ fileName: 'trpa-maps-apps.csv' }));
+
+  /* ── Plotly specimen ── */
+  function buildChart() {
+    if (!window.Plotly) return;
+    const b = brandVars($('specimens'));
+    const x = ['El Dorado', 'Placer', 'Washoe', 'Douglas', 'South Lake Tahoe'];
+    const data = [
+      { name: 'Series 1', x, y: [42, 31, 18, 22, 37], type: 'bar' },
+      { name: 'Series 2', x, y: [28, 19, 24, 15, 21], type: 'bar' },
+      { name: 'Series 3', x, y: [12, 9, 14, 8, 16], type: 'bar' },
+      { name: 'Series 4', x, y: [6, 11, 5, 9, 7], type: 'bar' }
+    ];
+    const layout = { barmode: 'stack', font: { family: b.font, color: b.text, size: 12 }, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+      margin: { t: 10, r: 10, b: 40, l: 40 }, xaxis: { gridcolor: '#E8EDF3', linecolor: b.border }, yaxis: { gridcolor: '#E8EDF3', linecolor: b.border, zeroline: false },
+      colorway: b.colors, legend: { orientation: 'h', y: -0.22 }, hoverlabel: { font: { family: b.font } } };
+    Plotly.react('dsChart', data, layout, { displayModeBar: false, responsive: true });
+  }
+  buildChart();
+
+  /* ── Brand switcher ── */
+  const NAMES = { '': 'TRPA agency', 'eip': 'EIP', 'tahoe-living': 'Tahoe Living' };
+  document.querySelectorAll('.brand-pick button').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.brand-pick button').forEach(b => { b.classList.toggle('active', b === btn); b.setAttribute('aria-checked', b === btn); });
+    const brand = btn.dataset.brand;
+    document.querySelectorAll('.brand-scope').forEach(s => { if (brand) s.dataset.brand = brand; else delete s.dataset.brand; });
+    document.querySelectorAll('[data-brand-name]').forEach(t => { t.textContent = NAMES[brand]; });
+    buildChart(); buildGrid();
+  }));
+
+  /* ── Dialog ── */
+  $('openDlg').addEventListener('click', () => { $('dsDialog').open = true; });
+  $('closeDlg').addEventListener('click', () => { $('dsDialog').open = false; });
+
+  /* ── TOC highlight ── */
+  const links = [...document.querySelectorAll('nav.toc a')];
+  const secs = links.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(en => { if (en.isIntersecting) { links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + en.target.id)); } });
+  }, { rootMargin: '-80px 0px -70% 0px', threshold: 0 });
+  secs.forEach(s => io.observe(s));
+})();
+</script>
+</body>
+</html>

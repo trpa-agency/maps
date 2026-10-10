@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 266" width="400" height="266" role="img"
+     aria-label="Design system: a palette of TRPA brand swatches, type specimens, and a row of buttons">
+  <rect width="400" height="266" fill="#F5F7FA"/>
+
+  <!-- Swatch grid -->
+  <g>
+    <rect x="18" y="18" width="52" height="52" rx="8" fill="#0072CE"/>
+    <rect x="78" y="18" width="52" height="52" rx="8" fill="#003B71"/>
+    <rect x="138" y="18" width="52" height="52" rx="8" fill="#E87722"/>
+    <rect x="198" y="18" width="52" height="52" rx="8" fill="#4A6118"/>
+    <rect x="18" y="78" width="52" height="52" rx="8" fill="#9C3E27"/>
+    <rect x="78" y="78" width="52" height="52" rx="8" fill="#B5A64C"/>
+    <rect x="138" y="78" width="52" height="52" rx="8" fill="#7B6A8A"/>
+    <rect x="198" y="78" width="52" height="52" rx="8" fill="#B4CBE8"/>
+  </g>
+  <!-- Hex labels -->
+  <g font-family="Consolas, Menlo, monospace" font-size="9" fill="#6B7688">
+    <text x="18" y="146">#0072CE</text><text x="78" y="146">#003B71</text><text x="138" y="146">#E87722</text><text x="198" y="146">#4A6118</text>
+  </g>
+
+  <!-- Type specimen card -->
+  <rect x="268" y="18" width="114" height="112" rx="8" fill="#FFFFFF" stroke="#E2E6EC"/>
+  <text x="280" y="44" font-family="Open Sans, Arial, sans-serif" font-size="26" font-weight="700" fill="#003B71">Aa</text>
+  <text x="326" y="44" font-family="Open Sans, Arial, sans-serif" font-size="12" font-weight="700" fill="#0072CE">Open Sans</text>
+  <g fill="#C9D2DE">
+    <rect x="280" y="58" width="90" height="6" rx="3"/>
+    <rect x="280" y="70" width="72" height="6" rx="3"/>
+    <rect x="280" y="82" width="84" height="6" rx="3"/>
+  </g>
+  <text x="280" y="112" font-family="Open Sans, Arial, sans-serif" font-size="7" font-weight="700" letter-spacing="0.8" fill="#6B7688">SECTION TITLE</text>
+
+  <!-- Component row card -->
+  <rect x="18" y="162" width="364" height="86" rx="8" fill="#FFFFFF" stroke="#E2E6EC"/>
+  <!-- Buttons -->
+  <rect x="32" y="176" width="86" height="24" rx="5" fill="#0072CE"/>
+  <text x="75" y="192" font-family="Open Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">Find parcels</text>
+  <rect x="126" y="176" width="60" height="24" rx="5" fill="#FFFFFF" stroke="#0072CE" stroke-width="1.5"/>
+  <text x="156" y="192" font-family="Open Sans, Arial, sans-serif" font-size="10" font-weight="700" fill="#0072CE" text-anchor="middle">CSV</text>
+  <!-- Segmented -->
+  <rect x="196" y="176" width="112" height="24" rx="6" fill="#FFFFFF" stroke="#E2E6EC"/>
+  <rect x="197" y="177" width="40" height="22" rx="5" fill="#0072CE"/>
+  <line x1="272" y1="177" x2="272" y2="199" stroke="#E2E6EC"/>
+  <!-- Toggle -->
+  <rect x="320" y="180" width="28" height="16" rx="8" fill="#0072CE"/>
+  <circle cx="340" cy="188" r="6" fill="#FFFFFF"/>
+  <!-- Pills -->
+  <rect x="32" y="212" width="70" height="20" rx="10" fill="#003B71"/>
+  <text x="67" y="226" font-family="Open Sans, Arial, sans-serif" font-size="9" font-weight="600" fill="#FFFFFF" text-anchor="middle">Planning</text>
+  <rect x="108" y="212" width="80" height="20" rx="10" fill="#FFFFFF" stroke="#C9D2DE" stroke-width="1.5"/>
+  <text x="148" y="226" font-family="Open Sans, Arial, sans-serif" font-size="9" font-weight="600" fill="#003B71" text-anchor="middle">Permitting</text>
+  <rect x="194" y="212" width="40" height="20" rx="10" fill="#E87722"/>
+  <text x="214" y="226" font-family="Open Sans, Arial, sans-serif" font-size="8" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.6">BETA</text>
+  <rect x="240" y="214" width="16" height="16" rx="3" fill="#4A6118"/>
+  <rect x="260" y="214" width="16" height="16" rx="3" fill="#9C3E27"/>
+  <rect x="280" y="214" width="16" height="16" rx="3" fill="#E87722"/>
+  <rect x="300" y="214" width="16" height="16" rx="3" fill="#0072CE"/>
+</svg>

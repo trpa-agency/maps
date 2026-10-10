@@ -426,6 +426,20 @@
       "external": true
     },
     {
+      "id": "designsystem",
+      "title": "Design System",
+      "category": "tools",
+      "url": "tools/design-system.html",
+      "thumbnail": "assets/thumbs/design-system.svg",
+      "description": "Colors, type, components, and page patterns behind TRPA web tools, with live specimens that switch between the agency, Environmental Improvement Program (EIP), and Tahoe Living brands. Includes the shared token stylesheet.",
+      "tags": [
+        "Design",
+        "Branding",
+        "Developers"
+      ],
+      "beta": true
+    },
+    {
       "id": "datainventory",
       "title": "Tahoe Data Inventory",
       "category": "data",
