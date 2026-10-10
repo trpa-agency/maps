@@ -1030,13 +1030,20 @@ const BUFFER  = { type: "simple-fill", color: [0, 0, 0, 0], outline: { color: "#
         <tr><td><code>--chart-1</code> to <code>--chart-8</code></td><td colspan="3">The three colorways in the Color section</td><td>Plotly colorway, map renderers</td></tr>
       </table>
       <h3>Claude Code skills</h3>
-      <p>The same rules live as skills so generated tools come out on brand without pasting this page in. Pair a brand skill with the stack skill on every build.</p>
+      <p>The same rules live as skills so generated tools come out on brand without pasting this page in. Pair a brand skill with the stack skill on every build. The skills are published as a Claude Code plugin marketplace at <a href="https://github.com/trpa-agency/trpa-claude-skills" target="_blank" rel="noopener">trpa-agency/trpa-claude-skills</a>; each one links back here and to the token file.</p>
       <div class="res-grid">
-        <div class="res"><b>trpa-brand</b>Agency palette, Open Sans, logo rules, TRPA Style Guide writing rules, Plotly layout.</div>
-        <div class="res"><b>trpa-eip-brand</b>EIP Pantone palette, Lexend Deca, logo variants including Forest Health, the four-color chart cycle.</div>
+        <div class="res"><b>trpa-brand</b>Agency palette, Open Sans, logo rules, TRPA Style Guide writing rules, Plotly layout, locked data category colors.</div>
+        <div class="res"><b>trpa-eip-brand</b>EIP Pantone palette, Lexend Deca, logo variants including Forest Health, the four-color chart cycle, priority ramp.</div>
         <div class="res"><b>tahoe-living-brand</b>Sage and terracotta palette, Montserrat, warm neutrals, housing semantic colors, bilingual notes.</div>
         <div class="res"><b>trpa-dashboard-stack</b>Calcite, ArcGIS SDK, Plotly, AG Grid: load order, page template, fetch pagination, conventions.</div>
+        <div class="res"><b>trpa-dashboard-qa</b>Pre-deploy checklist: data, brand, stack, accessibility, mobile, and copy checks before a tool goes live.</div>
       </div>
+      <h4>Install</h4>
+      <pre><code><span class="cmt"># once, in Claude Code</span>
+/plugin marketplace add trpa-agency/trpa-claude-skills
+<span class="cmt"># then the design bundle</span>
+/plugin install trpa-brand@trpa-claude-skills trpa-eip-brand@trpa-claude-skills tahoe-living-brand@trpa-claude-skills trpa-dashboard-stack@trpa-claude-skills trpa-dashboard-qa@trpa-claude-skills</code></pre>
+      <p class="note">Cowork and claude.ai take a skill as an uploaded folder: download the repository as a ZIP and upload the folder for the skill you want.</p>
     </section>
 
     <section class="ds" id="references">
