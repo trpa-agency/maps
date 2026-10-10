@@ -838,10 +838,12 @@ const PLOT_LAYOUT = {
   xaxis: { gridcolor: '#E8EDF3', linecolor: '#E2E6EC' },
   yaxis: { gridcolor: '#E8EDF3', linecolor: '#E2E6EC', zeroline: false },
   colorway: BRAND_COLORS, hoverlabel: { font: { family: 'Open Sans, sans-serif' } },
+  hovermode: 'x unified',   <span class="cmt">// always: one popup per x value listing every series</span>
   legend: { orientation: 'h', y: -0.2 }
 };
 const PLOT_CONFIG = { displayModeBar: false, responsive: true };</code></pre>
       <ul>
+        <li><b>Hover is always <code>x unified</code>.</b> One popup per x value that lists every series, so a reader compares values without chasing the cursor across bars. Hover over the chart above to see it.</li>
         <li>Four series or fewer. Beyond that, small multiples or a table.</li>
         <li>Symbols are fine in charts and tables (percent sign, dollar sign) even though body text spells them out.</li>
         <li>Sparklines in tiles are Plotly too, 40px tall, no axes, one line in brand primary.</li>
@@ -1218,7 +1220,7 @@ const BUFFER  = { type: "simple-fill", color: [0, 0, 0, 0], outline: { color: "#
     ];
     const layout = { barmode: 'stack', font: { family: b.font, color: b.text, size: 12 }, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
       margin: { t: 10, r: 10, b: 40, l: 40 }, xaxis: { gridcolor: '#E8EDF3', linecolor: b.border }, yaxis: { gridcolor: '#E8EDF3', linecolor: b.border, zeroline: false },
-      colorway: b.colors, legend: { orientation: 'h', y: -0.22 }, hoverlabel: { font: { family: b.font } } };
+      colorway: b.colors, legend: { orientation: 'h', y: -0.22 }, hoverlabel: { font: { family: b.font } }, hovermode: 'x unified' };
     Plotly.react('dsChart', data, layout, { displayModeBar: false, responsive: true });
   }
   buildChart();
